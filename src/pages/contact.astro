@@ -1,0 +1,47 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import WindowFrame from "../components/WindowFrame.astro";
+
+const title = "Contact";
+const description = "Send a signal — the only channel that's actually open is GitHub.";
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="shell contact">
+    <div class="marquee-header">contact // one open channel, no forms that go nowhere</div>
+
+    <WindowFrame title="send_signal.sh" flush>
+      <div class="terminal-toy contact__terminal">
+        <div class="terminal-toy__output" role="log">
+          <div class="terminal-toy__line terminal-toy__line--echo">guest@arctanmyangle:~$ ./send_signal.sh</div>
+          <div class="terminal-toy__line">checking open channels...</div>
+          <div class="terminal-toy__line">  [x] email          — not configured, intentionally not listed here</div>
+          <div class="terminal-toy__line">  [x] social          — not maintained</div>
+          <div class="terminal-toy__line">  [ok] github          — open, watched</div>
+          <div class="terminal-toy__line">1 open channel found.</div>
+        </div>
+      </div>
+    </WindowFrame>
+
+    <p class="contact__cta">
+      <a class="beveled-button beveled-button--lg beveled-button--primary" href="https://github.com/arcTanMyAngle" target="_blank" rel="noopener noreferrer">
+        Open an issue or start a discussion on GitHub
+      </a>
+    </p>
+  </div>
+</BaseLayout>
+
+<style>
+  .contact {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+  .contact__terminal {
+    border: none;
+    border-radius: 0;
+  }
+  .contact__cta {
+    text-align: center;
+  }
+</style>

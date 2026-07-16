@@ -1,0 +1,67 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+
+const notes = (await getCollection("notes")).sort(
+  (a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime()
+);
+
+const title = "Field Notes";
+const description = "Short write-ups on real-time systems, games as interfaces, and edge ML — grounded in the actual projects, not general takes.";
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="shell field-notes">
+    <div class="marquee-header">field notes // {notes.length} entries</div>
+
+    <ul class="field-notes__list">
+      {
+        notes.map((note) => (
+          <li class="field-notes__item">
+            <a href={`/field-notes/${note.id}/`}>
+              <h2>{note.data.title}</h2>
+              <p class="prose">{note.data.description}</p>
+              <time datetime={note.data.publishDate.toISOString()}>
+                {note.data.publishDate.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+              </time>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</BaseLayout>
+
+<style>
+  .field-notes {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+  .field-notes__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+  .field-notes__item a {
+    display: block;
+    text-decoration: none;
+    color: var(--color-text);
+    background: var(--color-bg-panel);
+    border: 1px solid var(--color-border-bright);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+  }
+  .field-notes__item h2 {
+    color: var(--color-green);
+  }
+  .field-notes__item a:hover h2 {
+    text-shadow: var(--glow-green);
+  }
+  .field-notes__item time {
+    display: block;
+    margin-top: var(--space-3);
+    color: var(--color-text-faint);
+    font-size: var(--text-xs);
+  }
+</style>

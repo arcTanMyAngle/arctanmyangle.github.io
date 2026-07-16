@@ -1,0 +1,85 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import WindowFrame from "../components/WindowFrame.astro";
+
+const title = "Lab";
+const description = "Interactive demo toys standing in for five real projects — radar, spectrogram, signal map, reaction trainer, terminal.";
+
+const TOYS = [
+  { toy: "radar", title: "look-above :: radar.demo", href: "/projects/look-above/" },
+  { toy: "spectrogram", title: "bird_acoustics :: spectrogram.demo", href: "/projects/bird_acoustics/" },
+  { toy: "signal-map", title: "global_unrest :: signal-map.demo", href: "/projects/global_unrest/" },
+  { toy: "reaction", title: "real-timereaction :: reaction.demo", href: "/projects/real-timereaction/" },
+] as const;
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="shell lab">
+    <div class="marquee-header">the lab // five running demos, zero real backends</div>
+    <p class="prose">
+      Everything on this page is a synthetic stand-in — no live flight feeds, no microphone, no real unrest data.
+      Each demo mirrors the actual project's UI language; the project pages explain what's real.
+    </p>
+
+    <div class="lab__grid">
+      {
+        TOYS.map((t) => (
+          <WindowFrame title={t.title} class="cv-auto">
+            <div class="toy-mount" data-toy={t.toy} />
+            <p class="lab__link">
+              <a href={t.href}>Read about the real project &rarr;</a>
+            </p>
+          </WindowFrame>
+        ))
+      }
+      <WindowFrame title="terminal.exe" class="cv-auto">
+        <div class="toy-mount" data-toy="terminal" />
+      </WindowFrame>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { lazyMount } from "../lib/lazyMount";
+
+  const TOY_LOADERS: Record<string, () => Promise<{ mount(root: HTMLElement): { destroy(): void } }>> = {
+    radar: () => import("../components/RadarToy"),
+    spectrogram: () => import("../components/SpectrogramToy"),
+    "signal-map": () => import("../components/SignalMapToy"),
+    reaction: () => import("../components/ReactionMiniGame"),
+    terminal: () => import("../components/TerminalToy"),
+  };
+
+  document.querySelectorAll<HTMLElement>("[data-toy]").forEach((el) => {
+    const loader = TOY_LOADERS[el.dataset.toy ?? ""];
+    if (!loader) return;
+    lazyMount(el, async (root) => {
+      const mod = await loader();
+      mod.mount(root);
+    });
+  });
+</script>
+
+<style>
+  .lab {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+  .lab__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: var(--space-5);
+  }
+  .lab__link {
+    margin-top: var(--space-3);
+    font-size: var(--text-sm);
+  }
+  .lab__link a {
+    color: var(--color-cyan);
+    text-decoration: none;
+  }
+  .lab__link a:hover {
+    text-shadow: var(--glow-cyan);
+  }
+</style>

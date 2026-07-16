@@ -1,0 +1,109 @@
+/*
+  All runtime-toggleable visual effects live here, keyed exclusively off
+  data-crt / data-motion / data-attract attributes set on <html> by
+  src/lib/clientState.ts (and the blocking init script in BaseLayout).
+  No component should read prefers-reduced-motion directly at runtime —
+  it's only ever consulted once, as the seed value for data-motion.
+*/
+
+/* Scanline overlay ----------------------------------------------------- */
+.scanline-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-scanline);
+  pointer-events: none;
+  opacity: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.06) 0px,
+    rgba(255, 255, 255, 0.06) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: overlay;
+  transition: opacity var(--dur-slow) var(--ease-standard);
+}
+
+:root[data-crt="on"] .scanline-overlay {
+  opacity: var(--scanline-opacity);
+}
+
+:root[data-crt="on"][data-motion="full"] .scanline-overlay {
+  animation: crt-flicker 6s linear infinite;
+}
+
+@keyframes crt-flicker {
+  0%,
+  96%,
+  100% {
+    opacity: var(--scanline-opacity);
+  }
+  97% {
+    opacity: calc(var(--scanline-opacity) * 2.2);
+  }
+  98% {
+    opacity: calc(var(--scanline-opacity) * 0.6);
+  }
+}
+
+/* Status light blink, gated on motion ----------------------------------- */
+:root[data-motion="full"] .status-dot--blink {
+  animation: status-blink 1.6s steps(2, jump-none) infinite;
+}
+:root[data-motion="reduced"] .status-dot--blink {
+  opacity: 1;
+}
+@keyframes status-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* Attract mode (Konami easter egg) --------------------------------------- */
+:root[data-attract="true"][data-motion="full"] {
+  animation: attract-hue 8s linear infinite;
+}
+@keyframes attract-hue {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
+}
+:root[data-attract="true"][data-motion="full"] .beveled-button,
+:root[data-attract="true"][data-motion="full"] .site-logo {
+  animation: attract-pulse 1.2s ease-in-out infinite alternate;
+}
+@keyframes attract-pulse {
+  from {
+    filter: brightness(1);
+  }
+  to {
+    filter: brightness(1.5);
+  }
+}
+
+/* Global reduced-motion kill switch --------------------------------------- */
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Marquee header gets a subtle static-vs-shimmer distinction ------------------ */
+:root[data-motion="full"] .marquee-header {
+  background-size: 200% 200%;
+  animation: marquee-shift 12s linear infinite;
+}
+@keyframes marquee-shift {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 28px 28px;
+  }
+}

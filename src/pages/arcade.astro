@@ -1,0 +1,52 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import WindowFrame from "../components/WindowFrame.astro";
+import ArcadeCabinet from "../components/ArcadeCabinet.astro";
+import { getProjectBySlug } from "../lib/projects";
+
+const project = getProjectBySlug("arcade");
+
+const title = "Arcade";
+const description = "One cabinet, four from-scratch games — Wii Kart, Uncanny Carnival, Galaga (C++ and Rust), and an HTML cabinet.";
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="shell arcade-page">
+    <div class="marquee-header">insert coin // no continues, no rigged hitboxes</div>
+    <p class="prose">
+      A single repo housing four completely different games, all built from scratch: no game engine, deterministic
+      simulation, asset-light procedural art and audio. This cabinet is a playable stand-in for the real menu —
+      picking a game here links out to the actual project.
+    </p>
+
+    <WindowFrame title="cabinet.exe">
+      <ArcadeCabinet variant="full" githubUrl={project?.githubUrl} />
+    </WindowFrame>
+
+    {
+      project && (
+        <p class="arcade-page__link">
+          <a href={`/projects/${project.slug}/`}>Full writeup on the arcade project &rarr;</a>
+        </p>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .arcade-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+  .arcade-page__link {
+    text-align: center;
+  }
+  .arcade-page__link a {
+    color: var(--color-cyan);
+    text-decoration: none;
+  }
+  .arcade-page__link a:hover {
+    text-shadow: var(--glow-cyan);
+  }
+</style>

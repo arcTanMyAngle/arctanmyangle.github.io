@@ -1,0 +1,20 @@
+---
+interface Props {
+  title: string;
+  flush?: boolean;
+  as?: "div" | "section" | "article";
+  class?: string;
+}
+
+const { title, flush = false, as: Tag = "div", class: className } = Astro.props;
+---
+
+<Tag class:list={["window-frame", className]}>
+  <div class="window-frame__titlebar">
+    <span class="window-frame__dots" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="window-frame__title">{title}</span>
+  </div>
+  <div class:list={["window-frame__body", { "window-frame__body--flush": flush }]}>
+    <slot />
+  </div>
+</Tag>

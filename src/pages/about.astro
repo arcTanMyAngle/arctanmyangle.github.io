@@ -1,0 +1,114 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import WindowFrame from "../components/WindowFrame.astro";
+
+const title = "About";
+const description = "Who built this — languages, systems, and what's currently being learned.";
+
+const SKILL_GROUPS = [
+  {
+    label: "Languages",
+    skills: ["Rust", "C++17", "Python", "TypeScript", "C"],
+  },
+  {
+    label: "Systems & real-time",
+    skills: ["tokio", "rayon", "crossbeam", "wgpu", "OpenGL", "SDL2", "macroquad", "raylib", "Three.js"],
+  },
+  {
+    label: "ML & data",
+    skills: ["PyTorch", "timm", "TensorFlow Lite Micro", "GradCAM/ScoreCAM", "DuckDB", "SQLite", "Parquet", "H3"],
+  },
+  {
+    label: "Hardware & tooling",
+    skills: ["ESP32-S3 / ESP-IDF", "CMake", "Catch2", "Gradio", "Google Colab"],
+  },
+];
+
+const EXPLORING = ["CUDA / parallel programming", "wgpu render pipelines beyond look-above's current M0 scope", "ACLED-style verified-event data pipelines"];
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="shell about">
+    <div class="marquee-header">about // no résumé buzzwords, just what's actually shipped</div>
+
+    <WindowFrame title="who.txt">
+      <p class="prose">
+        arcTanMyAngle builds real-time systems, native tools, and small ML models that run on hardware you can
+        actually hold — a flight radar built on public feeds, a bird classifier that fits on a microcontroller, a
+        reaction-time trainer that treats latency as the whole point. Every project on this site is a real GitHub
+        repo; nothing here is a mockup.
+      </p>
+      <p class="prose">
+        The throughline across the flagship projects is a preference for doing the harder, more honest version of a
+        thing: dead-reckoning between real ADS-B updates instead of faking smoothness, separating media attention
+        from verified events instead of implying certainty, publishing the model candidates that lost instead of
+        only the one that won.
+      </p>
+    </WindowFrame>
+
+    <WindowFrame title="skills.matrix">
+      <div class="about__skill-groups">
+        {
+          SKILL_GROUPS.map((group) => (
+            <div class="about__skill-group">
+              <h3>{group.label}</h3>
+              <div class="about__chips">
+                {group.skills.map((s) => (
+                  <span class="chip chip--lang">{s}</span>
+                ))}
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </WindowFrame>
+
+    <WindowFrame title="currently_exploring.log">
+      <ul class="about__exploring">
+        {EXPLORING.map((item) => <li>{item}</li>)}
+      </ul>
+    </WindowFrame>
+
+    <p class="about__cta">
+      <a class="beveled-button beveled-button--primary" href="https://github.com/arcTanMyAngle" target="_blank" rel="noopener noreferrer">
+        See the repos on GitHub
+      </a>
+    </p>
+  </div>
+</BaseLayout>
+
+<style>
+  .about {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+  .about__skill-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-5);
+  }
+  .about__skill-group h3 {
+    color: var(--color-cyan);
+    margin-bottom: var(--space-3);
+  }
+  .about__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .about__exploring {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    color: var(--color-text-dim);
+  }
+  .about__exploring li::before {
+    content: "> ";
+    color: var(--color-amber);
+  }
+  .about__cta {
+    text-align: center;
+  }
+</style>

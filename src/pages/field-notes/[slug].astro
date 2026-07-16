@@ -1,0 +1,62 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCollection, render } from "astro:content";
+
+export async function getStaticPaths() {
+  const notes = await getCollection("notes");
+  return notes.map((note) => ({
+    params: { slug: note.id },
+    props: { note },
+  }));
+}
+
+const { note } = Astro.props;
+const { Content } = await render(note);
+---
+
+<BaseLayout title={note.data.title} description={note.data.description}>
+  <div class="shell field-note">
+    <a class="field-note__back" href="/field-notes/">&larr; Back to field notes</a>
+    <article>
+      <header class="field-note__head">
+        <h1>{note.data.title}</h1>
+        <time datetime={note.data.publishDate.toISOString()}>
+          {note.data.publishDate.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+        </time>
+      </header>
+      <div class="prose field-note__body">
+        <Content />
+      </div>
+    </article>
+  </div>
+</BaseLayout>
+
+<style>
+  .field-note {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    max-width: 68ch;
+  }
+  .field-note__back {
+    color: var(--color-text-dim);
+    text-decoration: none;
+    font-size: var(--text-sm);
+  }
+  .field-note__back:hover {
+    color: var(--color-cyan);
+  }
+  .field-note__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+  }
+  .field-note__head time {
+    color: var(--color-text-faint);
+    font-size: var(--text-xs);
+  }
+  .field-note__body :global(p + p) {
+    margin-top: var(--space-4);
+  }
+</style>

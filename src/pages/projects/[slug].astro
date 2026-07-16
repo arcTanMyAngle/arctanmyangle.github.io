@@ -1,0 +1,198 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import WindowFrame from "../../components/WindowFrame.astro";
+import ArcadeCabinet from "../../components/ArcadeCabinet.astro";
+import { getAllProjects, type Project } from "../../lib/projects";
+
+export function getStaticPaths() {
+  return getAllProjects().map((project) => ({
+    params: { slug: project.slug },
+    props: { project },
+  }));
+}
+
+interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props;
+const isFlagship = project.detailSections !== null;
+
+const SECTION_LABELS: Record<keyof NonNullable<Project["detailSections"]>, string> = {
+  whatItIs: "What it is",
+  whyItMatters: "Why it matters",
+  howItWorks: "How it works",
+  technicalDecisions: "Technical decisions",
+  currentStatus: "Current status",
+  nextUpgrade: "Next upgrade",
+};
+
+const title = project.displayName;
+const description = project.description;
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="shell project-detail">
+    <a class="project-detail__back" href="/projects/">&larr; Back to projects</a>
+
+    <div class="marquee-header">{project.category.replace(/-/g, " ")} // {project.status}</div>
+
+    <header class="project-detail__head">
+      <h1>{project.displayName}</h1>
+      <p class="prose">{project.description}</p>
+      <div class="project-detail__chips">
+        {project.primaryLanguage && <span class="chip chip--lang">{project.primaryLanguage}</span>}
+        <span class={`chip chip--status-${project.status}`}>{project.status}</span>
+        {project.stars > 0 && <span class="chip">★ {project.stars}</span>}
+        {project.license && <span class="chip">{project.license}</span>}
+        {project.techStack.map((t) => <span class="chip">{t}</span>)}
+      </div>
+      <div class="project-detail__links">
+        <a class="beveled-button beveled-button--primary" href={project.githubUrl} target="_blank" rel="noopener noreferrer">
+          View on GitHub
+        </a>
+        {
+          project.homepageUrl && (
+            <a class="beveled-button beveled-button--cyan" href={project.homepageUrl} target="_blank" rel="noopener noreferrer">
+              Live site
+            </a>
+          )
+        }
+      </div>
+    </header>
+
+    {
+      project.demoType && (
+        <WindowFrame title="demo.exe" class="cv-auto">
+          {project.demoType === "cabinet" && <ArcadeCabinet variant="compact" githubUrl={project.githubUrl} />}
+          {project.demoType === "scanner" && (
+            <div class="scanner-demo">
+              <div class="scanner-demo__frame">
+                <pre class="scanner-demo__leaf" aria-hidden="true">{`      .--.
+    .'    '.
+   /  ,--.   \\
+  |  ( () )   |
+   \\  '--'   /
+    '.____.'`}</pre>
+                <div class="scanner-demo__bar"></div>
+              </div>
+              <p class="toy-caption">
+                Demo scan sweep, standing in for the real GradCAM/ScoreCAM overlay the model produces — no live inference here.
+              </p>
+            </div>
+          )}
+          {["radar", "signal-map", "spectrogram", "reaction"].includes(project.demoType) && (
+            <div class="toy-mount" data-toy={project.demoType} />
+          )}
+        </WindowFrame>
+      )
+    }
+
+    {
+      isFlagship && project.detailSections && (
+        <div class="project-detail__sections">
+          {(Object.keys(SECTION_LABELS) as (keyof typeof SECTION_LABELS)[]).map((key) => (
+            <WindowFrame title={SECTION_LABELS[key]} class="cv-auto">
+              <p class="prose">{project.detailSections![key]}</p>
+            </WindowFrame>
+          ))}
+        </div>
+      )
+    }
+  </div>
+</BaseLayout>
+
+{
+  project.demoType && ["radar", "signal-map", "spectrogram", "reaction"].includes(project.demoType) && (
+    <script>
+      import { lazyMount } from "../../lib/lazyMount";
+
+      const TOY_LOADERS: Record<string, () => Promise<{ mount(root: HTMLElement): { destroy(): void } }>> = {
+        radar: () => import("../../components/RadarToy"),
+        "signal-map": () => import("../../components/SignalMapToy"),
+        spectrogram: () => import("../../components/SpectrogramToy"),
+        reaction: () => import("../../components/ReactionMiniGame"),
+      };
+
+      const el = document.querySelector<HTMLElement>("[data-toy]");
+      const demoType = el?.dataset.toy;
+      const loader = demoType ? TOY_LOADERS[demoType] : undefined;
+      if (el && loader) {
+        lazyMount(el, async (root) => {
+          const mod = await loader();
+          mod.mount(root);
+        });
+      }
+    </script>
+  )
+}
+
+<style>
+  .project-detail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+  .project-detail__back {
+    color: var(--color-text-dim);
+    text-decoration: none;
+    font-size: var(--text-sm);
+  }
+  .project-detail__back:hover {
+    color: var(--color-cyan);
+  }
+  .project-detail__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  .project-detail__chips,
+  .project-detail__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .project-detail__sections {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--space-5);
+  }
+  .scanner-demo__frame {
+    position: relative;
+    overflow: hidden;
+    background: var(--color-bg-inset);
+    padding: var(--space-5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .scanner-demo__leaf {
+    color: var(--color-green);
+    font-size: var(--text-sm);
+    line-height: 1.2;
+  }
+  .scanner-demo__bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 3px;
+    top: 0;
+    background: var(--color-magenta);
+    box-shadow: var(--glow-magenta);
+  }
+  :root[data-motion="full"] .scanner-demo__bar {
+    animation: scanner-sweep 2.4s ease-in-out infinite;
+  }
+  :root[data-motion="reduced"] .scanner-demo__bar {
+    top: 50%;
+  }
+  @keyframes scanner-sweep {
+    0%,
+    100% {
+      top: 0;
+    }
+    50% {
+      top: calc(100% - 3px);
+    }
+  }
+</style>

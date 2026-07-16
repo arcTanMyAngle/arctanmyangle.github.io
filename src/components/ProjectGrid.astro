@@ -1,0 +1,29 @@
+---
+import type { Project } from "../lib/projects";
+import ProjectCard from "./ProjectCard.astro";
+
+interface Props {
+  projects: Project[];
+  id?: string;
+}
+
+const { projects, id } = Astro.props;
+---
+
+<div class="project-grid" id={id}>
+  {projects.map((project) => <ProjectCard project={project} />)}
+</div>
+<p class="project-grid__empty" id={id ? `${id}-empty` : undefined} hidden>No projects match those filters.</p>
+
+<style>
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-5);
+  }
+  .project-grid__empty {
+    color: var(--color-text-dim);
+    padding-block: var(--space-6);
+    text-align: center;
+  }
+</style>

@@ -1,0 +1,28 @@
+---
+interface Props {
+  label: string;
+  on?: boolean;
+  blink?: boolean;
+  showLabel?: boolean;
+}
+
+const { label, on = true, blink = false, showLabel = true } = Astro.props;
+---
+
+<span class="status-light">
+  <span class:list={["status-dot", { "status-dot--on": on, "status-dot--blink": on && blink }]} aria-hidden="true"
+  ></span>
+  {showLabel ? <span class="status-light__label">{label}</span> : <span class="visually-hidden">{label}</span>}
+</span>
+
+<style>
+  .status-light {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-dim);
+  }
+</style>

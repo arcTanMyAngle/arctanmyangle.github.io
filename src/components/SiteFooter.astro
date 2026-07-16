@@ -1,0 +1,29 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="shell site-footer__row">
+    <div class="site-footer__col">
+      <span class="status-dot status-dot--on" aria-hidden="true"></span>
+      arcTanMyAngle // {year} // built with Astro + Bun, no tracking, no bloat
+    </div>
+    <nav class="site-footer__links" aria-label="Footer">
+      <a href="https://github.com/arcTanMyAngle" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a href="/contact/">Contact</a>
+      <a href="/field-notes/">Field Notes</a>
+    </nav>
+  </div>
+</footer>
+
+<style>
+  .site-footer__col {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .site-footer__links {
+    display: flex;
+    gap: var(--space-4);
+  }
+</style>

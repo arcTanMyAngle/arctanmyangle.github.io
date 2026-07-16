@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "bun": {
+      "source": "brianlovin/claude-config",
+      "sourceType": "github",
+      "skillPath": "skills/bun/SKILL.md",
+      "computedHash": "264fd60e47e07734d5639047259fa83268a0e13e6a25357d486d1c9219ca7630"
+    }
+  }
+}

@@ -1,0 +1,130 @@
+---
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import "../styles/tokens.css";
+import "../styles/global.css";
+import "../styles/effects.css";
+
+interface Props {
+  title: string;
+  description: string;
+  ogImage?: string;
+  ogType?: "website" | "article";
+}
+
+const { title, description, ogImage = "/og-default.png", ogType = "website" } = Astro.props;
+
+const siteName = "arcTanMyAngle";
+const pageTitle = title === siteName ? title : `${title} // ${siteName}`;
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
+const ogImageUrl = new URL(ogImage, Astro.site);
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${Astro.site}#website`,
+      url: Astro.site,
+      name: "arcTanMyAngle // project signal deck",
+      description: "A fast, static-first portfolio of real-time systems, Rust/C++ tools, edge ML, and games.",
+    },
+    {
+      "@type": "Person",
+      "@id": `${Astro.site}#person`,
+      name: "arcTanMyAngle",
+      url: Astro.site,
+      sameAs: ["https://github.com/arcTanMyAngle"],
+    },
+  ],
+};
+---
+
+<!doctype html>
+<html lang="en" data-crt="on" data-motion="full">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:site_name" content={siteName} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+
+    <script is:inline>
+      // Blocking, non-module script: must run before first paint to avoid a
+      // flash of wrong CRT/motion state on every full MPA navigation.
+      // Key strings duplicated from src/lib/clientState.ts STORAGE_KEYS —
+      // keep in sync if those change.
+      (function () {
+        try {
+          var crt = localStorage.getItem("atma:crt-mode");
+          var motion = localStorage.getItem("atma:reduced-effects");
+          var html = document.documentElement;
+          html.dataset.crt = crt === "off" ? "off" : "on";
+          var reduced =
+            motion === "on" ||
+            (motion !== "off" && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+          html.dataset.motion = reduced ? "reduced" : "full";
+        } catch (e) {
+          /* localStorage unavailable — defaults already set on <html> */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="scanline-overlay" aria-hidden="true"></div>
+
+    <SiteHeader />
+
+    <main id="main-content" class="site-main" tabindex="-1">
+      <slot />
+    </main>
+
+    <SiteFooter />
+
+    <div id="command-palette-root"></div>
+    <script>
+      import { mount, registerProjectCommands } from "../components/CommandPalette";
+      import { getFeaturedProjects, getAllProjects } from "../lib/projects";
+
+      registerProjectCommands([
+        ...getFeaturedProjects().map((p) => ({
+          id: `open-project-${p.slug}`,
+          label: `Open project: ${p.displayName}`,
+          hint: "featured",
+          run: () => {
+            window.location.href = `/projects/${p.slug}/`;
+          },
+        })),
+        {
+          id: "random-project",
+          label: "Open a random project",
+          run: () => {
+            const all = getAllProjects();
+            const pick = all[Math.floor(Math.random() * all.length)];
+            if (pick) window.location.href = `/projects/${pick.slug}/`;
+          },
+        },
+      ]);
+
+      const root = document.getElementById("command-palette-root");
+      if (root) mount(root);
+    </script>
+  </body>
+</html>

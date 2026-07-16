@@ -1,0 +1,86 @@
+---
+import type { Project } from "../lib/projects";
+
+interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props;
+const href = `/projects/${project.slug}/`;
+const searchText = `${project.displayName} ${project.description} ${project.techStack.join(" ")}`.toLowerCase();
+---
+
+<article
+  class="project-card"
+  data-slug={project.slug}
+  data-category={project.category}
+  data-status={project.status}
+  data-language={project.primaryLanguage ?? ""}
+  data-updated={project.updatedAt}
+  data-stars={project.stars}
+  data-search={searchText}
+>
+  <a class="project-card__link" href={href}>
+    <div class="project-card__head">
+      <h3 class="project-card__title">{project.displayName}</h3>
+      <span class={`chip chip--status-${project.status}`}>{project.status}</span>
+    </div>
+    <p class="project-card__desc">{project.description}</p>
+    <div class="project-card__chips">
+      {project.primaryLanguage && <span class="chip chip--lang">{project.primaryLanguage}</span>}
+      <span class="chip">{project.category.replace(/-/g, " ")}</span>
+      {project.stars > 0 && <span class="chip">★ {project.stars}</span>}
+      {project.license && <span class="chip">{project.license}</span>}
+    </div>
+  </a>
+</article>
+
+<style>
+  .project-card {
+    background: var(--color-bg-panel);
+    border: 1px solid var(--color-border-bright);
+    border-radius: var(--radius-md);
+    transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+  }
+  .project-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-window);
+  }
+  .project-card[hidden] {
+    display: none;
+  }
+  .project-card__link {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    text-decoration: none;
+    color: var(--color-text);
+    height: 100%;
+  }
+  .project-card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+  .project-card__title {
+    font-size: var(--text-md);
+    color: var(--color-green);
+  }
+  .project-card__link:hover .project-card__title {
+    text-shadow: var(--glow-green);
+  }
+  .project-card__desc {
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    color: var(--color-text-dim);
+    max-width: none;
+  }
+  .project-card__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: auto;
+  }
+</style>
