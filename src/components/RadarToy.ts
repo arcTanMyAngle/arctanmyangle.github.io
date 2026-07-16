@@ -56,10 +56,10 @@ export function mount(root: HTMLElement): { destroy(): void } {
 
       // Phosphor-persistence fade instead of a full clear — gives aircraft
       // natural ghost trails for free.
-      ctx.fillStyle = "rgba(5,7,10,0.16)";
+      ctx.fillStyle = "rgba(5,9,18,0.16)";
       ctx.fillRect(0, 0, width, height);
 
-      ctx.strokeStyle = "rgba(60,255,122,0.25)";
+      ctx.strokeStyle = "rgba(79,178,255,0.25)";
       ctx.lineWidth = 1;
       for (let i = 1; i <= 4; i++) {
         ctx.beginPath();
@@ -79,13 +79,13 @@ export function mount(root: HTMLElement): { destroy(): void } {
       for (let i = 0; i < wedgeSteps; i++) {
         const a = sweepAngle - (i / wedgeSteps) * wedgeSpan;
         const alpha = 0.16 * (1 - i / wedgeSteps);
-        ctx.strokeStyle = `rgba(60,255,122,${alpha})`;
+        ctx.strokeStyle = `rgba(79,178,255,${alpha})`;
         ctx.beginPath();
         ctx.moveTo(cx, cy);
         ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
         ctx.stroke();
       }
-      ctx.strokeStyle = "rgba(60,255,122,0.9)";
+      ctx.strokeStyle = "rgba(79,178,255,0.9)";
       ctx.beginPath();
       ctx.moveTo(cx, cy);
       ctx.lineTo(cx + Math.cos(sweepAngle) * r, cy + Math.sin(sweepAngle) * r);
@@ -98,14 +98,14 @@ export function mount(root: HTMLElement): { destroy(): void } {
 
         const px = cx + ac.x * r;
         const py = cy + ac.y * r;
-        ctx.fillStyle = "#3cff7a";
+        ctx.fillStyle = "#4fb2ff";
         ctx.beginPath();
         ctx.arc(px, py, 2.5, 0, Math.PI * 2);
         ctx.fill();
 
         const acAngle = Math.atan2(ac.y, ac.x);
         if (Math.abs(normalizeAngle(sweepAngle - acAngle)) < 0.15) {
-          ctx.fillStyle = "rgba(60,255,122,0.9)";
+          ctx.fillStyle = "rgba(79,178,255,0.9)";
           ctx.font = FONT;
           ctx.fillText(`${ac.callsign} FL${Math.round(ac.altitudeFt / 100)}`, px + 6, py - 6);
         }

@@ -20,9 +20,9 @@ function cellIntensity(day: number, col: number, row: number): number {
 }
 
 function intensityColor(intensity: number, alpha: number): string {
-  if (intensity < 0.33) return `rgba(60,255,122,${alpha})`;
-  if (intensity < 0.66) return `rgba(255,176,0,${alpha})`;
-  return `rgba(225,75,255,${alpha})`;
+  if (intensity < 0.33) return `rgba(79,178,255,${alpha})`;
+  if (intensity < 0.66) return `rgba(255,207,92,${alpha})`;
+  return `rgba(210,104,255,${alpha})`;
 }
 
 function setupCanvasDPR(canvas: HTMLCanvasElement, maxDPR = 2) {
@@ -39,7 +39,7 @@ function setupCanvasDPR(canvas: HTMLCanvasElement, maxDPR = 2) {
 
 function draw(canvas: HTMLCanvasElement, day: number) {
   const { ctx, width, height } = setupCanvasDPR(canvas);
-  ctx.fillStyle = "#05070a";
+  ctx.fillStyle = "#050912";
   ctx.fillRect(0, 0, width, height);
 
   const cellW = width / COLS;
@@ -58,7 +58,7 @@ function draw(canvas: HTMLCanvasElement, day: number) {
     }
   }
 
-  ctx.strokeStyle = "rgba(225,75,255,0.9)";
+  ctx.strokeStyle = "rgba(210,104,255,0.9)";
   ctx.lineWidth = 1.5;
   for (const cell of hotCells) {
     const s = Math.min(cellW, cellH) * 0.28;

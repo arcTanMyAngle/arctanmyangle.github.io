@@ -1,10 +1,10 @@
 // Central registry of localStorage keys + typed get/set helpers.
 // The FOUC-prevention script in BaseLayout.astro's <head> duplicates the
-// crtMode/reducedEffects key strings inline (it must be a blocking, non-module
+// shineMode/reducedEffects key strings inline (it must be a blocking, non-module
 // classic script, so it can't import this file) — keep them in sync if you
 // change a key here.
 export const STORAGE_KEYS = {
-  crtMode: "atma:crt-mode",
+  shineMode: "atma:shine-mode",
   reducedEffects: "atma:reduced-effects",
   reactionBestScore: "atma:reaction-best",
   lastProjectCategory: "atma:last-category",
@@ -26,13 +26,13 @@ function writeLocalStorage(key: string, value: string): void {
   }
 }
 
-export function getCrtMode(): boolean {
-  return readLocalStorage(STORAGE_KEYS.crtMode) !== "off";
+export function getShineMode(): boolean {
+  return readLocalStorage(STORAGE_KEYS.shineMode) !== "off";
 }
 
-export function setCrtMode(on: boolean): void {
-  writeLocalStorage(STORAGE_KEYS.crtMode, on ? "on" : "off");
-  document.documentElement.dataset.crt = on ? "on" : "off";
+export function setShineMode(on: boolean): void {
+  writeLocalStorage(STORAGE_KEYS.shineMode, on ? "on" : "off");
+  document.documentElement.dataset.shine = on ? "on" : "off";
 }
 
 export function getReducedEffects(): boolean {

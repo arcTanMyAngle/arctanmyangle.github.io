@@ -41,7 +41,7 @@ const jsonLd = {
 ---
 
 <!doctype html>
-<html lang="en" data-crt="on" data-motion="full">
+<html lang="en" data-shine="on" data-motion="full">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -67,15 +67,15 @@ const jsonLd = {
 
     <script is:inline>
       // Blocking, non-module script: must run before first paint to avoid a
-      // flash of wrong CRT/motion state on every full MPA navigation.
+      // flash of wrong shine/motion state on every full MPA navigation.
       // Key strings duplicated from src/lib/clientState.ts STORAGE_KEYS —
       // keep in sync if those change.
       (function () {
         try {
-          var crt = localStorage.getItem("atma:crt-mode");
+          var shine = localStorage.getItem("atma:shine-mode");
           var motion = localStorage.getItem("atma:reduced-effects");
           var html = document.documentElement;
-          html.dataset.crt = crt === "off" ? "off" : "on";
+          html.dataset.shine = shine === "off" ? "off" : "on";
           var reduced =
             motion === "on" ||
             (motion !== "off" && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -88,7 +88,7 @@ const jsonLd = {
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to content</a>
-    <div class="scanline-overlay" aria-hidden="true"></div>
+    <div class="shine-overlay" aria-hidden="true"></div>
 
     <SiteHeader />
 

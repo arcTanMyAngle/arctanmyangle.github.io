@@ -1,4 +1,4 @@
-import { getCrtMode, setCrtMode, getReducedEffects, setReducedEffects } from "../lib/clientState";
+import { getShineMode, setShineMode, getReducedEffects, setReducedEffects } from "../lib/clientState";
 
 interface Command {
   id: string;
@@ -38,10 +38,10 @@ function navCommands(): Command[] {
 function toggleCommands(): Command[] {
   return [
     {
-      id: "toggle-crt",
-      label: "Toggle CRT mode",
-      hint: getCrtMode() ? "currently on" : "currently off",
-      run: () => setCrtMode(!getCrtMode()),
+      id: "toggle-shine",
+      label: "Toggle chrome shine",
+      hint: getShineMode() ? "currently on" : "currently off",
+      run: () => setShineMode(!getShineMode()),
     },
     {
       id: "toggle-motion",

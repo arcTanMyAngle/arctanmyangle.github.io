@@ -34,12 +34,12 @@ export function mount(canvas: HTMLCanvasElement): { destroy(): void } {
       stars = makeStars(count, width, height);
     },
     onFrame(ctx, { dt, time, width, height }) {
-      ctx.fillStyle = "#05070a";
+      ctx.fillStyle = "#050912";
       ctx.fillRect(0, 0, width, height);
 
       for (const star of stars) {
         const twinkle = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(time * star.speed + star.phase));
-        ctx.fillStyle = `rgba(238,242,236,${twinkle * 0.7})`;
+        ctx.fillStyle = `rgba(238,242,251,${twinkle * 0.7})`;
         ctx.fillRect(star.x, star.y, star.r, star.r);
       }
 
@@ -61,8 +61,8 @@ export function mount(canvas: HTMLCanvasElement): { destroy(): void } {
           originX + Math.cos(a) * radius,
           originY + Math.sin(a) * radius
         );
-        grad.addColorStop(0, `rgba(60,255,122,${alpha})`);
-        grad.addColorStop(1, "rgba(60,255,122,0)");
+        grad.addColorStop(0, `rgba(79,178,255,${alpha})`);
+        grad.addColorStop(1, "rgba(79,178,255,0)");
         ctx.strokeStyle = grad;
         ctx.lineWidth = 2;
         ctx.beginPath();

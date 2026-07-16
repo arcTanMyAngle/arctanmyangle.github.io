@@ -14,7 +14,7 @@ const GAMES = [
 ];
 ---
 
-<div class={`arcade-cabinet arcade-cabinet--${variant} pixel-border`} data-state="insert-coin" data-selected="0">
+<div class={`arcade-cabinet arcade-cabinet--${variant} chrome-border`} data-state="insert-coin" data-selected="0">
   <div class="arcade-cabinet__screen">
     <div class="arcade-cabinet__panel" data-panel="insert-coin">
       <p class="arcade-cabinet__blink">INSERT COIN</p>
@@ -80,12 +80,12 @@ const GAMES = [
   .arcade-cabinet__panel {
     width: 100%;
     text-align: center;
-    color: var(--color-green);
+    color: var(--color-blue);
   }
   .arcade-cabinet__blink {
     font-size: var(--text-lg);
     letter-spacing: 0.1em;
-    text-shadow: var(--glow-green);
+    text-shadow: var(--glow-blue);
   }
   :root[data-motion="full"] .arcade-cabinet__blink {
     animation: status-blink 1s steps(2, jump-none) infinite;

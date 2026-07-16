@@ -24,14 +24,14 @@ export function mount(root: HTMLElement): { destroy(): void } {
   const handle = startCanvasLoop(canvas, {
     maxDPR: 2,
     onFrame(ctx, { time, width, height }) {
-      ctx.fillStyle = "#05070a";
+      ctx.fillStyle = "#050912";
       ctx.fillRect(0, 0, width, height);
 
       const barW = width / BANDS;
       for (let i = 0; i < BANDS; i++) {
         const v = bandValue(time, i);
         const barH = v * height * 0.9;
-        ctx.fillStyle = v < 0.5 ? `rgba(60,255,122,${0.35 + v * 0.5})` : `rgba(255,176,0,${0.35 + v * 0.5})`;
+        ctx.fillStyle = v < 0.5 ? `rgba(79,178,255,${0.35 + v * 0.5})` : `rgba(255,207,92,${0.35 + v * 0.5})`;
         ctx.fillRect(i * barW + 1, height - barH, barW - 2, barH);
       }
     },

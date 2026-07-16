@@ -5,8 +5,11 @@ Project-specific guidance for Claude Code sessions working in this repo.
 ## What this is
 
 arcTanMyAngle's GitHub Pages portfolio (`arctanmyangle.github.io`). Astro 7 + TypeScript, static output, Bun as the
-package manager/runtime. Late-90s/early-00s CRT-terminal/arcade aesthetic executed with modern performance
-discipline. For current build status and exact next steps, read `HANDOFF.md` in this repo first.
+package manager/runtime. Y2K chrome/blue futurism aesthetic — deep indigo-black backdrop, glossy Windows XP
+Luna / Mac OS Aqua-style chrome UI (gradient-filled pill buttons, glossy titlebars with traffic-light dots),
+electric blue/cyan/magenta holographic accents — executed with modern performance discipline. (This replaced an
+earlier CRT-terminal/arcade direction; if you see stray references to "CRT" anywhere, they're a miss from that
+rename, not intentional.) For current build status and exact next steps, read `HANDOFF.md` in this repo first.
 
 ## Hard conventions — do not deviate without asking
 
@@ -17,8 +20,9 @@ discipline. For current build status and exact next steps, read `HANDOFF.md` in 
   Everything else reads the committed `src/data/github-repos.generated.json`.
 - **System fonts only.** No Google Fonts / remote font loading, ever.
 - **Motion is attribute-gated, not media-query-gated per component.** Every conditional animation keys off
-  `<html data-crt="on|off" data-motion="full|reduced">`, set once by the blocking init script in
+  `<html data-shine="on|off" data-motion="full|reduced">`, set once by the blocking init script in
   `src/layouts/BaseLayout.astro`. Don't add a second `prefers-reduced-motion` check elsewhere — read `data-motion`.
+  (`data-shine` toggles the holographic shine-sweep overlay; it was called `data-crt` before the Y2K redesign.)
 - **Toy/island pattern:** every interactive vanilla-TS module (`src/components/*.ts`) exports
   `mount(root: HTMLElement, options?) => { destroy(): void }`. Canvas-based toys use the shared
   `src/lib/canvasLoop.ts` (`startCanvasLoop`) for DPR capping / visibility pausing / reduced-motion gating / mobile
@@ -32,11 +36,12 @@ discipline. For current build status and exact next steps, read `HANDOFF.md` in 
 
 ## Where things are
 
-- Design tokens: `src/styles/tokens.css` (CSS custom properties only, no selectors).
+- Design tokens: `src/styles/tokens.css` (CSS custom properties only, no selectors). Chrome gradients live here too
+  (`--chrome-titlebar`, `--chrome-button*`, `--holo-gradient`).
 - Global chrome/utility classes: `src/styles/global.css`.
-- All motion/CRT/attract-mode effects: `src/styles/effects.css`.
+- All motion/shine/attract-mode effects: `src/styles/effects.css`.
 - Central localStorage keys: `src/lib/clientState.ts` (`STORAGE_KEYS`) — the blocking FOUC script in
-  `BaseLayout.astro`'s `<head>` duplicates the `crtMode`/`reducedEffects` key strings inline (must be a classic,
+  `BaseLayout.astro`'s `<head>` duplicates the `shineMode`/`reducedEffects` key strings inline (must be a classic,
   non-module script to block before paint). Keep them in sync if a key is renamed.
 - Command palette: `src/components/CommandPalette.ts`, mounted globally from `BaseLayout.astro`. The Konami-code
   attract-mode toggle lives inside it too. `registerProjectCommands()` is how page-level code injects the

@@ -1,48 +1,47 @@
 /*
   All runtime-toggleable visual effects live here, keyed exclusively off
-  data-crt / data-motion / data-attract attributes set on <html> by
+  data-shine / data-motion / data-attract attributes set on <html> by
   src/lib/clientState.ts (and the blocking init script in BaseLayout).
   No component should read prefers-reduced-motion directly at runtime —
   it's only ever consulted once, as the seed value for data-motion.
 */
 
-/* Scanline overlay ----------------------------------------------------- */
-.scanline-overlay {
+/* Holographic shine sweep ------------------------------------------------ */
+.shine-overlay {
   position: fixed;
-  inset: 0;
-  z-index: var(--z-scanline);
+  inset: -20%;
+  z-index: var(--z-shine);
   pointer-events: none;
   opacity: 0;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.06) 0px,
-    rgba(255, 255, 255, 0.06) 1px,
-    transparent 1px,
-    transparent 3px
+  background: linear-gradient(
+    115deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.09) 48%,
+    rgba(109, 243, 255, 0.14) 50%,
+    rgba(255, 255, 255, 0.09) 52%,
+    transparent 58%
   );
-  mix-blend-mode: overlay;
+  mix-blend-mode: screen;
   transition: opacity var(--dur-slow) var(--ease-standard);
 }
 
-:root[data-crt="on"] .scanline-overlay {
-  opacity: var(--scanline-opacity);
+:root[data-shine="on"] .shine-overlay {
+  opacity: 1;
 }
 
-:root[data-crt="on"][data-motion="full"] .scanline-overlay {
-  animation: crt-flicker 6s linear infinite;
+:root[data-shine="on"][data-motion="full"] .shine-overlay {
+  animation: shine-sweep 9s linear infinite;
 }
 
-@keyframes crt-flicker {
-  0%,
-  96%,
+@keyframes shine-sweep {
+  0% {
+    transform: translate(-18%, -12%);
+  }
+  50% {
+    transform: translate(18%, 12%);
+  }
   100% {
-    opacity: var(--scanline-opacity);
-  }
-  97% {
-    opacity: calc(var(--scanline-opacity) * 2.2);
-  }
-  98% {
-    opacity: calc(var(--scanline-opacity) * 0.6);
+    transform: translate(-18%, -12%);
   }
 }
 
@@ -96,14 +95,13 @@
 
 /* Marquee header gets a subtle static-vs-shimmer distinction ------------------ */
 :root[data-motion="full"] .marquee-header {
-  background-size: 200% 200%;
-  animation: marquee-shift 12s linear infinite;
+  animation: marquee-shift 10s linear infinite;
 }
 @keyframes marquee-shift {
   0% {
-    background-position: 0% 0%;
+    background-position: 0% 50%;
   }
   100% {
-    background-position: 28px 28px;
+    background-position: 100% 50%;
   }
 }

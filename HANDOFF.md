@@ -8,9 +8,31 @@ self-contained summary in case that path isn't available.
 
 ## What this project is
 
-Full rebuild of `arctanmyangle.github.io` from a placeholder Tailwind bento-grid site into a late-90s/early-00s
-CRT-terminal/arcade-cabinet portfolio, built with Astro 7 + TypeScript + Bun, showcasing arcTanMyAngle's real GitHub
-projects. Multi-page, static-first, no heavy frameworks. The Astro project lives at the **repo root**.
+Full rebuild of `arctanmyangle.github.io` from a placeholder Tailwind bento-grid site into a Y2K chrome/blue
+futurism portfolio (deep indigo-black backdrop, glossy Windows XP Luna / Mac OS Aqua-style chrome UI, electric
+blue/cyan/magenta holographic accents), built with Astro 7 + TypeScript + Bun, showcasing arcTanMyAngle's real
+GitHub projects. Multi-page, static-first, no heavy frameworks. The Astro project lives at the **repo root**.
+
+**Design history**: the site was originally built (phases 1–14 below) with a late-90s/early-00s CRT-terminal/arcade
+aesthetic. After that build was complete, deployed, and verified, the user shared a Y2K/"frutiger aero" reference
+collage (chrome, glossy blue-silver gradients, holographic, iPod/Xbox-era tech optimism) and asked for a full pivot
+to that look — see "Design pivot session" below for exactly what changed and why. Don't be confused if you find
+references to the old CRT direction in git history or in your own memory of this project; the Y2K chrome/blue
+direction described above is current.
+
+## Deploy status (as of the pivot session)
+
+- GitHub Pages Source has been switched from "Deploy from a branch" to **"GitHub Actions"** (user did this in the
+  repo Settings UI). The new `.github/workflows/deploy.yml` has run successfully at least once.
+- A stray root-level `index.html` ("Lured by Curiousity" — unrelated content from an earlier course assignment,
+  different persona/author) was what got served under the *old* branch-based Pages source. It is **not** included
+  in the new Actions-based deploy (that workflow uploads only `dist/`, Astro's own build output) — it's inert now,
+  just sitting in the repo. Per the locked-in decision below, leave it alone; it's not this project's file to
+  delete.
+- Local `main` and `origin/main` are in sync — the two build-session commits were rebased onto a small unrelated
+  assignment commit (`fancifymytext.html/js`) that existed upstream, then pushed successfully.
+
+## Build order status
 
 ## Build order status
 
@@ -46,10 +68,10 @@ All 14 phases from the original plan are now complete. The site is fully built o
     seed notes (`real-time-visual-systems.md`, `games-are-good-interfaces.md`, `edge-ml-on-cheap-hardware.md`, each
     grounded in specifics from a real flagship project, not generic takes) + `src/pages/field-notes/{index,[slug]}
     .astro` using `render()` from `astro:content` (Astro 7's replacement for `entry.render()`).
-12. ✅ **Polish.** `public/og-default.png` generated (1200×630 CRT-window-chrome-styled PNG via a one-off Python/
-    Pillow script — no image tooling exists in the JS toolchain, so this was produced out-of-band and committed as
-    a static asset, not by any build step) + `public/robots.txt`. `astro.config.mjs` sitemap integration confirmed
-    already correct from phase 1.
+12. ✅ **Polish.** `public/og-default.png` generated (1200×630 PNG via a one-off Python/Pillow script — no image
+    tooling exists in the JS toolchain, so this was produced out-of-band and committed as a static asset, not by any
+    build step; regenerated again during the Y2K pivot, see below) + `public/robots.txt`. `astro.config.mjs` sitemap
+    integration confirmed already correct from phase 1.
 13. ✅ **Deploy workflow + README.** `.github/workflows/deploy.yml` (bun setup → install → `sync:github` with
     `GITHUB_TOKEN` → build → `actions/deploy-pages`) + root `README.md` rewritten with real project docs (stack,
     data-pipeline explanation, local dev commands, deploy notes).
@@ -74,6 +96,55 @@ All 14 phases from the original plan are now complete. The site is fully built o
     verified by code review and structural HTML checks, not by watching them run.** Do one real click-through pass
     in an actual browser — `bun run dev` and manually visit `/`, `/lab/`, `/arcade/`, and one flagship project page
     — before calling this fully shipped.
+
+## Design pivot session: CRT-terminal → Y2K chrome/blue futurism
+
+Full design-system reskin, done in one session after the initial 14-phase build was already deployed. Every visual
+file changed; page structure/routes/data model did not.
+
+- **`src/styles/tokens.css`** — full rewrite. New palette: `--color-bg` shifted from near-black to deep indigo-black
+  (`#050912`), `--color-green`/`--color-green-dim` **removed** (replaced by `--color-blue`/`--color-blue-dim`,
+  `#4fb2ff`/`#2f6fb8`), `--color-cyan`/`--color-amber`/`--color-magenta` **kept their names** but got retuned hex
+  values (brighter/more holographic). New chrome-gradient tokens: `--chrome-titlebar`, `--chrome-button`,
+  `--chrome-button-hover`, `--chrome-button-active` (Aqua/Luna-style glossy gradients), `--holo-gradient` (an
+  animated blue→cyan→magenta→blue band used for the marquee-header "holographic foil" treatment). Radius scale went
+  from sharp/pixel (`2px`/`4px`) to rounded/glossy (`6px`/`12px`) plus a new `--radius-pill` (`999px`) for buttons
+  and chips. `--scanline-opacity`/`--z-scanline` renamed to fold into the new shine-overlay design (see effects.css).
+- **`src/styles/effects.css`** — the CRT scanline-overlay + `crt-flicker` keyframe were replaced with a
+  `.shine-overlay` + `shine-sweep` keyframe (a soft diagonal holographic sheen that drifts across the viewport).
+  `data-crt` attribute renamed to **`data-shine`** throughout. Attract-mode (Konami easter egg) and the reduced-
+  motion kill switch were left untouched — both are already palette-agnostic (`filter: hue-rotate/brightness`,
+  `animation-duration: 0.001ms !important`) and needed zero changes to keep working under the new theme.
+- **`src/styles/global.css`** — full rewrite. Body/heading font-family moved from `--font-mono` to `--font-sans`
+  (Y2K poster typography, not terminal typography) — `--font-mono` is now deliberately reserved for the parts that
+  are still conceptually a technical readout: `.toy-stat-row`, `.terminal-toy`, `.palette` (command palette). Window
+  titlebars now use `--chrome-titlebar` with colored traffic-light dots (red/amber/green, Mac-style). Buttons
+  (`.beveled-button`) became glossy chrome pill buttons with a `::after` shine-highlight overlay instead of flat
+  bordered ghost-buttons. `.pixel-border` renamed to **`.chrome-border`** (glossy inset-bevel look). `.marquee-header`
+  now uses `--holo-gradient` as an animated "holographic foil banner" instead of a diagonal-stripe pattern. Chips
+  became pill-shaped. Every remaining `--color-green`/`--glow-green` reference was migrated — mostly to
+  `--color-blue`/`--glow-blue` (site accents, chip--status-active, status-dot--on, palette selected-item, toy-stat
+  emphasis), with a couple of deliberate exceptions where cyan reads better contextually (site-logo, terminal-toy
+  output text, reaction-game "go" flash state).
+- **Renamed across the codebase** (mechanical, not just cosmetic — grep confirmed zero leftover references):
+  `data-crt` → `data-shine`, `atma:crt-mode` → `atma:shine-mode`, `crtMode` → `shineMode`, `getCrtMode`/`setCrtMode`
+  → `getShineMode`/`setShineMode` (in `src/lib/clientState.ts`), the command-palette toggle command
+  (`toggle-crt`/"Toggle CRT mode" → `toggle-shine`/"Toggle chrome shine" in `src/components/CommandPalette.ts`), and
+  the `<html>` attribute + blocking FOUC script in `src/layouts/BaseLayout.astro`.
+- **Canvas toy color literals** — `RadarToy.ts`, `SpectrogramToy.ts`, `SignalMapToy.ts`, `HeroCanvas.ts` all had
+  hardcoded hex/rgba color strings (canvas can't read CSS custom properties), so each one was hand-updated to match
+  the new tokens: old green `rgb(60,255,122)` → new blue `rgb(79,178,255)`, old amber `rgb(255,176,0)` → new amber
+  `rgb(255,207,92)`, old magenta `rgb(225,75,255)` → new magenta `rgb(210,104,255)`, old bg `#05070a` → new bg
+  `#050912`. If you add a new canvas toy, pull the current hex values from `tokens.css` rather than re-deriving
+  them, since these can't be kept in sync automatically.
+- **`public/og-default.png`** regenerated from scratch with the new palette (glossy blue Aqua-style titlebar with
+  traffic-light dots, holographic foil band, blue/cyan/magenta text) — same one-off Python/Pillow approach as
+  before, script not committed to the repo.
+- **`CLAUDE.md`** updated: aesthetic description, `data-shine` attribute name, `shineMode` key name.
+- Verified after the pivot: `bunx tsc --noEmit` clean, `bun run build` clean (still 25 pages), grep-confirmed zero
+  leftover `color-green`/`glow-green`/`data-crt`/`crt-mode`/`pixel-border`/`scanline` references anywhere in `src/`.
+  **No new browser-visual verification was done this pivot session** (see phase 14 above for why headless-Chromium
+  doesn't work in this sandbox) — the same caveat applies: do a real click-through before calling the redesign done.
 
 ## A real bug caught and fixed this session
 

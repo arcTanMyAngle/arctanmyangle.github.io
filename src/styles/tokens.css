@@ -1,34 +1,42 @@
 /*
   Design tokens. CSS custom properties only — no selectors beyond :root.
-  Palette: near-black/blue-black bg, CRT green, amber, electric cyan, magenta accent, off-white text.
+  Palette: Y2K chrome/blue futurism — deep indigo-black backdrop, glossy Windows XP
+  Luna / Mac OS Aqua-style chrome UI, electric blue/cyan/magenta holographic accents.
 */
 :root {
   /* -- surfaces -- */
-  --color-bg: #05070a;
-  --color-bg-raised: #0b0f16;
-  --color-bg-inset: #010203;
-  --color-bg-panel: #0e131c;
+  --color-bg: #050912;
+  --color-bg-raised: #0d1428;
+  --color-bg-inset: #01030a;
+  --color-bg-panel: #101a30;
 
   /* -- ink -- */
-  --color-text: #eef2ec;
-  --color-text-dim: #93a39a;
-  --color-text-faint: #5b6b64;
+  --color-text: #eef2fb;
+  --color-text-dim: #96a5c4;
+  --color-text-faint: #56607e;
 
   /* -- signal colors -- */
-  --color-green: #3cff7a;
-  --color-green-dim: #1f8a45;
-  --color-amber: #ffb000;
-  --color-cyan: #4df3ff;
-  --color-magenta: #e14bff;
+  --color-blue: #4fb2ff;
+  --color-blue-dim: #2f6fb8;
+  --color-amber: #ffcf5c;
+  --color-cyan: #6df3ff;
+  --color-magenta: #d268ff;
 
-  --color-danger: #ff4d5e;
-  --color-ok: var(--color-green);
+  --color-danger: #ff4d6a;
+  --color-ok: var(--color-blue);
 
   /* -- borders / chrome -- */
-  --color-border: #1e2b26;
-  --color-border-bright: #2c4a3d;
-  --bevel-light: rgba(255, 255, 255, 0.28);
-  --bevel-dark: rgba(0, 0, 0, 0.65);
+  --color-border: #232f4a;
+  --color-border-bright: #3d5480;
+  --bevel-light: rgba(255, 255, 255, 0.55);
+  --bevel-dark: rgba(0, 0, 0, 0.55);
+
+  /* -- chrome gradients: Luna/Aqua-era glossy UI -- */
+  --chrome-titlebar: linear-gradient(180deg, #6fb6ff 0%, #2f79d6 48%, #1c5bb0 50%, #3f8ee0 100%);
+  --chrome-button: linear-gradient(180deg, #eaf3ff 0%, #a9c6ec 45%, #5f92cf 46%, #3f78bd 100%);
+  --chrome-button-hover: linear-gradient(180deg, #ffffff 0%, #c3ddf9 45%, #79aee0 46%, #5698d6 100%);
+  --chrome-button-active: linear-gradient(180deg, #5f92cf 0%, #3f78bd 45%, #a9c6ec 46%, #eaf3ff 100%);
+  --holo-gradient: linear-gradient(120deg, var(--color-blue), var(--color-cyan), var(--color-magenta), var(--color-blue));
 
   /* -- fonts: system-only, no remote loading -- */
   --font-mono: ui-monospace, "Cascadia Code", "Consolas", "SFMono-Regular", Menlo, Monaco,
@@ -56,24 +64,24 @@
   --space-8: 4rem;
   --space-9: 6rem;
 
-  /* -- radius: mostly sharp, pixel-ish -- */
-  --radius-sm: 2px;
-  --radius-md: 4px;
+  /* -- radius: rounder, glossy chrome rather than sharp/pixel -- */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-pill: 999px;
 
   /* -- effects -- */
-  --scanline-opacity: 0.05;
-  --shadow-window: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--color-border);
-  --glow-green: 0 0 6px rgba(60, 255, 122, 0.55);
-  --glow-cyan: 0 0 6px rgba(77, 243, 255, 0.55);
-  --glow-amber: 0 0 6px rgba(255, 176, 0, 0.55);
-  --glow-magenta: 0 0 6px rgba(225, 75, 255, 0.55);
+  --shadow-window: 0 14px 34px rgba(4, 8, 20, 0.65), 0 0 0 1px var(--color-border);
+  --glow-blue: 0 0 8px rgba(79, 178, 255, 0.6);
+  --glow-cyan: 0 0 8px rgba(109, 243, 255, 0.6);
+  --glow-amber: 0 0 8px rgba(255, 207, 92, 0.6);
+  --glow-magenta: 0 0 8px rgba(210, 104, 255, 0.6);
 
   /* -- z-index scale -- */
   --z-base: 0;
   --z-chrome: 10;
   --z-overlay: 100;
   --z-palette: 1000;
-  --z-scanline: 2000;
+  --z-shine: 2000;
 
   /* -- motion -- */
   --dur-fast: 120ms;
