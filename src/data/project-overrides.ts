@@ -127,6 +127,7 @@ export const projectOverrides: Record<string, ProjectOverride> = {
   },
 
   foliage_disease_classification: {
+    displayName: "Foliage Disease Classification",
     category: "applied-ml",
     status: "featured",
     featuredOrder: 6,

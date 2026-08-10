@@ -6,33 +6,98 @@ interface Props {
 
 const { variant = "compact", githubUrl } = Astro.props;
 
+const HTML_GAMES = [
+  { name: "Mario", file: "mario.html" },
+  { name: "Tetris", file: "tetris.html" },
+  { name: "DK64", file: "dk64.html" },
+  { name: "Kaboom", file: "kaboom.html" },
+  { name: "Stacker", file: "stacker.html" },
+];
+
 const GAMES = [
-  { name: "Wii Kart", blurb: "3D procedural kart racer — Rust + macroquad, fixed 60Hz sim." },
-  { name: "Uncanny Carnival", blurb: "Six skill games, five difficulty tiers — Three.js, zero RNG rigging." },
-  { name: "Galaga", blurb: "Built twice — once in C++, once in Rust — as a direct language comparison." },
-  { name: "HTML Cabinet", blurb: "Five zero-dependency single-file browser games." },
+  {
+    name: "Wii Kart",
+    blurb: "3D procedural kart racer — Rust + macroquad, fixed 60Hz sim.",
+    kind: "local" as const,
+    run: "cargo run --release",
+    path: "",
+  },
+  {
+    name: "Uncanny Carnival",
+    blurb: "Six skill games, five difficulty tiers — Three.js, zero RNG rigging.",
+    kind: "local" as const,
+    run: "cd carnival && npm install && npm run dev",
+    path: "carnival",
+  },
+  {
+    name: "Galaga",
+    blurb: "Built twice — once in C++, once in Rust — as a direct language comparison.",
+    kind: "local" as const,
+    run: "See galaga/README.md for the C++ and Rust build steps",
+    path: "galaga",
+  },
+  {
+    name: "HTML Cabinet",
+    blurb: "Five zero-dependency single-file browser games — play right here.",
+    kind: "playable" as const,
+    path: "",
+  },
 ];
 ---
 
-<div class={`arcade-cabinet arcade-cabinet--${variant} chrome-border`} data-state="insert-coin" data-selected="0">
+<div
+  class={`arcade-cabinet arcade-cabinet--${variant} chrome-border`}
+  data-state="insert-coin"
+  data-selected="0"
+  data-html-selected="0"
+  data-github-url={githubUrl ?? ""}
+>
   <div class="arcade-cabinet__screen">
     <div class="arcade-cabinet__panel" data-panel="insert-coin">
       <p class="arcade-cabinet__blink">INSERT COIN</p>
       <p class="arcade-cabinet__hint">to select a cabinet</p>
     </div>
+
     <div class="arcade-cabinet__panel" data-panel="select" hidden>
       <ul class="arcade-cabinet__games">
         {GAMES.map((g, i) => (
-          <li class="arcade-cabinet__game" data-index={i} aria-selected={i === 0 ? "true" : "false"}>
+          <li
+            class="arcade-cabinet__game"
+            data-index={i}
+            data-kind={g.kind}
+            data-path={g.path}
+            aria-selected={i === 0 ? "true" : "false"}
+          >
             <strong>{g.name}</strong>
             <span>{g.blurb}</span>
           </li>
         ))}
       </ul>
     </div>
-    <div class="arcade-cabinet__panel" data-panel="loaded" hidden>
-      <p class="arcade-cabinet__loaded-name" data-loaded-name></p>
-      <p class="arcade-cabinet__hint">good luck.</p>
+
+    <div class="arcade-cabinet__panel" data-panel="html-select" hidden>
+      <p class="arcade-cabinet__subhead">THE HTML CABINET // pick a game</p>
+      <ul class="arcade-cabinet__games arcade-cabinet__games--compact">
+        {HTML_GAMES.map((g, i) => (
+          <li class="arcade-cabinet__game" data-index={i} data-file={g.file} aria-selected={i === 0 ? "true" : "false"}>
+            <strong>{g.name}</strong>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <div class="arcade-cabinet__panel arcade-cabinet__panel--info" data-panel="local-info" hidden>
+      <p class="arcade-cabinet__loaded-name" data-info-name></p>
+      <p class="arcade-cabinet__hint" data-info-blurb></p>
+      <p class="arcade-cabinet__run-label">this machine runs locally — no browser build shipped:</p>
+      <code class="arcade-cabinet__run" data-info-run></code>
+      <a class="beveled-button beveled-button--cyan arcade-cabinet__source-link" data-info-link target="_blank" rel="noopener noreferrer">
+        View source &amp; instructions →
+      </a>
+    </div>
+
+    <div class="arcade-cabinet__panel arcade-cabinet__panel--playing" data-panel="playing" hidden>
+      <iframe class="arcade-cabinet__frame" data-frame title="Playable game" loading="lazy"></iframe>
     </div>
   </div>
 
@@ -40,10 +105,14 @@ const GAMES = [
     <button type="button" class="beveled-button beveled-button--primary" data-action="coin">Insert Coin</button>
     <button type="button" class="beveled-button" data-action="up" hidden>▲</button>
     <button type="button" class="beveled-button" data-action="down" hidden>▼</button>
-    <button type="button" class="beveled-button beveled-button--cyan" data-action="start" hidden>Start</button>
+    <button type="button" class="beveled-button beveled-button--cyan" data-action="confirm" hidden>Start</button>
+    <button type="button" class="beveled-button" data-action="back" hidden>◂ Back</button>
+    <a class="beveled-button beveled-button--magenta" data-action="open-new-tab" href="#" target="_blank" rel="noopener noreferrer" hidden
+      >Open in new tab ↗</a
+    >
     {
       githubUrl && (
-        <a class="beveled-button beveled-button--magenta" href={githubUrl} target="_blank" rel="noopener noreferrer">
+        <a class="beveled-button beveled-button--magenta" data-action="view-source" href={githubUrl} target="_blank" rel="noopener noreferrer">
           View source
         </a>
       )
@@ -52,7 +121,7 @@ const GAMES = [
 
   {
     variant === "full" && (
-      <p class="arcade-cabinet__keys">Keyboard: Enter to insert coin / start · Arrow Up/Down to pick a cabinet</p>
+      <p class="arcade-cabinet__keys">Keyboard: Enter to insert coin / confirm · Arrow Up/Down to pick · Esc to back out</p>
     )
   }
 </div>
@@ -73,6 +142,7 @@ const GAMES = [
     align-items: center;
     justify-content: center;
     padding: var(--space-4);
+    overflow: hidden;
   }
   .arcade-cabinet--full .arcade-cabinet__screen {
     min-height: 240px;
@@ -81,6 +151,10 @@ const GAMES = [
     width: 100%;
     text-align: center;
     color: var(--color-blue);
+  }
+  .arcade-cabinet__panel--playing,
+  .arcade-cabinet__panel--info {
+    padding: 0;
   }
   .arcade-cabinet__blink {
     font-size: var(--text-lg);
@@ -95,11 +169,27 @@ const GAMES = [
     font-size: var(--text-sm);
     margin-top: var(--space-2);
   }
+  .arcade-cabinet__subhead {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.08em;
+    color: var(--color-text-faint);
+    margin-bottom: var(--space-3);
+  }
   .arcade-cabinet__games {
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
     text-align: left;
+  }
+  .arcade-cabinet__games--compact {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2);
+  }
+  .arcade-cabinet__games--compact .arcade-cabinet__game {
+    flex: 0 0 auto;
   }
   .arcade-cabinet__game {
     display: flex;
@@ -124,6 +214,39 @@ const GAMES = [
     color: var(--color-amber);
     text-shadow: var(--glow-amber);
   }
+  .arcade-cabinet__panel--info:not([hidden]) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+  }
+  .arcade-cabinet__run-label {
+    color: var(--color-text-faint);
+    font-size: var(--text-xs);
+    margin-top: var(--space-3);
+  }
+  .arcade-cabinet__run {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-cyan);
+    background: var(--color-bg-inset);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-1) var(--space-3);
+  }
+  .arcade-cabinet__source-link {
+    margin-top: var(--space-4);
+  }
+  .arcade-cabinet__frame {
+    width: 100%;
+    height: 420px;
+    border: 0;
+    display: block;
+    background: #0a0a12;
+  }
+  .arcade-cabinet--full .arcade-cabinet__frame {
+    height: 600px;
+  }
   .arcade-cabinet__controls {
     display: flex;
     flex-wrap: wrap;
@@ -141,63 +264,146 @@ const GAMES = [
       if (cabinet.dataset.wired === "true") return;
       cabinet.dataset.wired = "true";
 
+      const githubUrl = cabinet.dataset.githubUrl || "";
+
       const panels = {
         "insert-coin": cabinet.querySelector<HTMLElement>('[data-panel="insert-coin"]')!,
         select: cabinet.querySelector<HTMLElement>('[data-panel="select"]')!,
-        loaded: cabinet.querySelector<HTMLElement>('[data-panel="loaded"]')!,
+        "html-select": cabinet.querySelector<HTMLElement>('[data-panel="html-select"]')!,
+        "local-info": cabinet.querySelector<HTMLElement>('[data-panel="local-info"]')!,
+        playing: cabinet.querySelector<HTMLElement>('[data-panel="playing"]')!,
       };
-      const games = Array.from(cabinet.querySelectorAll<HTMLElement>(".arcade-cabinet__game"));
-      const loadedName = cabinet.querySelector<HTMLElement>("[data-loaded-name]")!;
+      const games = Array.from(cabinet.querySelectorAll<HTMLElement>('[data-panel="select"] .arcade-cabinet__game'));
+      const htmlGames = Array.from(
+        cabinet.querySelectorAll<HTMLElement>('[data-panel="html-select"] .arcade-cabinet__game'),
+      );
+      const infoName = cabinet.querySelector<HTMLElement>("[data-info-name]")!;
+      const infoBlurb = cabinet.querySelector<HTMLElement>("[data-info-blurb]")!;
+      const infoRun = cabinet.querySelector<HTMLElement>("[data-info-run]")!;
+      const infoLink = cabinet.querySelector<HTMLAnchorElement>("[data-info-link]")!;
+      const frame = cabinet.querySelector<HTMLIFrameElement>("[data-frame]")!;
       const buttons = {
         coin: cabinet.querySelector<HTMLButtonElement>('[data-action="coin"]')!,
         up: cabinet.querySelector<HTMLButtonElement>('[data-action="up"]')!,
         down: cabinet.querySelector<HTMLButtonElement>('[data-action="down"]')!,
-        start: cabinet.querySelector<HTMLButtonElement>('[data-action="start"]')!,
+        confirm: cabinet.querySelector<HTMLButtonElement>('[data-action="confirm"]')!,
+        back: cabinet.querySelector<HTMLButtonElement>('[data-action="back"]')!,
+        openNewTab: cabinet.querySelector<HTMLAnchorElement>('[data-action="open-new-tab"]')!,
       };
 
+      type State = "insert-coin" | "select" | "html-select" | "local-info" | "playing";
       let selected = 0;
+      let htmlSelected = 0;
 
-      function showPanel(name: "insert-coin" | "select" | "loaded") {
+      function showPanel(name: State) {
         cabinet.dataset.state = name;
         for (const [key, el] of Object.entries(panels)) el.hidden = key !== name;
         buttons.coin.hidden = name !== "insert-coin";
-        buttons.up.hidden = name !== "select";
-        buttons.down.hidden = name !== "select";
-        buttons.start.hidden = name !== "select";
+        buttons.up.hidden = name !== "select" && name !== "html-select";
+        buttons.down.hidden = name !== "select" && name !== "html-select";
+        buttons.confirm.hidden = name !== "select" && name !== "html-select";
+        buttons.back.hidden = name !== "html-select" && name !== "local-info" && name !== "playing";
+        buttons.openNewTab.hidden = name !== "playing";
+        buttons.confirm.textContent = name === "html-select" ? "Play" : "Start";
+        if (name !== "playing") frame.src = "about:blank";
       }
 
       function renderSelection() {
         games.forEach((g, i) => g.setAttribute("aria-selected", String(i === selected)));
       }
+      function renderHtmlSelection() {
+        htmlGames.forEach((g, i) => g.setAttribute("aria-selected", String(i === htmlSelected)));
+      }
+
+      function openLocalInfo() {
+        const game = games[selected];
+        const name = game?.querySelector("strong")?.textContent ?? "";
+        const blurb = game?.querySelector("span")?.textContent ?? "";
+        const path = game?.dataset.path ?? "";
+        const run =
+          name === "Wii Kart"
+            ? "cargo run --release"
+            : name === "Uncanny Carnival"
+              ? "cd carnival && npm install && npm run dev"
+              : "See galaga/README.md for the C++ and Rust build steps";
+        infoName.textContent = name;
+        infoBlurb.textContent = blurb;
+        infoRun.textContent = run;
+        infoLink.href = path && githubUrl ? `${githubUrl}/tree/main/${path}` : githubUrl;
+        showPanel("local-info");
+      }
+
+      function playHtmlGame() {
+        const game = htmlGames[htmlSelected];
+        const file = game?.dataset.file;
+        if (!file) return;
+        const src = `/games/${file}`;
+        frame.src = src;
+        buttons.openNewTab.href = src;
+        showPanel("playing");
+      }
 
       buttons.coin.addEventListener("click", () => showPanel("select"));
+
       buttons.up.addEventListener("click", () => {
-        selected = (selected - 1 + games.length) % games.length;
-        renderSelection();
+        if (cabinet.dataset.state === "select") {
+          selected = (selected - 1 + games.length) % games.length;
+          renderSelection();
+        } else if (cabinet.dataset.state === "html-select") {
+          htmlSelected = (htmlSelected - 1 + htmlGames.length) % htmlGames.length;
+          renderHtmlSelection();
+        }
       });
       buttons.down.addEventListener("click", () => {
-        selected = (selected + 1) % games.length;
-        renderSelection();
+        if (cabinet.dataset.state === "select") {
+          selected = (selected + 1) % games.length;
+          renderSelection();
+        } else if (cabinet.dataset.state === "html-select") {
+          htmlSelected = (htmlSelected + 1) % htmlGames.length;
+          renderHtmlSelection();
+        }
       });
-      buttons.start.addEventListener("click", () => {
-        loadedName.textContent = `Loading ${games[selected]?.querySelector("strong")?.textContent}...`;
-        showPanel("loaded");
+
+      buttons.confirm.addEventListener("click", () => {
+        if (cabinet.dataset.state === "select") {
+          const kind = games[selected]?.dataset.kind;
+          if (kind === "playable") {
+            htmlSelected = 0;
+            renderHtmlSelection();
+            showPanel("html-select");
+          } else {
+            openLocalInfo();
+          }
+        } else if (cabinet.dataset.state === "html-select") {
+          playHtmlGame();
+        }
+      });
+
+      buttons.back.addEventListener("click", () => {
+        if (cabinet.dataset.state === "playing") {
+          showPanel("html-select");
+        } else if (cabinet.dataset.state === "html-select" || cabinet.dataset.state === "local-info") {
+          showPanel("select");
+        }
       });
 
       cabinet.addEventListener("keydown", (e) => {
         const key = (e as KeyboardEvent).key;
-        if (cabinet.dataset.state === "insert-coin" && key === "Enter") {
+        const state = cabinet.dataset.state;
+        if (state === "insert-coin" && key === "Enter") {
           showPanel("select");
-        } else if (cabinet.dataset.state === "select") {
+        } else if (state === "select" || state === "html-select") {
           if (key === "ArrowUp") {
-            selected = (selected - 1 + games.length) % games.length;
-            renderSelection();
+            buttons.up.click();
           } else if (key === "ArrowDown") {
-            selected = (selected + 1) % games.length;
-            renderSelection();
+            buttons.down.click();
           } else if (key === "Enter") {
-            buttons.start.click();
+            buttons.confirm.click();
+          } else if (key === "Escape" && state === "html-select") {
+            buttons.back.click();
           }
+        } else if ((state === "local-info" || state === "playing") && key === "Escape") {
+          buttons.back.click();
         }
       });
       cabinet.tabIndex = 0;

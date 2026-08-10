@@ -222,7 +222,7 @@ a:hover {
   box-shadow: var(--glow-cyan);
 }
 
-.site-nav__toggle {
+button.site-nav__toggle {
   display: none;
 }
 
@@ -247,7 +247,7 @@ a:hover {
     padding-block: var(--space-3);
     border-bottom: 1px solid var(--color-border);
   }
-  .site-nav__toggle {
+  button.site-nav__toggle {
     display: inline-flex;
   }
 }
@@ -326,6 +326,9 @@ a:hover {
 }
 
 /* Beveled buttons: glossy chrome pill buttons (Aqua/Luna-era look) ---------- */
+.beveled-button[hidden] {
+  display: none;
+}
 .beveled-button {
   display: inline-flex;
   align-items: center;
