@@ -1,89 +1,77 @@
-/*
-  All runtime-toggleable visual effects live here, keyed exclusively off
-  data-shine / data-motion / data-attract attributes set on <html> by
-  src/lib/clientState.ts (and the blocking init script in BaseLayout).
-  No component should read prefers-reduced-motion directly at runtime —
-  it's only ever consulted once, as the seed value for data-motion.
-*/
+/* Motion + flourish layer.
+   Every animated rule here is gated on the attributes the blocking init script
+   in BaseLayout.astro sets on <html>: data-shine (chrome flourishes on/off) and
+   data-motion (full/reduced). No component defines its own prefers-reduced-motion
+   query -- the script resolves the preference once, everything reads the result. */
 
-/* Holographic shine sweep ------------------------------------------------ */
-.shine-overlay {
-  position: fixed;
-  inset: -20%;
-  z-index: var(--z-shine);
-  pointer-events: none;
+/* Titlebar sheen: the one place gloss survives the de-gradient pass, and only
+   when the visitor has flourishes switched on. */
+:root[data-shine="on"] .window-frame__titlebar {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 60%);
+}
+
+/* Scroll reveal ------------------------------------------------------------
+   data-reveal is armed by the head script only when JS is running and motion is
+   full, so a no-JS visitor never gets stuck with invisible content. */
+:root[data-reveal-state="armed"] [data-reveal] {
   opacity: 0;
-  background: linear-gradient(
-    115deg,
-    transparent 42%,
-    rgba(255, 255, 255, 0.09) 48%,
-    rgba(109, 243, 255, 0.14) 50%,
-    rgba(255, 255, 255, 0.09) 52%,
-    transparent 58%
-  );
-  mix-blend-mode: screen;
-  transition: opacity var(--dur-slow) var(--ease-standard);
+  will-change: opacity, transform;
 }
 
-:root[data-shine="on"] .shine-overlay {
-  opacity: 1;
-}
-
-:root[data-shine="on"][data-motion="full"] .shine-overlay {
-  animation: shine-sweep 9s linear infinite;
-}
-
-@keyframes shine-sweep {
-  0% {
-    transform: translate(-18%, -12%);
-  }
-  50% {
-    transform: translate(18%, 12%);
-  }
-  100% {
-    transform: translate(-18%, -12%);
-  }
-}
-
-/* Status light blink, gated on motion ----------------------------------- */
-:root[data-motion="full"] .status-dot--blink {
-  animation: status-blink 1.6s steps(2, jump-none) infinite;
-}
-:root[data-motion="reduced"] .status-dot--blink {
-  opacity: 1;
-}
+/* Status light -------------------------------------------------------------- */
 @keyframes status-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
   50% {
-    opacity: 0.25;
+    opacity: 0.35;
   }
 }
-
-/* Attract mode (Konami easter egg) --------------------------------------- */
-:root[data-attract="true"][data-motion="full"] {
-  animation: attract-hue 8s linear infinite;
+:root[data-motion="full"] .status-dot--on {
+  animation: status-blink 2.4s var(--ease-out) infinite;
 }
-@keyframes attract-hue {
+
+/* Beam sweep on the section rule: a 2px highlight travelling the hairline,
+   echoing the background scanner without adding another full-bleed effect. */
+@keyframes rule-scan {
   0% {
-    filter: hue-rotate(0deg);
+    transform: translateX(-100%);
   }
   100% {
-    filter: hue-rotate(360deg);
+    transform: translateX(100%);
   }
 }
-:root[data-attract="true"][data-motion="full"] .beveled-button,
-:root[data-attract="true"][data-motion="full"] .site-logo {
-  animation: attract-pulse 1.2s ease-in-out infinite alternate;
+.section-head__rule {
+  position: relative;
+  overflow: hidden;
 }
-@keyframes attract-pulse {
-  from {
-    filter: brightness(1);
-  }
-  to {
-    filter: brightness(1.5);
-  }
+:root[data-motion="full"][data-shine="on"] .section-head__rule::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--color-cyan), transparent);
+  animation: rule-scan 6.2s linear infinite;
 }
 
-/* Global reduced-motion kill switch --------------------------------------- */
+/* Attract mode: Konami-code easter egg, toggled from the command palette. ---- */
+@keyframes attract-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px var(--color-border-bright);
+  }
+  50% {
+    box-shadow: 0 0 0 1px var(--color-magenta), 0 0 18px rgba(255, 92, 214, 0.35);
+  }
+}
+:root[data-attract="true"][data-motion="full"] .window-frame {
+  animation: attract-pulse 3.2s var(--ease-out) infinite;
+}
+:root[data-attract="true"] .site-logo {
+  color: var(--color-magenta);
+}
+
+/* Global reduced-motion kill switch ------------------------------------------ */
 :root[data-motion="reduced"] *,
 :root[data-motion="reduced"] *::before,
 :root[data-motion="reduced"] *::after {
@@ -93,15 +81,9 @@
   scroll-behavior: auto !important;
 }
 
-/* Marquee header gets a subtle static-vs-shimmer distinction ------------------ */
-:root[data-motion="full"] .marquee-header {
-  animation: marquee-shift 10s linear infinite;
-}
-@keyframes marquee-shift {
-  0% {
-    background-position: 0% 50%;
-  }
-  100% {
-    background-position: 100% 50%;
-  }
+/* Group reveal: children of a [data-reveal-group] start hidden under the same
+   armed-only guard as [data-reveal]. */
+:root[data-reveal-state="armed"] [data-reveal-group] > * {
+  opacity: 0;
+  will-change: opacity, transform;
 }

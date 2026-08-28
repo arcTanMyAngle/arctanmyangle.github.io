@@ -5,11 +5,13 @@ Project-specific guidance for Claude Code sessions working in this repo.
 ## What this is
 
 arcTanMyAngle's GitHub Pages portfolio (`arctanmyangle.github.io`). Astro 7 + TypeScript, static output, Bun as the
-package manager/runtime. Y2K chrome/blue futurism aesthetic — deep indigo-black backdrop, glossy Windows XP
-Luna / Mac OS Aqua-style chrome UI (gradient-filled pill buttons, glossy titlebars with traffic-light dots),
-electric blue/cyan/magenta holographic accents — executed with modern performance discipline. (This replaced an
-earlier CRT-terminal/arcade direction; if you see stray references to "CRT" anywhere, they're a miss from that
-rename, not intentional.) For current build status and exact next steps, read `HANDOFF.md` in this repo first.
+package manager/runtime. **Dark instrument-panel aesthetic** — deep indigo-black backdrop, hairline-beveled chrome
+(titlebars with traffic-light dots), blue/cyan accents, and a single scanner beam sweeping across the viewport
+behind everything. Restraint is the point: **exactly one gradient-filled element per view** (the primary CTA,
+`--chrome-primary`); every other surface is a flat fill with a `--hairline` bevel. (Design history: a CRT/arcade
+build → a glossy Y2K chrome pivot → this de-gradiented pass. Stray "CRT" or "holographic foil" references anywhere
+are leftovers from those renames, not intentional.) For current build status and exact next steps, read
+`HANDOFF.md` in this repo first.
 
 ## Hard conventions — do not deviate without asking
 
@@ -20,9 +22,18 @@ rename, not intentional.) For current build status and exact next steps, read `H
   Everything else reads the committed `src/data/github-repos.generated.json`.
 - **System fonts only.** No Google Fonts / remote font loading, ever.
 - **Motion is attribute-gated, not media-query-gated per component.** Every conditional animation keys off
-  `<html data-shine="on|off" data-motion="full|reduced">`, set once by the blocking init script in
-  `src/layouts/BaseLayout.astro`. Don't add a second `prefers-reduced-motion` check elsewhere — read `data-motion`.
-  (`data-shine` toggles the holographic shine-sweep overlay; it was called `data-crt` before the Y2K redesign.)
+  `<html data-shine="on|off" data-motion="full|reduced" data-reveal-state="armed|off">`, set once by the blocking
+  init script in `src/layouts/BaseLayout.astro`. Don't add a second `prefers-reduced-motion` check elsewhere —
+  read `data-motion`. (`data-shine` dims the beam and chrome flourishes; it was called `data-crt` before the Y2K
+  redesign. **Never name a state attribute the same as a content hook** — `data-reveal` was briefly both, so
+  `querySelectorAll("[data-reveal]")` matched `<html>` itself.)
+- **Scroll reveal.** `src/lib/reveal.ts` uses `motion` (bundled, not a CDN) for `[data-reveal]` / `[data-reveal-group]`.
+  The CSS that hides those elements applies **only** under `:root[data-reveal-state="armed"]`, and every failure
+  path in that module disarms it — so a JS error, a background tab, or a thrown `inView` can never leave content
+  permanently invisible. Motion's option is `ease`, not the WAAPI `easing` (the latter is silently ignored).
+- **Background tabs are a real case.** A hidden document gets no rAF and unreliable IntersectionObserver callbacks
+  — exactly what happens when a recruiter middle-clicks several links at once. `reveal.ts` and `lazyMount.ts` both
+  defer on `document.hidden` and resume on `visibilitychange`. Keep that guard in anything new that animates on mount.
 - **Toy/island pattern:** every interactive vanilla-TS module (`src/components/*.ts`) exports
   `mount(root: HTMLElement, options?) => { destroy(): void }`. Canvas-based toys use the shared
   `src/lib/canvasLoop.ts` (`startCanvasLoop`) for DPR capping / visibility pausing / reduced-motion gating / mobile
@@ -36,8 +47,14 @@ rename, not intentional.) For current build status and exact next steps, read `H
 
 ## Where things are
 
-- Design tokens: `src/styles/tokens.css` (CSS custom properties only, no selectors). Chrome gradients live here too
-  (`--chrome-titlebar`, `--chrome-button*`, `--holo-gradient`).
+- Design tokens: `src/styles/tokens.css` (CSS custom properties only, no selectors). Chrome surfaces live here too
+  (`--chrome-titlebar`, `--chrome-button*`, `--hairline`). `--chrome-primary` / `--chrome-primary-hover` are the
+  **only** gradients in the system — don't add a third.
+- Contact routes: `src/data/contact.ts`. `email`, `linkedin`, and `resumeUrl` ship as empty strings and simply
+  don't render; filling one in grows the contact page a channel (and a "Download CV" button) automatically.
+  Publishing the user's address is their call — don't fill these in unprompted.
+- Toy shells: `src/components/ToyMount.astro` server-renders a placeholder with reserved height for every
+  client-mounted toy, so nothing shifts on mount and a no-JS visitor sees real copy instead of an empty box.
 - Global chrome/utility classes: `src/styles/global.css`.
 - All motion/shine/attract-mode effects: `src/styles/effects.css`.
 - Central localStorage keys: `src/lib/clientState.ts` (`STORAGE_KEYS`) — the blocking FOUC script in

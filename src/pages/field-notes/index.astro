@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import SectionHead from "../../components/SectionHead.astro";
 import { getCollection } from "astro:content";
 
 const notes = (await getCollection("notes")).sort(
@@ -12,9 +13,9 @@ const description = "Short write-ups on real-time systems, games as interfaces, 
 
 <BaseLayout title={title} description={description}>
   <div class="shell field-notes">
-    <div class="marquee-header">field notes // {notes.length} entries</div>
+    <SectionHead label="Field notes" meta={`${notes.length} entries`} />
 
-    <ul class="field-notes__list">
+    <ul class="field-notes__list" data-reveal-group>
       {
         notes.map((note) => (
           <li class="field-notes__item">
@@ -55,8 +56,22 @@ const description = "Short write-ups on real-time systems, games as interfaces, 
   .field-notes__item h2 {
     color: var(--color-blue);
   }
+  .field-notes__item a {
+    transition:
+      border-color var(--dur-fast) var(--ease-out),
+      transform var(--dur-fast) var(--ease-out);
+  }
+  .field-notes__item a:hover,
+  .field-notes__item a:focus-visible {
+    border-color: var(--color-cyan);
+    transform: translateY(-2px);
+  }
+  :root[data-motion="reduced"] .field-notes__item a:hover,
+  :root[data-motion="reduced"] .field-notes__item a:focus-visible {
+    transform: none;
+  }
   .field-notes__item a:hover h2 {
-    text-shadow: var(--glow-blue);
+    color: var(--color-cyan);
   }
   .field-notes__item time {
     display: block;

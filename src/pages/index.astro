@@ -1,102 +1,186 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import ProjectGrid from "../components/ProjectGrid.astro";
-import { getFeaturedProjects } from "../lib/projects";
+import SectionHead from "../components/SectionHead.astro";
+import { getAllProjects, getFeaturedProjects } from "../lib/projects";
 
 const featured = getFeaturedProjects();
+const all = getAllProjects();
+
+// Every number below is derived from the committed GitHub snapshot — nothing is
+// estimated, and a metric with no data simply doesn't render.
+const languages = [...new Set(all.map((p) => p.primaryLanguage).filter(Boolean))] as string[];
+const lastPush = all.reduce<string | null>(
+  (latest, p) => (!latest || p.updatedAt > latest ? p.updatedAt : latest),
+  null,
+);
+const lastPushLabel = lastPush
+  ? new Date(lastPush).toLocaleDateString("en-US", { month: "short", year: "numeric" })
+  : null;
+
+const stats = [
+  { value: String(all.length), label: "public repos" },
+  { value: String(languages.length), label: "languages shipped" },
+  ...(lastPushLabel ? [{ value: lastPushLabel, label: "last push" }] : []),
+];
+
+const capabilities = [
+  {
+    title: "Real-time systems",
+    body: "Signal processing, radar and telemetry visualisation, and the render loops that keep them at frame rate.",
+  },
+  {
+    title: "Rust / C++ tooling",
+    body: "Native command-line and desktop tools where the performance budget is the whole point of the project.",
+  },
+  {
+    title: "Edge ML",
+    body: "Models trained and quantised to run on the device in front of you, not in someone else's datacentre.",
+  },
+];
 
 const title = "arcTanMyAngle";
 const description =
-  "arcTanMyAngle // project signal deck — real-time systems, Rust/C++, edge ML, and handmade games.";
+  "Portfolio of arcTanMyAngle — real-time systems, Rust/C++ tooling, edge ML, and handmade games, shipped as working code.";
 ---
 
 <BaseLayout title={title} description={description}>
   <section class="hero">
-    <canvas class="hero__canvas" id="hero-bg" aria-hidden="true"></canvas>
     <div class="shell hero__content">
-      <p class="hero__eyebrow">// project signal deck</p>
-      <h1 class="hero__title">arcTanMyAngle</h1>
-      <p class="hero__lede prose">
-        Real-time systems, Rust/C++ tools, edge ML, and handmade games — built from scratch, shipped as working
-        code, not slideware.
+      <p class="eyebrow" data-reveal>Engineer // real-time systems &amp; edge ML</p>
+      <h1 class="hero__title" data-reveal>
+        I build things that have to run <em>now</em>.
+      </h1>
+      <p class="lede" data-reveal>
+        Real-time visualisation, Rust and C++ tooling, on-device machine learning, and games built from
+        scratch. Everything here is a repository you can open, read, and run — no slideware.
       </p>
-      <div class="hero__actions">
-        <a class="beveled-button beveled-button--lg beveled-button--primary" href="/lab/">Enter the Lab</a>
-        <a class="beveled-button beveled-button--lg beveled-button--cyan" href="/projects/">Browse Projects</a>
-        <a class="beveled-button beveled-button--lg beveled-button--magenta" href="/arcade/">Insert Coin</a>
+      <div class="hero__actions" data-reveal>
+        <a class="beveled-button beveled-button--lg beveled-button--primary" href="/projects/">
+          Browse the work
+        </a>
+        <a class="beveled-button beveled-button--lg beveled-button--ghost" href="/lab/">
+          Try the live demos
+        </a>
       </div>
+      <dl class="hero__stats" data-reveal>
+        {
+          stats.map((s) => (
+            <div class="hero__stat">
+              <dt>{s.label}</dt>
+              <dd>{s.value}</dd>
+            </div>
+          ))
+        }
+      </dl>
     </div>
   </section>
 
   <div class="shell">
-    <div class="marquee-header">featured signals // {featured.length} entries</div>
-    <ProjectGrid projects={featured} />
+    <SectionHead label="What I do" />
+    <ul class="capabilities" data-reveal-group>
+      {
+        capabilities.map((c) => (
+          <li class="capability">
+            <h2 class="capability__title">{c.title}</h2>
+            <p class="capability__body">{c.body}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+
+  <div class="shell home__featured">
+    <SectionHead label="Selected work" meta={`${featured.length} projects`} />
+    <ProjectGrid projects={featured} reveal />
     <p class="home__more">
-      <a href="/projects/">See the full archive &rarr;</a>
+      <a href="/projects/">See all {all.length} repositories &rarr;</a>
     </p>
   </div>
 </BaseLayout>
 
-<script>
-  import { mount } from "../components/HeroCanvas";
-  const canvas = document.getElementById("hero-bg") as HTMLCanvasElement | null;
-  if (canvas) mount(canvas);
-</script>
-
 <style>
   .hero {
-    position: relative;
     display: flex;
     align-items: center;
-    min-height: min(70vh, 640px);
-    overflow: hidden;
+    min-height: min(64vh, 560px);
     border-bottom: 1px solid var(--color-border);
-  }
-  .hero__canvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    margin-bottom: var(--space-7);
   }
   .hero__content {
-    position: relative;
-    z-index: 1;
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
     padding-block: var(--space-8);
   }
-  .hero__eyebrow {
-    color: var(--color-amber);
-    text-shadow: var(--glow-amber);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    font-size: var(--text-sm);
-  }
   .hero__title {
     font-size: var(--text-3xl);
-    color: var(--color-blue);
-    text-shadow: var(--glow-blue);
+    max-width: 16ch;
   }
-  .hero__lede {
-    max-width: 56ch;
-    color: var(--color-text-dim);
+  .hero__title em {
+    font-style: normal;
+    color: var(--color-cyan);
   }
   .hero__actions {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-3);
-    margin-top: var(--space-3);
+    margin-top: var(--space-2);
+  }
+  .hero__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+    margin: var(--space-5) 0 0;
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border);
+  }
+  .hero__stat dt {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-text-faint);
+  }
+  .hero__stat dd {
+    margin: 2px 0 0;
+    font-size: var(--text-lg);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .capabilities {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-5);
+  }
+  .capability {
+    border-left: 2px solid var(--color-border-bright);
+    padding-left: var(--space-4);
+  }
+  .capability__title {
+    font-size: var(--text-md);
+    margin-bottom: var(--space-2);
+  }
+  .capability__body {
+    color: var(--color-text-dim);
+    font-size: var(--text-sm);
+    line-height: 1.65;
+  }
+
+  .home__featured {
+    margin-top: var(--space-7);
   }
   .home__more {
-    text-align: center;
     padding-block: var(--space-6);
   }
   .home__more a {
     color: var(--color-cyan);
     text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
   }
   .home__more a:hover {
-    text-shadow: var(--glow-cyan);
+    text-decoration: underline;
   }
 </style>

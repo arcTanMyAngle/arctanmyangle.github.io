@@ -1,33 +1,65 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import SectionHead from "../components/SectionHead.astro";
 import WindowFrame from "../components/WindowFrame.astro";
+import { CONTACT, getContactChannels } from "../data/contact";
+
+const channels = getContactChannels();
 
 const title = "Contact";
-const description = "Send a signal — the only channel that's actually open is GitHub.";
+const description = "How to get in touch about real-time systems, native tooling, and on-device ML work.";
 ---
 
 <BaseLayout title={title} description={description}>
   <div class="shell contact">
-    <div class="marquee-header">contact // one open channel, no forms that go nowhere</div>
+    <SectionHead label="Contact" meta={`${channels.length} open channel${channels.length === 1 ? "" : "s"}`} />
 
-    <WindowFrame title="send_signal.sh" flush>
-      <div class="terminal-toy contact__terminal">
-        <div class="terminal-toy__output" role="log">
-          <div class="terminal-toy__line terminal-toy__line--echo">guest@arctanmyangle:~$ ./send_signal.sh</div>
-          <div class="terminal-toy__line">checking open channels...</div>
-          <div class="terminal-toy__line">  [x] email          — not configured, intentionally not listed here</div>
-          <div class="terminal-toy__line">  [x] social          — not maintained</div>
-          <div class="terminal-toy__line">  [ok] github          — open, watched</div>
-          <div class="terminal-toy__line">1 open channel found.</div>
-        </div>
-      </div>
-    </WindowFrame>
+    <div class="contact__intro" data-reveal>
+      <h1 class="contact__title">{CONTACT.availability}</h1>
+      <p class="lede">{CONTACT.responseTime}</p>
+    </div>
 
-    <p class="contact__cta">
-      <a class="beveled-button beveled-button--lg beveled-button--primary" href="https://github.com/arcTanMyAngle" target="_blank" rel="noopener noreferrer">
-        Open an issue or start a discussion on GitHub
+    <ul class="contact__channels" data-reveal-group>
+      {
+        channels.map((c) => (
+          <li class="contact__channel">
+            <span class="contact__channel-label">{c.label}</span>
+            <a
+              class="contact__channel-value"
+              href={c.href}
+              {...c.href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {}}
+            >
+              {c.value}
+            </a>
+            <span class="contact__channel-note">{c.note}</span>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="contact__actions" data-reveal>
+      <a class="beveled-button beveled-button--lg beveled-button--primary" href={CONTACT.github} target="_blank" rel="noopener noreferrer">
+        Open a discussion on GitHub
       </a>
-    </p>
+      {
+        CONTACT.resumeUrl && (
+          <a class="beveled-button beveled-button--lg" href={CONTACT.resumeUrl} target="_blank" rel="noopener noreferrer">
+            Download CV
+          </a>
+        )
+      }
+      <a class="beveled-button beveled-button--lg beveled-button--ghost" href="/projects/">
+        Read the work first
+      </a>
+    </div>
+
+    <WindowFrame title="what_to_expect.txt" class="cv-auto">
+      <ul class="contact__expect">
+        <li>Every project linked here is a real repository — clone it, read it, run it.</li>
+        <li>Happy to walk through architecture decisions on any of the flagship projects.</li>
+        <li>No contact form, no tracking pixels, no newsletter. This site collects nothing.</li>
+      </ul>
+    </WindowFrame>
   </div>
 </BaseLayout>
 
@@ -37,11 +69,61 @@ const description = "Send a signal — the only channel that's actually open is 
     flex-direction: column;
     gap: var(--space-5);
   }
-  .contact__terminal {
-    border: none;
-    border-radius: 0;
+  .contact__title {
+    font-size: var(--text-2xl);
+    max-width: 22ch;
+    margin-bottom: var(--space-3);
   }
-  .contact__cta {
-    text-align: center;
+  .contact__channels {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: var(--space-5);
+  }
+  .contact__channel {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-left: 2px solid var(--color-border-bright);
+    padding-left: var(--space-4);
+  }
+  .contact__channel-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-text-faint);
+  }
+  .contact__channel-value {
+    color: var(--color-cyan);
+    text-decoration: none;
+    font-weight: 600;
+    word-break: break-word;
+  }
+  .contact__channel-value:hover {
+    text-decoration: underline;
+  }
+  .contact__channel-note {
+    color: var(--color-text-dim);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+  }
+  .contact__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+  .contact__expect {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    color: var(--color-text-dim);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+  }
+  .contact__expect li::before {
+    content: "> ";
+    color: var(--color-amber);
   }
 </style>

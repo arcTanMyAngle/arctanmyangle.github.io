@@ -80,6 +80,9 @@ const jsonLd = {
             motion === "on" ||
             (motion !== "off" && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
           html.dataset.motion = reduced ? "reduced" : "full";
+          // Arm scroll-reveal only when JS + full motion are both live, so a
+          // no-JS visitor never lands on permanently invisible content.
+          html.dataset.revealState = reduced ? "off" : "armed";
         } catch (e) {
           /* localStorage unavailable — defaults already set on <html> */
         }
@@ -88,7 +91,7 @@ const jsonLd = {
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to content</a>
-    <div class="shine-overlay" aria-hidden="true"></div>
+    <canvas class="bg-beam" id="bg-beam" aria-hidden="true"></canvas>
 
     <SiteHeader />
 
@@ -97,6 +100,15 @@ const jsonLd = {
     </main>
 
     <SiteFooter />
+
+    <script>
+      import { mount } from "../components/BeamBackground";
+      import { revealAll } from "../lib/reveal";
+
+      const canvas = document.getElementById("bg-beam") as HTMLCanvasElement | null;
+      if (canvas) mount(canvas);
+      revealAll();
+    </script>
 
     <div id="command-palette-root"></div>
     <script>

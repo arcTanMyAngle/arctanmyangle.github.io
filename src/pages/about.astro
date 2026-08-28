@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import SectionHead from "../components/SectionHead.astro";
 import WindowFrame from "../components/WindowFrame.astro";
 
 const title = "About";
@@ -29,9 +30,10 @@ const EXPLORING = ["CUDA / parallel programming", "wgpu render pipelines beyond 
 
 <BaseLayout title={title} description={description}>
   <div class="shell about">
-    <div class="marquee-header">about // no résumé buzzwords, just what's actually shipped</div>
+    <SectionHead label="About" meta="what is actually shipped" />
 
-    <WindowFrame title="who.txt">
+    <div class="about__stack" data-reveal-group>
+    <WindowFrame title="who.txt" class="cv-auto">
       <p class="prose">
         arcTanMyAngle builds real-time systems, native tools, and small ML models that run on hardware you can
         actually hold — a flight radar built on public feeds, a bird classifier that fits on a microcontroller, a
@@ -46,7 +48,7 @@ const EXPLORING = ["CUDA / parallel programming", "wgpu render pipelines beyond 
       </p>
     </WindowFrame>
 
-    <WindowFrame title="skills.matrix">
+    <WindowFrame title="skills.matrix" class="cv-auto">
       <div class="about__skill-groups">
         {
           SKILL_GROUPS.map((group) => (
@@ -63,13 +65,15 @@ const EXPLORING = ["CUDA / parallel programming", "wgpu render pipelines beyond 
       </div>
     </WindowFrame>
 
-    <WindowFrame title="currently_exploring.log">
+    <WindowFrame title="currently_exploring.log" class="cv-auto">
       <ul class="about__exploring">
         {EXPLORING.map((item) => <li>{item}</li>)}
       </ul>
     </WindowFrame>
 
-    <p class="about__cta">
+    </div>
+
+    <p class="about__cta" data-reveal>
       <a class="beveled-button beveled-button--primary" href="https://github.com/arcTanMyAngle" target="_blank" rel="noopener noreferrer">
         See the repos on GitHub
       </a>
@@ -79,6 +83,11 @@ const EXPLORING = ["CUDA / parallel programming", "wgpu render pipelines beyond 
 
 <style>
   .about {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+  .about__stack {
     display: flex;
     flex-direction: column;
     gap: var(--space-5);

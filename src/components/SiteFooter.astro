@@ -10,13 +10,41 @@ const year = new Date().getFullYear();
     </div>
     <nav class="site-footer__links" aria-label="Footer">
       <a href="https://github.com/arcTanMyAngle" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a href="/projects/">Projects</a>
       <a href="/contact/">Contact</a>
       <a href="/field-notes/">Field Notes</a>
     </nav>
   </div>
+  <div class="shell site-footer__row site-footer__row--controls">
+    <p class="site-footer__hint">
+      Press <kbd>Ctrl</kbd> + <kbd>K</kbd> for the command palette.
+    </p>
+    <div class="site-footer__toggles" id="display-controls" aria-label="Display settings" role="group" hidden>
+      <button type="button" class="beveled-button beveled-button--sm" data-toggle-shine aria-pressed="true">
+        Shine on
+      </button>
+      <button type="button" class="beveled-button beveled-button--sm" data-toggle-motion aria-pressed="true">
+        Motion on
+      </button>
+    </div>
+  </div>
 </footer>
 
+<script>
+  import { mount } from "./DisplayControls";
+
+  const root = document.getElementById("display-controls");
+  if (root) mount(root);
+</script>
+
 <style>
+  .site-footer__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
   .site-footer__col {
     display: inline-flex;
     align-items: center;
@@ -24,6 +52,32 @@ const year = new Date().getFullYear();
   }
   .site-footer__links {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--space-4);
+  }
+  .site-footer__row--controls {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+  }
+  .site-footer__hint {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.08em;
+    color: var(--color-text-faint);
+  }
+  .site-footer__hint kbd {
+    font-family: inherit;
+    border: 1px solid var(--color-border-bright);
+    border-radius: 3px;
+    padding: 1px 5px;
+    color: var(--color-text-dim);
+  }
+  .site-footer__toggles {
+    display: flex;
+    gap: var(--space-2);
+  }
+  .site-footer__toggles button[aria-pressed="false"] {
+    color: var(--color-text-faint);
   }
 </style>

@@ -1,0 +1,18 @@
+---
+// Server-rendered shell for a client-mounted toy.
+//
+// Every toy replaces this element's innerHTML on mount, so the placeholder below
+// costs nothing once the module loads — but it reserves the height (no layout
+// shift) and leaves a no-JS visitor a sentence instead of an empty box.
+interface Props {
+  toy: string;
+  label: string;
+  minHeight?: string;
+}
+
+const { toy, label, minHeight = "260px" } = Astro.props;
+---
+
+<div class="toy-mount" data-toy={toy} style={`--toy-min-height:${minHeight}`}>
+  <p class="toy-mount__placeholder">{label}</p>
+</div>

@@ -1,0 +1,15 @@
+---
+interface Props {
+  label: string;
+  meta?: string;
+  class?: string;
+}
+
+const { label, meta, class: className } = Astro.props;
+---
+
+<div class:list={["section-head", className]}>
+  <span class="section-head__label">{label}</span>
+  <span class="section-head__rule" aria-hidden="true"></span>
+  {meta && <span class="section-head__meta">{meta}</span>}
+</div>

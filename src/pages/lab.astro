@@ -1,31 +1,53 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import SectionHead from "../components/SectionHead.astro";
 import WindowFrame from "../components/WindowFrame.astro";
+import ToyMount from "../components/ToyMount.astro";
 
 const title = "Lab";
 const description = "Interactive demo toys standing in for five real projects — radar, spectrogram, signal map, reaction trainer, terminal.";
 
 const TOYS = [
-  { toy: "radar", title: "look-above :: radar.demo", href: "/projects/look-above/" },
-  { toy: "spectrogram", title: "bird_acoustics :: spectrogram.demo", href: "/projects/bird_acoustics/" },
-  { toy: "signal-map", title: "global_unrest :: signal-map.demo", href: "/projects/global_unrest/" },
-  { toy: "reaction", title: "real-timereaction :: reaction.demo", href: "/projects/real-timereaction/" },
+  {
+    toy: "radar",
+    title: "look-above :: radar.demo",
+    href: "/projects/look-above/",
+    label: "Synthetic radar scope with dead-reckoned tracks — needs JavaScript.",
+  },
+  {
+    toy: "spectrogram",
+    title: "bird_acoustics :: spectrogram.demo",
+    href: "/projects/bird_acoustics/",
+    label: "Procedural spectrogram bars — needs JavaScript.",
+  },
+  {
+    toy: "signal-map",
+    title: "global_unrest :: signal-map.demo",
+    href: "/projects/global_unrest/",
+    label: "Scrubable 35-day synthetic signal map — needs JavaScript.",
+  },
+  {
+    toy: "reaction",
+    title: "real-timereaction :: reaction.demo",
+    href: "/projects/real-timereaction/",
+    label: "Reaction-time trainer, five rounds per set — needs JavaScript.",
+  },
 ] as const;
 ---
 
 <BaseLayout title={title} description={description}>
   <div class="shell lab">
-    <div class="marquee-header">the lab // five running demos, zero real backends</div>
+    <SectionHead label="The lab" meta="five live demos" />
     <p class="prose">
       Everything on this page is a synthetic stand-in — no live flight feeds, no microphone, no real unrest data.
       Each demo mirrors the actual project's UI language; the project pages explain what's real.
     </p>
 
-    <div class="lab__grid">
+    <div class="lab__grid" data-reveal-group>
       {
         TOYS.map((t) => (
           <WindowFrame title={t.title} class="cv-auto">
-            <div class="toy-mount" data-toy={t.toy} />
+            <ToyMount toy={t.toy} label={t.label} />
             <p class="lab__link">
               <a href={t.href}>Read about the real project &rarr;</a>
             </p>
@@ -33,7 +55,7 @@ const TOYS = [
         ))
       }
       <WindowFrame title="terminal.exe" class="cv-auto">
-        <div class="toy-mount" data-toy="terminal" />
+        <ToyMount toy="terminal" label="Interactive terminal — type `help` once JavaScript loads." minHeight="300px" />
       </WindowFrame>
     </div>
   </div>

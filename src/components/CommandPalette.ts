@@ -84,6 +84,14 @@ export function mount(root: HTMLElement): { destroy(): void } {
     return [...navCommands(), ...toggleCommands(), ...extraCommands];
   }
 
+  // Command labels can carry repo names straight from the GitHub snapshot, so
+  // never interpolate them into innerHTML raw.
+  function escapeHtml(value: string): string {
+    return value.replace(/[&<>"']/g, (ch) =>
+      ch === "&" ? "&amp;" : ch === "<" ? "&lt;" : ch === ">" ? "&gt;" : ch === '"' ? "&quot;" : "&#39;",
+    );
+  }
+
   function render() {
     const query = input.value.trim().toLowerCase();
     const commands = allCommands();
@@ -97,8 +105,8 @@ export function mount(root: HTMLElement): { destroy(): void } {
       .map(
         (c, i) => `
       <li class="palette__item" role="option" data-index="${i}" aria-selected="${i === selected}">
-        <span>${c.label}</span>
-        ${c.hint ? `<span class="palette__item-hint">${c.hint}</span>` : ""}
+        <span>${escapeHtml(c.label)}</span>
+        ${c.hint ? `<span class="palette__item-hint">${escapeHtml(c.hint)}</span>` : ""}
       </li>`
       )
       .join("");

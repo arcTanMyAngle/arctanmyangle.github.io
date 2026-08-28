@@ -91,7 +91,7 @@ const GAMES = [
       <p class="arcade-cabinet__hint" data-info-blurb></p>
       <p class="arcade-cabinet__run-label">this machine runs locally — no browser build shipped:</p>
       <code class="arcade-cabinet__run" data-info-run></code>
-      <a class="beveled-button beveled-button--cyan arcade-cabinet__source-link" data-info-link target="_blank" rel="noopener noreferrer">
+      <a class="beveled-button arcade-cabinet__source-link" data-info-link target="_blank" rel="noopener noreferrer">
         View source &amp; instructions →
       </a>
     </div>
@@ -105,14 +105,14 @@ const GAMES = [
     <button type="button" class="beveled-button beveled-button--primary" data-action="coin">Insert Coin</button>
     <button type="button" class="beveled-button" data-action="up" hidden>▲</button>
     <button type="button" class="beveled-button" data-action="down" hidden>▼</button>
-    <button type="button" class="beveled-button beveled-button--cyan" data-action="confirm" hidden>Start</button>
+    <button type="button" class="beveled-button beveled-button--primary" data-action="confirm" hidden>Start</button>
     <button type="button" class="beveled-button" data-action="back" hidden>◂ Back</button>
-    <a class="beveled-button beveled-button--magenta" data-action="open-new-tab" href="#" target="_blank" rel="noopener noreferrer" hidden
+    <a class="beveled-button" data-action="open-new-tab" href="#" target="_blank" rel="noopener noreferrer" hidden
       >Open in new tab ↗</a
     >
     {
       githubUrl && (
-        <a class="beveled-button beveled-button--magenta" data-action="view-source" href={githubUrl} target="_blank" rel="noopener noreferrer">
+        <a class="beveled-button beveled-button--ghost" data-action="view-source" href={githubUrl} target="_blank" rel="noopener noreferrer">
           View source
         </a>
       )

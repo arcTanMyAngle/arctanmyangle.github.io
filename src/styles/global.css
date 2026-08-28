@@ -1,4 +1,4 @@
-/* Reset ------------------------------------------------------------- */
+/* Reset ------------------------------------------------------------------ */
 *,
 *::before,
 *::after {
@@ -30,10 +30,6 @@ textarea {
   color: inherit;
 }
 
-a {
-  color: inherit;
-}
-
 ul,
 ol {
   margin: 0;
@@ -49,7 +45,7 @@ p {
   margin: 0;
 }
 
-/* Base ---------------------------------------------------------------- */
+/* Base -------------------------------------------------------------------- */
 body {
   background: var(--color-bg);
   color: var(--color-text);
@@ -63,10 +59,9 @@ h1,
 h2,
 h3,
 h4 {
-  font-family: var(--font-sans);
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  font-weight: 750;
+  line-height: 1.14;
+  letter-spacing: -0.02em;
 }
 
 h1 {
@@ -86,17 +81,8 @@ p {
   max-width: 68ch;
 }
 
-.prose {
-  font-family: var(--font-sans);
-  font-size: var(--text-base);
-  line-height: 1.7;
-  color: var(--color-text);
-}
-.prose p + p {
-  margin-top: var(--space-4);
-}
-
 a {
+  color: inherit;
   text-decoration-color: var(--color-blue-dim);
   text-underline-offset: 3px;
 }
@@ -104,7 +90,30 @@ a:hover {
   color: var(--color-blue);
 }
 
-/* Focus states --------------------------------------------------------- */
+.prose {
+  line-height: 1.7;
+  color: var(--color-text-dim);
+}
+.prose p + p {
+  margin-top: var(--space-4);
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+}
+
+.lede {
+  font-size: var(--text-md);
+  line-height: 1.65;
+  color: var(--color-text-dim);
+  max-width: 60ch;
+}
+
+/* Focus / skip link -------------------------------------------------------- */
 :focus {
   outline: none;
 }
@@ -120,7 +129,7 @@ a:hover {
   top: -3rem;
   z-index: var(--z-palette);
   background: var(--color-bg-panel);
-  color: var(--color-blue);
+  color: var(--color-cyan);
   padding: var(--space-2) var(--space-4);
   border: 1px solid var(--color-border-bright);
   border-radius: var(--radius-sm);
@@ -142,11 +151,18 @@ a:hover {
   border: 0;
 }
 
-/* Layout ---------------------------------------------------------------- */
+/* Layout ------------------------------------------------------------------- */
 .shell {
   max-width: var(--shell-width);
   margin-inline: auto;
   padding-inline: var(--space-5);
+}
+
+.site-header,
+.site-main,
+.site-footer {
+  position: relative;
+  z-index: var(--z-content);
 }
 
 .site-main {
@@ -160,16 +176,25 @@ a:hover {
   }
 }
 
-/* Site header / nav ------------------------------------------------------ */
+/* Scanner-beam background canvas ------------------------------------------- */
+.bg-beam {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: var(--z-bg);
+  pointer-events: none;
+}
+
+/* Header / nav -------------------------------------------------------------- */
 .site-header {
   position: sticky;
   top: 0;
   z-index: var(--z-chrome);
-  background: color-mix(in srgb, var(--color-bg) 88%, transparent);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  background: color-mix(in srgb, var(--color-bg) 84%, transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--color-border);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
 }
 
 .site-header__bar {
@@ -181,17 +206,16 @@ a:hover {
 }
 
 .site-logo {
-  font-weight: 800;
-  color: var(--color-cyan);
+  font-weight: 750;
+  color: var(--color-text);
   text-decoration: none;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
 }
 .site-logo:hover {
   color: var(--color-cyan);
-  text-shadow: var(--glow-cyan);
 }
 
 .site-nav {
@@ -209,7 +233,7 @@ a:hover {
 }
 .site-nav__link:hover,
 .site-nav__link[aria-current="page"] {
-  color: var(--color-cyan);
+  color: var(--color-text);
 }
 .site-nav__link[aria-current="page"]::after {
   content: "";
@@ -219,14 +243,13 @@ a:hover {
   bottom: -4px;
   height: 2px;
   background: var(--color-cyan);
-  box-shadow: var(--glow-cyan);
 }
 
 button.site-nav__toggle {
   display: none;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 800px) {
   .site-nav {
     position: absolute;
     inset-inline: 0;
@@ -234,7 +257,7 @@ button.site-nav__toggle {
     background: var(--color-bg-panel);
     border-bottom: 1px solid var(--color-border);
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 0;
     padding: var(--space-2) var(--space-4) var(--space-4);
     display: none;
@@ -243,7 +266,6 @@ button.site-nav__toggle {
     display: flex;
   }
   .site-nav__link {
-    width: 100%;
     padding-block: var(--space-3);
     border-bottom: 1px solid var(--color-border);
   }
@@ -252,19 +274,13 @@ button.site-nav__toggle {
   }
 }
 
-/* Site footer ------------------------------------------------------------ */
+/* Footer -------------------------------------------------------------------- */
 .site-footer {
   border-top: 1px solid var(--color-border);
   padding-block: var(--space-6);
   color: var(--color-text-dim);
   font-size: var(--text-sm);
-}
-.site-footer__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-  align-items: center;
-  justify-content: space-between;
+  background: color-mix(in srgb, var(--color-bg) 80%, transparent);
 }
 .site-footer a {
   color: var(--color-text-dim);
@@ -274,10 +290,10 @@ button.site-nav__toggle {
   color: var(--color-cyan);
 }
 
-/* Window chrome (Aqua/Luna-style glossy title bar) -------------------------- */
+/* Window chrome -------------------------------------------------------------- */
 .window-frame {
   background: var(--color-bg-panel);
-  border: 1px solid var(--color-border-bright);
+  border: 1px solid var(--color-border);
   box-shadow: var(--shadow-window);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -285,83 +301,77 @@ button.site-nav__toggle {
 .window-frame__titlebar {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
   padding: var(--space-2) var(--space-3);
   background: var(--chrome-titlebar);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.35);
-  font-family: var(--font-sans);
-  font-weight: 700;
-  font-size: var(--text-sm);
-  color: #ffffff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--hairline);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
 }
 .window-frame__dots {
   display: inline-flex;
-  gap: 6px;
+  gap: 5px;
 }
 .window-frame__dots span {
-  width: 11px;
-  height: 11px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   display: inline-block;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5), inset 0 -2px 2px rgba(0, 0, 0, 0.3);
+  background: var(--color-border-bright);
 }
 .window-frame__dots span:nth-child(1) {
-  background: linear-gradient(180deg, #ff8f87 0%, #ff5f57 60%, #d93a32 100%);
+  background: #c85a52;
 }
 .window-frame__dots span:nth-child(2) {
-  background: linear-gradient(180deg, #ffd479 0%, #febc2e 60%, #d99a12 100%);
+  background: #c9962a;
 }
 .window-frame__dots span:nth-child(3) {
-  background: linear-gradient(180deg, #5be873 0%, #28c840 60%, #1a9c2e 100%);
+  background: #3f9c55;
 }
 .window-frame__title {
   flex: 1;
 }
 .window-frame__body {
-  padding: var(--space-4);
+  padding: var(--space-5);
 }
 .window-frame__body--flush {
   padding: 0;
 }
 
-/* Beveled buttons: glossy chrome pill buttons (Aqua/Luna-era look) ---------- */
+/* Buttons --------------------------------------------------------------------
+   The system carries exactly one gradient: .beveled-button--primary. Everything
+   else is a flat panel tone with a hairline top bevel, so no page ever shows
+   more than one glossy call to action. */
 .beveled-button[hidden] {
   display: none;
 }
 .beveled-button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
-  font-family: var(--font-sans);
-  font-weight: 700;
+  font-weight: 650;
   font-size: var(--text-sm);
-  color: #14263f;
+  color: var(--color-text);
   background: var(--chrome-button);
-  border: 1px solid rgba(0, 0, 0, 0.25);
-  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border-bright);
+  border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-4);
   cursor: pointer;
   text-decoration: none;
-  position: relative;
-  isolation: isolate;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 2px 6px rgba(4, 8, 20, 0.4);
-  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out),
-    background var(--dur-fast) var(--ease-out);
-}
-.beveled-button::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0) 55%);
-  opacity: 0.7;
-  pointer-events: none;
-  z-index: -1;
+  box-shadow: var(--hairline);
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 .beveled-button:hover {
   background: var(--chrome-button-hover);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 3px 10px rgba(4, 8, 20, 0.5), var(--glow-cyan);
+  border-color: color-mix(in srgb, var(--color-cyan) 42%, var(--color-border-bright));
+  color: var(--color-text);
 }
 .beveled-button:active {
   transform: translateY(1px);
@@ -369,137 +379,164 @@ button.site-nav__toggle {
 }
 .beveled-button--primary {
   color: #ffffff;
-  background: linear-gradient(180deg, #7fc4ff 0%, #2f79d6 45%, #1c5bb0 46%, #4f97e0 100%);
+  background: var(--chrome-primary);
+  border-color: #2a6fbe;
+  box-shadow: var(--hairline), 0 2px 14px rgba(33, 104, 192, 0.32);
 }
 .beveled-button--primary:hover {
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 3px 10px rgba(4, 8, 20, 0.5), var(--glow-blue);
-}
-.beveled-button--cyan {
-  color: #04303a;
-  background: linear-gradient(180deg, #d8fbff 0%, #7fe9f5 45%, #3fc2d6 46%, #6fdcea 100%);
-}
-.beveled-button--cyan:hover {
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 3px 10px rgba(4, 8, 20, 0.5), var(--glow-cyan);
-}
-.beveled-button--magenta {
+  background: var(--chrome-primary-hover);
+  border-color: #4f96e4;
   color: #ffffff;
-  background: linear-gradient(180deg, #f0c6ff 0%, #c368e8 45%, #9d3fc7 46%, #d089ea 100%);
 }
-.beveled-button--magenta:hover {
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 3px 10px rgba(4, 8, 20, 0.5), var(--glow-magenta);
+.beveled-button--ghost {
+  background: transparent;
+  border-color: var(--color-border-bright);
+  color: var(--color-text-dim);
+  box-shadow: none;
+}
+.beveled-button--ghost:hover {
+  color: var(--color-text);
+  background: var(--color-bg-raised);
 }
 .beveled-button--lg {
-  padding: var(--space-4) var(--space-6);
-  font-size: var(--text-md);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-base);
+}
+.beveled-button--sm {
+  padding: 4px var(--space-3);
+  font-size: var(--text-xs);
 }
 .beveled-button--block {
   width: 100%;
-  justify-content: center;
 }
 
-/* Chrome border (glossy inset bevel, replaces the old pixel-border look) --- */
+/* Chrome border --------------------------------------------------------------- */
 .chrome-border {
   border-radius: var(--radius-md);
-  border: 1px solid rgba(0, 0, 0, 0.35);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.35),
-    0 0 0 1px var(--color-border-bright);
+  border: 1px solid var(--color-border-bright);
+  box-shadow: var(--hairline);
 }
 
-/* Dotted grid background ------------------------------------------------------------ */
+/* Dotted grid ------------------------------------------------------------------ */
 .dotted-grid-bg {
-  background-image: radial-gradient(var(--color-border-bright) 1px, transparent 1px);
+  background-image: radial-gradient(var(--color-border) 1px, transparent 1px);
   background-size: 22px 22px;
   background-position: -11px -11px;
 }
 
-/* Marquee header: holographic foil banner --------------------------------- */
-.marquee-header {
-  position: relative;
-  padding: var(--space-3) var(--space-4);
-  background: var(--holo-gradient);
-  background-size: 300% 100%;
-  border-radius: var(--radius-md);
+/* Toy mounts ----------------------------------------------------------------- */
+/* Height is reserved server-side so a toy appearing never shifts the layout. */
+.toy-mount {
+  min-height: var(--toy-min-height, 260px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.toy-mount__placeholder {
+  font-family: var(--font-mono);
   font-size: var(--text-xs);
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #04101f;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+  letter-spacing: 0.06em;
+  color: var(--color-text-faint);
+  text-align: center;
 }
 
-/* Chips: pill-shaped, glossy tech-spec tags -------------------------------- */
+/* Section head -- typographic rule that replaces the old banner ---------------- */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+}
+.section-head__label {
+  color: var(--color-cyan);
+  white-space: nowrap;
+}
+.section-head__rule {
+  flex: 1;
+  height: 1px;
+  min-width: var(--space-4);
+  background: linear-gradient(90deg, var(--color-border-bright), transparent);
+}
+.section-head__meta {
+  white-space: nowrap;
+}
+
+/* Chips ------------------------------------------------------------------------ */
 .chip {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  font-family: var(--font-sans);
-  font-weight: 700;
+  font-family: var(--font-mono);
+  font-weight: 500;
   font-size: var(--text-xs);
-  letter-spacing: 0.02em;
-  padding: 3px var(--space-3);
+  letter-spacing: 0.03em;
+  padding: 2px var(--space-2);
   border: 1px solid var(--color-border-bright);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-sm);
   color: var(--color-text-dim);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 60%), var(--color-bg-raised);
+  background: var(--color-bg-raised);
 }
 .chip--lang {
   color: var(--color-cyan);
-  border-color: color-mix(in srgb, var(--color-cyan) 45%, var(--color-border-bright));
+  border-color: color-mix(in srgb, var(--color-cyan) 32%, var(--color-border-bright));
 }
 .chip--status-featured {
   color: var(--color-amber);
-  border-color: color-mix(in srgb, var(--color-amber) 45%, var(--color-border-bright));
+  border-color: color-mix(in srgb, var(--color-amber) 32%, var(--color-border-bright));
 }
 .chip--status-active {
   color: var(--color-blue);
-  border-color: color-mix(in srgb, var(--color-blue) 45%, var(--color-border-bright));
+  border-color: color-mix(in srgb, var(--color-blue) 32%, var(--color-border-bright));
 }
 .chip--status-archive {
-  color: var(--color-text-dim);
+  color: var(--color-text-faint);
 }
 .chip--status-fork,
 .chip--status-experiment {
   color: var(--color-magenta);
-  border-color: color-mix(in srgb, var(--color-magenta) 45%, var(--color-border-bright));
+  border-color: color-mix(in srgb, var(--color-magenta) 30%, var(--color-border-bright));
 }
 
-/* Status light ------------------------------------------------------------ */
+/* Status light ----------------------------------------------------------------- */
 .status-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   display: inline-block;
   background: var(--color-text-faint);
   flex-shrink: 0;
 }
 .status-dot--on {
-  background: var(--color-blue);
-  box-shadow: var(--glow-blue);
-}
-.status-dot--blink {
-  /* animation applied conditionally in effects.css, gated on data-motion */
+  background: var(--color-cyan);
+  box-shadow: var(--glow-cyan);
 }
 
-/* Forms ------------------------------------------------------------ */
+/* Form fields ------------------------------------------------------------------- */
 .field {
-  font-family: var(--font-sans);
   background: var(--color-bg-inset);
   border: 1px solid var(--color-border-bright);
   color: var(--color-text);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 .field::placeholder {
   color: var(--color-text-faint);
 }
+.field:hover {
+  border-color: color-mix(in srgb, var(--color-cyan) 30%, var(--color-border-bright));
+}
 
-/* Command palette ------------------------------------------------------------ */
+/* Command palette ---------------------------------------------------------------- */
 .palette-backdrop {
   position: fixed;
   inset: 0;
   z-index: var(--z-palette);
-  background: rgba(1, 2, 3, 0.72);
+  background: rgba(2, 4, 10, 0.72);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -526,6 +563,7 @@ button.site-nav__toggle {
   font-size: var(--text-md);
   padding: var(--space-4);
   background: var(--color-bg-inset);
+  color: var(--color-text);
 }
 .palette__list {
   max-height: 50vh;
@@ -545,7 +583,7 @@ button.site-nav__toggle {
 }
 .palette__item[aria-selected="true"] {
   background: var(--color-bg-raised);
-  color: var(--color-blue);
+  color: var(--color-cyan);
 }
 .palette__item-hint {
   color: var(--color-text-faint);
@@ -557,17 +595,19 @@ button.site-nav__toggle {
   font-size: var(--text-sm);
 }
 
-/* Toy modules (Radar/Spectrogram/SignalMap/Reaction/Terminal) shared chrome --------- */
+/* Toy modules ---------------------------------------------------------------------- */
 .toy-canvas {
   width: 100%;
   height: 260px;
   display: block;
   background: var(--color-bg-inset);
+  border-radius: var(--radius-sm);
 }
 .toy-caption {
-  margin-top: var(--space-2);
+  margin-top: var(--space-3);
   font-size: var(--text-xs);
-  color: var(--color-text-dim);
+  color: var(--color-text-faint);
+  line-height: 1.6;
 }
 .toy-controls {
   display: flex;
@@ -586,10 +626,11 @@ button.site-nav__toggle {
   margin-top: var(--space-2);
 }
 .toy-stat-row strong {
-  color: var(--color-blue);
+  color: var(--color-cyan);
+  font-weight: 600;
 }
 
-/* Reaction mini-game ------------------------------------------------------------ */
+/* Reaction mini-game ---------------------------------------------------------------- */
 .reaction-toy__stage {
   display: flex;
   align-items: center;
@@ -625,7 +666,7 @@ button.site-nav__toggle {
   color: var(--color-cyan);
 }
 
-/* Terminal toy ------------------------------------------------------------ */
+/* Terminal toy ---------------------------------------------------------------------- */
 .terminal-toy {
   background: var(--color-bg-inset);
   border: 1px solid var(--color-border-bright);
@@ -670,14 +711,8 @@ button.site-nav__toggle {
   outline: none;
 }
 
-/* content-visibility for below-the-fold sections ------------------------------------ */
+/* Below-the-fold cost control -------------------------------------------------------- */
 .cv-auto {
   content-visibility: auto;
   contain-intrinsic-size: 1px 600px;
-}
-
-@keyframes status-blink {
-  50% {
-    opacity: 0.25;
-  }
 }

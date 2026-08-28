@@ -1,7 +1,9 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import SectionHead from "../../components/SectionHead.astro";
 import WindowFrame from "../../components/WindowFrame.astro";
 import ArcadeCabinet from "../../components/ArcadeCabinet.astro";
+import ToyMount from "../../components/ToyMount.astro";
 import { getAllProjects, type Project } from "../../lib/projects";
 
 export function getStaticPaths() {
@@ -35,9 +37,9 @@ const description = project.description;
   <div class="shell project-detail">
     <a class="project-detail__back" href="/projects/">&larr; Back to projects</a>
 
-    <div class="marquee-header">{project.category.replace(/-/g, " ")} // {project.status}</div>
+    <SectionHead label={project.category.replace(/-/g, " ")} meta={project.status} />
 
-    <header class="project-detail__head">
+    <header class="project-detail__head" data-reveal>
       <h1>{project.displayName}</h1>
       <p class="prose">{project.description}</p>
       <div class="project-detail__chips">
@@ -53,7 +55,7 @@ const description = project.description;
         </a>
         {
           project.homepageUrl && (
-            <a class="beveled-button beveled-button--cyan" href={project.homepageUrl} target="_blank" rel="noopener noreferrer">
+            <a class="beveled-button" href={project.homepageUrl} target="_blank" rel="noopener noreferrer">
               Live site
             </a>
           )
@@ -82,7 +84,7 @@ const description = project.description;
             </div>
           )}
           {["radar", "signal-map", "spectrogram", "reaction"].includes(project.demoType) && (
-            <div class="toy-mount" data-toy={project.demoType} />
+            <ToyMount toy={project.demoType} label="Interactive demo — needs JavaScript." />
           )}
         </WindowFrame>
       )
@@ -90,7 +92,7 @@ const description = project.description;
 
     {
       isFlagship && project.detailSections && (
-        <div class="project-detail__sections">
+        <div class="project-detail__sections" data-reveal-group>
           {(Object.keys(SECTION_LABELS) as (keyof typeof SECTION_LABELS)[]).map((key) => (
             <WindowFrame title={SECTION_LABELS[key]} class="cv-auto">
               <p class="prose">{project.detailSections![key]}</p>

@@ -1,0 +1,85 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SectionHead from "../components/SectionHead.astro";
+import { getFeaturedProjects } from "../lib/projects";
+
+const suggestions = getFeaturedProjects().slice(0, 3);
+
+const title = "404";
+const description = "That page doesn't exist — here's where the working code lives instead.";
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="shell notfound">
+    <SectionHead label="404" meta="signal lost" />
+    <h1 class="notfound__title">No route to that page.</h1>
+    <p class="lede">
+      The URL didn't match anything in the build. Nothing is broken on your end — the page either moved or
+      never existed.
+    </p>
+    <div class="notfound__actions">
+      <a class="beveled-button beveled-button--primary" href="/">Back to the start</a>
+      <a class="beveled-button beveled-button--ghost" href="/projects/">Browse all projects</a>
+    </div>
+
+    {
+      suggestions.length > 0 && (
+        <div class="notfound__suggestions">
+          <SectionHead label="Or start here" />
+          <ul class="notfound__list" data-reveal-group>
+            {suggestions.map((p) => (
+              <li>
+                <a href={`/projects/${p.slug}/`}>{p.displayName}</a>
+                <span>{p.description}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .notfound {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding-block: var(--space-6);
+  }
+  .notfound__title {
+    font-size: var(--text-2xl);
+  }
+  .notfound__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+  }
+  .notfound__suggestions {
+    margin-top: var(--space-6);
+  }
+  .notfound__list {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .notfound__list li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-left: 2px solid var(--color-border-bright);
+    padding-left: var(--space-4);
+  }
+  .notfound__list a {
+    color: var(--color-cyan);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .notfound__list a:hover {
+    text-decoration: underline;
+  }
+  .notfound__list span {
+    color: var(--color-text-dim);
+    font-size: var(--text-sm);
+  }
+</style>

@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import SectionHead from "../components/SectionHead.astro";
 import WindowFrame from "../components/WindowFrame.astro";
 import ArcadeCabinet from "../components/ArcadeCabinet.astro";
 import { getProjectBySlug } from "../lib/projects";
@@ -12,8 +13,8 @@ const description = "One cabinet, four from-scratch games — Wii Kart, Uncanny 
 
 <BaseLayout title={title} description={description}>
   <div class="shell arcade-page">
-    <div class="marquee-header">insert coin // no continues, no rigged hitboxes</div>
-    <p class="prose">
+    <SectionHead label="Arcade" meta="playable in the browser" />
+    <p class="prose" data-reveal>
       A single repo housing four completely different games, all built from scratch: no game engine, deterministic
       simulation, asset-light procedural art and audio. The HTML Cabinet's five browser games are fully playable
       right here — the other three (Wii Kart, Uncanny Carnival, Galaga) need a local Rust/Node/C++ toolchain to

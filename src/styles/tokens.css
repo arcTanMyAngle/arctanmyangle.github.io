@@ -1,19 +1,21 @@
 /*
   Design tokens. CSS custom properties only — no selectors beyond :root.
-  Palette: Y2K chrome/blue futurism — deep indigo-black backdrop, glossy Windows XP
-  Luna / Mac OS Aqua-style chrome UI, electric blue/cyan/magenta holographic accents.
+  Palette: Y2K chrome/blue futurism, but disciplined — a dark instrument
+  panel with hairline bevels, where gloss is a highlight reserved for ONE
+  primary action per view rather than the default state of every surface.
 */
 :root {
   /* -- surfaces -- */
   --color-bg: #050912;
   --color-bg-raised: #0d1428;
   --color-bg-inset: #01030a;
-  --color-bg-panel: #101a30;
+  --color-bg-panel: #0b1224;
+  --color-bg-glass: rgba(13, 20, 40, 0.72);
 
   /* -- ink -- */
   --color-text: #eef2fb;
-  --color-text-dim: #96a5c4;
-  --color-text-faint: #56607e;
+  --color-text-dim: #9caac8;
+  --color-text-faint: #5b6688;
 
   /* -- signal colors -- */
   --color-blue: #4fb2ff;
@@ -26,32 +28,36 @@
   --color-ok: var(--color-blue);
 
   /* -- borders / chrome -- */
-  --color-border: #232f4a;
-  --color-border-bright: #3d5480;
-  --bevel-light: rgba(255, 255, 255, 0.55);
-  --bevel-dark: rgba(0, 0, 0, 0.55);
+  --color-border: #1c2740;
+  --color-border-bright: #2c3c60;
+  --bevel-light: rgba(255, 255, 255, 0.09);
+  --bevel-dark: rgba(0, 0, 0, 0.5);
+  --hairline: inset 0 1px 0 var(--bevel-light);
 
-  /* -- chrome gradients: Luna/Aqua-era glossy UI -- */
-  --chrome-titlebar: linear-gradient(180deg, #6fb6ff 0%, #2f79d6 48%, #1c5bb0 50%, #3f8ee0 100%);
-  --chrome-button: linear-gradient(180deg, #eaf3ff 0%, #a9c6ec 45%, #5f92cf 46%, #3f78bd 100%);
-  --chrome-button-hover: linear-gradient(180deg, #ffffff 0%, #c3ddf9 45%, #79aee0 46%, #5698d6 100%);
-  --chrome-button-active: linear-gradient(180deg, #5f92cf 0%, #3f78bd 45%, #a9c6ec 46%, #eaf3ff 100%);
-  --holo-gradient: linear-gradient(120deg, var(--color-blue), var(--color-cyan), var(--color-magenta), var(--color-blue));
+  /* -- chrome surfaces --
+     Only --chrome-primary carries a real gradient. Everything else is a flat
+     tone plus a 1px top highlight; that hairline is what reads as "bevel". */
+  --chrome-titlebar: linear-gradient(180deg, #16233d 0%, #0d1526 100%);
+  --chrome-button: #131e35;
+  --chrome-button-hover: #1b2a49;
+  --chrome-button-active: #0c1425;
+  --chrome-primary: linear-gradient(180deg, #4a97e8 0%, #2168c0 100%);
+  --chrome-primary-hover: linear-gradient(180deg, #5da8f5 0%, #2a75cf 100%);
 
   /* -- fonts: system-only, no remote loading -- */
   --font-mono: ui-monospace, "Cascadia Code", "Consolas", "SFMono-Regular", Menlo, Monaco,
     "Liberation Mono", "Courier New", monospace;
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
-  /* -- type scale -- */
+  /* -- type scale: fluid at the display sizes so the hero never overflows -- */
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
   --text-md: 1.125rem;
   --text-lg: 1.375rem;
-  --text-xl: 1.875rem;
-  --text-2xl: 2.5rem;
-  --text-3xl: 3.5rem;
+  --text-xl: clamp(1.5rem, 1.29rem + 0.95vw, 1.875rem);
+  --text-2xl: clamp(1.9rem, 1.5rem + 1.8vw, 2.5rem);
+  --text-3xl: clamp(2.5rem, 1.75rem + 3.4vw, 4rem);
 
   /* -- spacing scale -- */
   --space-1: 0.25rem;
@@ -64,24 +70,25 @@
   --space-8: 4rem;
   --space-9: 6rem;
 
-  /* -- radius: rounder, glossy chrome rather than sharp/pixel -- */
+  /* -- radius -- */
   --radius-sm: 6px;
-  --radius-md: 12px;
+  --radius-md: 10px;
   --radius-pill: 999px;
 
   /* -- effects -- */
-  --shadow-window: 0 14px 34px rgba(4, 8, 20, 0.65), 0 0 0 1px var(--color-border);
-  --glow-blue: 0 0 8px rgba(79, 178, 255, 0.6);
-  --glow-cyan: 0 0 8px rgba(109, 243, 255, 0.6);
-  --glow-amber: 0 0 8px rgba(255, 207, 92, 0.6);
-  --glow-magenta: 0 0 8px rgba(210, 104, 255, 0.6);
+  --shadow-window: 0 18px 40px rgba(2, 5, 14, 0.55);
+  --shadow-lift: 0 10px 26px rgba(2, 5, 14, 0.5);
+  --glow-blue: 0 0 8px rgba(79, 178, 255, 0.5);
+  --glow-cyan: 0 0 8px rgba(109, 243, 255, 0.5);
+  --glow-amber: 0 0 8px rgba(255, 207, 92, 0.5);
+  --glow-magenta: 0 0 8px rgba(210, 104, 255, 0.5);
 
   /* -- z-index scale -- */
-  --z-base: 0;
+  --z-bg: 0;
+  --z-content: 1;
   --z-chrome: 10;
   --z-overlay: 100;
   --z-palette: 1000;
-  --z-shine: 2000;
 
   /* -- motion -- */
   --dur-fast: 120ms;

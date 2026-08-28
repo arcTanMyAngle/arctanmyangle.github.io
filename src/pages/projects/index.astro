@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import SectionHead from "../../components/SectionHead.astro";
 import ProjectGrid from "../../components/ProjectGrid.astro";
 import { getAllProjects } from "../../lib/projects";
 
@@ -13,7 +14,7 @@ const description = "Every real project on arcTanMyAngle's GitHub, filterable by
 
 <BaseLayout title={title} description={description}>
   <div class="shell">
-    <div class="marquee-header">project archive // {projects.length} entries</div>
+    <SectionHead label="Project archive" meta={`${projects.length} repositories`} />
 
     <div class="project-filters" id="project-filters">
       <label class="visually-hidden" for="project-search">Search projects</label>
@@ -40,9 +41,14 @@ const description = "Every real project on arcTanMyAngle's GitHub, filterable by
         <option value="stars-desc">Most stars</option>
         <option value="name-asc">Name A–Z</option>
       </select>
+      <button type="button" class="beveled-button beveled-button--ghost beveled-button--sm" data-filter-reset hidden>
+        Clear filters
+      </button>
     </div>
 
-    <ProjectGrid projects={projects} id="project-grid" />
+    <p class="project-filters__count" data-result-count aria-live="polite">{projects.length} repositories</p>
+
+    <ProjectGrid projects={projects} id="project-grid" reveal />
   </div>
 </BaseLayout>
 
@@ -65,5 +71,13 @@ const description = "Every real project on arcTanMyAngle's GitHub, filterable by
   }
   .project-filters__search {
     flex: 1 1 220px;
+  }
+  .project-filters__count {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-faint);
+    margin-top: calc(var(--space-3) * -1);
   }
 </style>

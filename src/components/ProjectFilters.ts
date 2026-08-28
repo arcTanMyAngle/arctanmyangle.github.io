@@ -21,10 +21,26 @@ export function mount(root: HTMLElement, options: ProjectFiltersOptions): { dest
   const category = root.querySelector<HTMLSelectElement>("#project-category");
   const status = root.querySelector<HTMLSelectElement>("#project-status");
   const sort = root.querySelector<HTMLSelectElement>("#project-sort");
+  const count =
+    root.querySelector<HTMLElement>("[data-result-count]") ??
+    document.querySelector<HTMLElement>("[data-result-count]");
+  // Two places offer a reset: the toolbar and the empty state.
+  const resets = [
+    ...root.querySelectorAll<HTMLButtonElement>("[data-filter-reset]"),
+    ...document.querySelectorAll<HTMLButtonElement>("[data-filter-reset]"),
+  ].filter((el, i, arr) => arr.indexOf(el) === i);
 
   const savedCategory = getLastProjectCategory();
   if (category && savedCategory && [...category.options].some((o) => o.value === savedCategory)) {
     category.value = savedCategory;
+  }
+
+  function filtersActive(): boolean {
+    return Boolean(
+      (search?.value ?? "").trim() ||
+        (category && category.value !== "all") ||
+        (status && status.value !== "all"),
+    );
   }
 
   function apply() {
@@ -51,15 +67,35 @@ export function mount(root: HTMLElement, options: ProjectFiltersOptions): { dest
     for (const card of sorted) gridEl.appendChild(card);
 
     if (empty) empty.hidden = visibleCount > 0;
+    if (count) {
+      count.textContent =
+        visibleCount === cards.length
+          ? `${cards.length} repositories`
+          : `${visibleCount} of ${cards.length} repositories`;
+    }
+    const active = filtersActive();
+    for (const reset of resets) reset.hidden = !active;
+  }
+
+  function onCategoryChange() {
+    if (category) setLastProjectCategory(category.value);
+    apply();
+  }
+
+  function onReset() {
+    if (search) search.value = "";
+    if (category) category.value = "all";
+    if (status) status.value = "all";
+    setLastProjectCategory("all");
+    apply();
+    search?.focus();
   }
 
   search?.addEventListener("input", apply);
   status?.addEventListener("change", apply);
   sort?.addEventListener("change", apply);
-  category?.addEventListener("change", () => {
-    if (category) setLastProjectCategory(category.value);
-    apply();
-  });
+  category?.addEventListener("change", onCategoryChange);
+  for (const reset of resets) reset.addEventListener("click", onReset);
 
   apply();
 
@@ -68,6 +104,8 @@ export function mount(root: HTMLElement, options: ProjectFiltersOptions): { dest
       search?.removeEventListener("input", apply);
       status?.removeEventListener("change", apply);
       sort?.removeEventListener("change", apply);
+      category?.removeEventListener("change", onCategoryChange);
+      for (const reset of resets) reset.removeEventListener("click", onReset);
     },
   };
 }

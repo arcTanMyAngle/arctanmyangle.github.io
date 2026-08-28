@@ -8,17 +8,17 @@ self-contained summary in case that path isn't available.
 
 ## What this project is
 
-Full rebuild of `arctanmyangle.github.io` from a placeholder Tailwind bento-grid site into a Y2K chrome/blue
-futurism portfolio (deep indigo-black backdrop, glossy Windows XP Luna / Mac OS Aqua-style chrome UI, electric
-blue/cyan/magenta holographic accents), built with Astro 7 + TypeScript + Bun, showcasing arcTanMyAngle's real
-GitHub projects. Multi-page, static-first, no heavy frameworks. The Astro project lives at the **repo root**.
+Full rebuild of `arctanmyangle.github.io` from a placeholder Tailwind bento-grid site into a dark
+instrument-panel portfolio (deep indigo-black backdrop, hairline-beveled chrome, blue/cyan accents, a scanner beam
+sweeping behind everything), built with Astro 7 + TypeScript + Bun, showcasing arcTanMyAngle's real GitHub
+projects. Multi-page, static-first, no heavy frameworks. The Astro project lives at the **repo root**.
 
-**Design history**: the site was originally built (phases 1–14 below) with a late-90s/early-00s CRT-terminal/arcade
-aesthetic. After that build was complete, deployed, and verified, the user shared a Y2K/"frutiger aero" reference
-collage (chrome, glossy blue-silver gradients, holographic, iPod/Xbox-era tech optimism) and asked for a full pivot
-to that look — see "Design pivot session" below for exactly what changed and why. Don't be confused if you find
-references to the old CRT direction in git history or in your own memory of this project; the Y2K chrome/blue
-direction described above is current.
+**Design history**, three passes, most recent last:
+1. CRT-terminal/arcade (phases 1–14 below) — built, deployed, verified.
+2. Y2K / "frutiger aero" chrome pivot — glossy blue-silver gradients everywhere, holographic foil marquee.
+3. **Current: the de-gradient / recruiter pass** (see "Recruiter + UX pass" below). The Y2K chrome *structure*
+   survived; the gloss did not. Exactly one gradient-filled element per view now. Don't be confused by CRT or
+   "holographic" references in git history — pass 3 is current.
 
 ## Deploy status (as of the pivot session)
 
@@ -34,10 +34,8 @@ direction described above is current.
 
 ## Build order status
 
-## Build order status
-
-All 14 phases from the original plan are now complete. The site is fully built out: 25 static pages, zero
-`tsc`/`astro build` errors, dev-server smoke-tested.
+All 14 phases from the original plan are now complete, and two design passes have run on top of them. The site
+builds to **26 static pages** with zero `tsc --noEmit` and zero `astro build` errors.
 
 1. ✅ **Scaffolding.**
 2. ✅ **Tokens + layout shell.**
@@ -92,10 +90,9 @@ All 14 phases from the original plan are now complete. The site is fully built o
     Don't re-attempt the same approach expecting a different result unless something about the sandbox's process
     isolation has changed; if a real screenshot is needed, either try `--remote-debugging-port` (TCP instead of a
     pipe) as a workaround, or hand this off to the user's own machine / an environment with working `chromium-cli`.
-    **Net effect: canvas animation, click-driven toy state, and CRT/motion visual correctness are still only
-    verified by code review and structural HTML checks, not by watching them run.** Do one real click-through pass
-    in an actual browser — `bun run dev` and manually visit `/`, `/lab/`, `/arcade/`, and one flagship project page
-    — before calling this fully shipped.
+    **Superseded**: the recruiter pass below drove the live dev server through the in-app Browser pane and
+    exercised every interactive surface programmatically (see "What was actually verified"). Screenshots are still
+    impossible in that pane — it never composites frames — but behaviour is no longer unverified.
 
 ## Design pivot session: CRT-terminal → Y2K chrome/blue futurism
 
@@ -146,7 +143,111 @@ file changed; page structure/routes/data model did not.
   **No new browser-visual verification was done this pivot session** (see phase 14 above for why headless-Chromium
   doesn't work in this sandbox) — the same caveat applies: do a real click-through before calling the redesign done.
 
-## A real bug caught and fixed this session
+## Recruiter + UX pass (most recent session)
+
+Brief: play through every feature on the live site and fix what's broken; strip unnecessary gradients; make a
+"creative library choice" that helps the site stand out; **replace the background with a beam sweeping back and
+forth**; and judge the result through three lenses — a recruiter, a visitor who actually cares about the topics,
+and a UI/UX designer who can smell an AI-generated template.
+
+### Visual system
+
+- **Gradients: one per view.** `--holo-gradient` was deleted from `tokens.css` outright and the `.marquee-header`
+  that used it was replaced by `SectionHead.astro` (a quiet label/meta rule). `--chrome-button*` went from glossy
+  gradients to flat fills. What survives is `--chrome-primary` / `--chrome-primary-hover` on the single primary CTA
+  per view — so the eye has exactly one place to land. **Don't add a third gradient.**
+- **`BeamBackground.ts` replaces `HeroCanvas.ts`** (starfield + rotating radar wedge, deleted). One scanner beam
+  sweeps the full viewport on a 6.2 s `sin()` period — `sin` eases into each wall on its own, which is what makes
+  it read as a *scan* rather than a slider — trailed by 8 lagged copies and crossing a field of instrument ticks
+  along the bottom edge that brighten as it passes. Perf: the soft falloff is rasterised **once per resize** into
+  an offscreen sprite, then blitted ~9x per frame, so a full-viewport fixed canvas costs one fill + 9 `drawImage`
+  + ~40 hairlines per frame instead of rebuilding gradients 60x/s. `data-shine="off"` dims it to 0.4 rather than
+  killing it. Verified by pixel-sampling the canvas: under reduced motion the single static frame peaks at dead
+  centre (luminance 143 vs a background floor of 9) with clean symmetric falloff.
+- Hover states that were glow-only (field notes) gained a real affordance — border colour + a 2 px lift, with the
+  lift suppressed under `:root[data-motion="reduced"]`.
+
+### The creative library choice: `motion@13.1.1`
+
+Framework-free WAAPI wrapper, bundled by Astro — **no CDN, no remote font, no framework**, so it doesn't violate a
+single hard convention. Wired up in `src/lib/reveal.ts` as `[data-reveal]` (element) and `[data-reveal-group]`
+(stagger direct children, 60 ms). Applied to the hero, capability list, project grids, lab grid, about stack,
+field-notes list, project-detail head + sections, and the 404 page.
+
+**This module is more defensive than it looks, and every guard is there because something actually broke:**
+
+- The hiding CSS lives under `:root[data-reveal-state="armed"]` only. Every failure path calls `disarm()`, which
+  flips that attribute off and makes all content unconditionally visible. Progressive enhancement, not decoration.
+- Above-the-fold elements animate **immediately** instead of waiting on `inView` — an intersection callback for
+  something already on screen at load fires at an unreliable moment, or not at all.
+- The failsafe checks **real computed opacity** after 1200 ms, not a "did we call animate()" flag. The first draft
+  used the flag and never fired, because `animate()` was called fine — it just never rendered.
+- Motion's option is **`ease`**, not the WAAPI `easing`. The latter typechecks past a plain variable and is then
+  silently ignored, quietly downgrading the curve to the default. Caught by `tsc --noEmit`, not by `astro build`.
+
+### Bugs found and fixed by actually driving the site
+
+1. **`data-reveal` attribute collision.** The blocking head script set `html.dataset.reveal = "armed"`, so
+   `querySelectorAll("[data-reveal]")` matched `<html>` itself and animated the whole document. Renamed the state
+   attribute to `data-reveal-state` / `dataset.revealState` across `BaseLayout.astro`, `effects.css` (x2), and
+   `DisplayControls.ts`. **Lesson: never give a state attribute the same name as a content hook.**
+2. **Hero content stuck at `opacity: 0`.** Diagnosed live: `document.visibilityState === "hidden"` and
+   `el.getAnimations() === []`. A hidden document gets no rAF, so motion queues animations that never start — and
+   this hits any real page opened into a **background tab**, which is exactly what a recruiter middle-clicking
+   several portfolio links does. Fixed with a `document.hidden` deferral + `visibilitychange` resume in both
+   `reveal.ts` and `lazyMount.ts`.
+3. **Toys had no reserved height and no fallback.** `[data-toy]` divs were empty and `.toy-mount` had **no CSS
+   anywhere** in the codebase, so frames collapsed and jumped when a toy mounted, and no-JS visitors saw blank
+   boxes. Fixed with `ToyMount.astro` (server-rendered placeholder + `--toy-min-height`) plus matching CSS. Every
+   toy's `mount()` starts with `root.innerHTML = ...`, so the placeholder is replaced cleanly.
+4. **`data-reveal-group` on the `ProjectGrid` *wrapper*** staggered one wrapper div instead of the cards. Fixed
+   with a `reveal` prop on `ProjectGrid` itself, which puts the attribute on `.project-grid`.
+5. **The filtered-empty state was a dead end** — copy, no way out. It now contains a real "Clear filters" button;
+   `ProjectFilters.ts` grew from a single `reset` to a deduped `resets` array so the toolbar and empty-state
+   buttons stay in sync.
+6. **`tsc` type errors that `astro build` happily ignored**: `CONTACT` was `as const`, which narrowed the empty
+   strings to `""` and then to `never` inside their own truthiness guards — now typed with an explicit
+   `ContactConfig` interface, which is also what makes the fields fillable. **Run `bunx tsc --noEmit` separately;
+   `astro build` does not typecheck script modules.**
+
+### Recruiter-facing additions
+
+- **`src/pages/contact.astro` was a dead end** — it literally enumerated why there was no email. Now: availability
+  headline, response-time lede, channel cards, and a CTA row. `src/data/contact.ts` drives it; `email`, `linkedin`,
+  and `resumeUrl` ship **empty on purpose** (publishing the user's address is their call, not an agent's) and each
+  one renders itself the moment it's filled in — `resumeUrl` also grows a "Download CV" button. **This is the
+  single highest-value thing the user can do to this site: fill in those three strings.**
+- **`src/pages/404.astro`** — new; a lost visitor gets three featured projects instead of a dead end.
+- **Footer display controls** (`DisplayControls.ts`) — shine and motion were previously reachable *only* via
+  Ctrl+K, which nobody discovers. Rendered `hidden` server-side so a no-JS visitor never sees a dead control.
+
+### What was actually verified
+
+Driven through the in-app Browser pane against `bun run dev`, programmatically (the pane never composites frames,
+so **screenshots are impossible — don't retry them expecting different results**; `javascript_tool` and
+`get_page_text` both work fine):
+
+- Footer shine/motion toggles: attribute + `localStorage` + label + `aria-pressed`, both directions, including the
+  reveal-disarm when motion is switched off.
+- `/projects/`: search, empty state, empty-state reset, toolbar reset, star sort, category filter with
+  `atma:last-category` persistence, live `aria-live` result count.
+- All six client modules (`RadarToy`, `SpectrogramToy`, `SignalMapToy`, `ReactionMiniGame`, `TerminalToy`,
+  `BeamBackground`) `mount()` -> non-empty markup -> `destroy()` cleanly via dynamic import.
+- `canvasLoop.ts` read end-to-end to confirm by inspection what a hidden pane can't show: synchronous initial
+  `resize()`, exactly one static frame under `data-motion="reduced"` with no rAF started, dual
+  `visibilitychange` + IntersectionObserver pausing, debounced ResizeObserver, complete `stop()` teardown. **No
+  change was needed** — don't "fix" it.
+- `bunx tsc --noEmit` clean, `bun run build` clean at 26 pages.
+
+### Known gaps, deliberately left
+
+- `CONTACT.email` / `linkedin` / `resumeUrl` are empty — the user's call (see above).
+- Field notes are still only the 3 seed posts; thin for a visitor who came for the topics.
+- `SignalMapToy.ts` still hand-rolls `setupCanvasDPR` instead of using `startCanvasLoop` — a real convention
+  violation, harmless today, worth folding in next time that file is touched.
+- Nothing from this pass has been committed.
+
+## A real bug caught and fixed in the Y2K pivot session
 
 The first draft of `/projects/[slug].astro`'s demo-toy mounting script used `<script define:vars={{ demoType }}>`
 with a relative `import(...)` inside. **`define:vars` forces Astro to treat the script as inline/unprocessed** — it
@@ -174,8 +275,8 @@ script. **Lesson for future toy-mounting scripts on this site: never combine `de
 
 - 19 real repos on `github.com/arcTanMyAngle`; the 6 flagship slugs are `look-above`, `global_unrest`,
   `bird_acoustics`, `arcade`, `real-timereaction`, `foliage_disease_classification`.
-- All 25 static routes build clean: `/`, `/projects/`, `/projects/<15 slugs>/`, `/lab/`, `/arcade/`, `/about/`,
-  `/contact/`, `/field-notes/`, `/field-notes/<3 slugs>/`.
+- All 26 static routes build clean: `/`, `/projects/`, `/projects/<15 slugs>/`, `/lab/`, `/arcade/`, `/about/`,
+  `/contact/`, `/field-notes/`, `/field-notes/<3 slugs>/`, `/404`.
 - `public/og-default.png` was generated by a throwaway Python/Pillow script (not committed to the repo, it lived in
   the session scratchpad) — if the OG image ever needs regenerating, it'll need to be rebuilt from scratch the same
   way (or hand-designed properly); there's no script in this repo that produces it.

@@ -5,15 +5,21 @@ import ProjectCard from "./ProjectCard.astro";
 interface Props {
   projects: Project[];
   id?: string;
+  /** Stagger the cards in on scroll. Set on the grid itself so the cards are the
+      animated children, not the wrapper. */
+  reveal?: boolean;
 }
 
-const { projects, id } = Astro.props;
+const { projects, id, reveal = false } = Astro.props;
 ---
 
-<div class="project-grid" id={id}>
+<div class="project-grid" id={id} data-reveal-group={reveal ? "" : undefined}>
   {projects.map((project) => <ProjectCard project={project} />)}
 </div>
-<p class="project-grid__empty" id={id ? `${id}-empty` : undefined} hidden>No projects match those filters.</p>
+<div class="project-grid__empty" id={id ? `${id}-empty` : undefined} hidden>
+  <p>No repositories match those filters.</p>
+  <button type="button" class="beveled-button beveled-button--sm" data-filter-reset>Clear filters</button>
+</div>
 
 <style>
   .project-grid {
@@ -22,8 +28,15 @@ const { projects, id } = Astro.props;
     gap: var(--space-5);
   }
   .project-grid__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
     color: var(--color-text-dim);
-    padding-block: var(--space-6);
+    padding-block: var(--space-7);
     text-align: center;
+  }
+  .project-grid__empty[hidden] {
+    display: none;
   }
 </style>
