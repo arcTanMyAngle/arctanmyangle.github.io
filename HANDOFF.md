@@ -1,5 +1,9 @@
 # Handoff — resume here
 
+> **Superseded (2026-10-17).** A hub rebuild is underway. Start at `docs/hub/STATE.md`, then `docs/hub/PLAN.md`.
+> This file describes the old instrument-panel portfolio and is kept for history only; its plan path below is
+> stale.
+
 Status snapshot for picking this build back up in a fresh session. Read `CLAUDE.md` alongside this for durable
 conventions. The full approved architecture plan (data pipeline design, CSS architecture, hydration pattern, canvas
 perf discipline, workflow shape, build order) lives at

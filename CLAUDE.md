@@ -10,8 +10,9 @@ package manager/runtime. **Dark instrument-panel aesthetic** — deep indigo-bla
 behind everything. Restraint is the point: **exactly one gradient-filled element per view** (the primary CTA,
 `--chrome-primary`); every other surface is a flat fill with a `--hairline` bevel. (Design history: a CRT/arcade
 build → a glossy Y2K chrome pivot → this de-gradiented pass. Stray "CRT" or "holographic foil" references anywhere
-are leftovers from those renames, not intentional.) For current build status and exact next steps, read
-`HANDOFF.md` in this repo first.
+are leftovers from those renames, not intentional.) **A hub rebuild (Clean-zine redesign, Cloudflare Pages,
+owner admin) is in progress and will replace this aesthetic in M1** — for current status and exact next steps,
+read `docs/hub/STATE.md` first.
 
 ## Hard conventions — do not deviate without asking
 
@@ -74,10 +75,10 @@ are leftovers from those renames, not intentional.) For current build status and
 
 ## Token-efficiency notes for future sessions
 
-- Read `HANDOFF.md` first — it has current build status and exact next steps, so `git status`/full-repo exploration
-  at session start usually isn't necessary.
+- Read `docs/hub/STATE.md` first — it has current milestone, next exact task and blockers for the hub rebuild
+  (plan: `docs/hub/PLAN.md`, decisions: `docs/hub/DECISIONS.md`). `HANDOFF.md` describes the old site only.
 - The real GitHub repo data (descriptions, tech stacks, README-derived facts for the 6 flagship projects) is already
   fully captured in `src/data/project-overrides.ts`. Don't re-fetch READMEs or the GitHub API "to verify" — that was
   done once, deliberately, from the live API. Only re-fetch if the user explicitly asks for updated project copy.
-- Don't re-explore the whole repo tree at the start of a session by default — `HANDOFF.md` + this file are the
-  intended fast-start path.
+- Don't re-explore the whole repo tree at the start of a session by default — `docs/hub/STATE.md` + this file are
+  the intended fast-start path.
