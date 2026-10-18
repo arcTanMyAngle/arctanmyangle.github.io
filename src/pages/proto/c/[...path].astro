@@ -1,0 +1,43 @@
+---
+// M1.1 prototype C ("pro modern", D-14). Dev-only: getStaticPaths returns nothing in a production
+// build, so `bun run build` never emits /proto/c/*. One route file for the whole prototype so its
+// global stylesheet (Shell.astro) never reaches prototypes A or B.
+import Home from "../../../proto/c/pages/Home.astro";
+import Arcade from "../../../proto/c/pages/Arcade.astro";
+import Stacker from "../../../proto/c/pages/Stacker.astro";
+import Reaction from "../../../proto/c/pages/Reaction.astro";
+import Chess from "../../../proto/c/pages/Chess.astro";
+import ChessPlay from "../../../proto/c/pages/ChessPlay.astro";
+import Lab from "../../../proto/c/pages/Lab.astro";
+import Tabs from "../../../proto/c/pages/Tabs.astro";
+import Skate from "../../../proto/c/pages/Skate.astro";
+import Projects from "../../../proto/c/pages/Projects.astro";
+import About from "../../../proto/c/pages/About.astro";
+
+const pages = {
+  "": Home,
+  arcade: Arcade,
+  "arcade/stacker": Stacker,
+  "arcade/reaction": Reaction,
+  chess: Chess,
+  "chess/play": ChessPlay,
+  lab: Lab,
+  tabs: Tabs,
+  skate: Skate,
+  projects: Projects,
+  about: About,
+} as const;
+
+export function getStaticPaths() {
+  if (!import.meta.env.DEV) return [];
+  // getStaticPaths runs in its own scope, so it can't see `pages` above; keep this list in step.
+  const keys = ["", "arcade", "arcade/stacker", "arcade/reaction", "chess", "chess/play"];
+  keys.push("lab", "tabs", "skate", "projects", "about");
+  return keys.map((key) => ({ params: { path: key || undefined } }));
+}
+
+const key = (Astro.params.path ?? "") as keyof typeof pages;
+const Page = pages[key];
+---
+
+<Page />

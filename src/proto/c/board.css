@@ -1,0 +1,158 @@
+/* Prototype C chess board. Global because the line boards and the two-player board build their
+   piece and marker elements on the client. Imported once, from Shell.astro. */
+
+.board {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  container-type: inline-size;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  box-shadow:
+    0 0 0 1px var(--line-2),
+    0 24px 48px -28px rgb(0 0 0 / 0.7);
+}
+.board__squares {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+}
+.sq {
+  position: relative;
+  background: var(--board-light);
+}
+.sq--dark {
+  background: var(--board-dark);
+}
+.sq__file,
+.sq__rank {
+  position: absolute;
+  font: 650 max(8px, 2.6cqi) / 1 var(--sans);
+  color: var(--board-dark);
+  pointer-events: none;
+}
+.sq--dark .sq__file,
+.sq--dark .sq__rank {
+  color: var(--board-light);
+}
+.sq__file {
+  right: 6%;
+  bottom: 6%;
+}
+.sq__rank {
+  left: 6%;
+  top: 6%;
+}
+.board--mini .sq__file,
+.board--mini .sq__rank {
+  display: none;
+}
+
+.board__marks,
+.board__pieces {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.pc,
+.mark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 12.5%;
+  height: 12.5%;
+  transform: translate(calc(var(--x, 0) * 100%), calc(var(--y, 0) * 100%));
+}
+.pc-svg {
+  width: 100%;
+  height: 100%;
+  padding: 6%;
+  overflow: visible;
+}
+.pc-svg path {
+  stroke-width: 3.2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.pc-w path {
+  fill: #fbfaf6;
+  stroke: #1b1d23;
+}
+.pc-b path {
+  fill: #23262e;
+  stroke: #0b0c0f;
+}
+.pc-svg .pc-detail {
+  fill: none;
+}
+.pc-w .pc-detail {
+  stroke: #1b1d23;
+}
+.pc-b .pc-detail {
+  stroke: #cfd3dc;
+}
+.pc-svg {
+  filter: drop-shadow(0 1.5px 0 rgb(0 0 0 / 0.25));
+}
+.pc[hidden] {
+  display: none;
+}
+
+.mark--last {
+  background: color-mix(in oklab, #f6c453 46%, transparent);
+}
+.mark--sel {
+  background: color-mix(in oklab, #f6c453 62%, transparent);
+}
+.mark--check {
+  background: radial-gradient(circle, rgb(239 68 68 / 0.9) 0 30%, rgb(239 68 68 / 0) 72%);
+}
+.mark--dot::after {
+  content: "";
+  position: absolute;
+  inset: 37%;
+  border-radius: 50%;
+  background: rgb(15 18 24 / 0.32);
+}
+.mark--take::after {
+  content: "";
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  border: max(3px, 0.9cqi) solid rgb(15 18 24 / 0.32);
+}
+.mark--hover {
+  box-shadow: inset 0 0 0 max(3px, 0.7cqi) rgb(255 255 255 / 0.7);
+}
+.mark--focus {
+  box-shadow: inset 0 0 0 max(3px, 0.7cqi) var(--chess);
+}
+
+/* Motion: pieces glide between squares. Off under reduced motion, and off while a board resets. */
+:root[data-motion="full"] .pc {
+  transition: transform 420ms cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+:root[data-motion="full"] .board--snap .pc,
+:root[data-motion="full"] .pc--drag {
+  transition: none;
+}
+:root[data-motion="full"] .pc--arrive .pc-svg {
+  animation: pc-pop 380ms cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+@keyframes pc-pop {
+  40% {
+    transform: scale(1.08);
+  }
+}
+.pc--drag {
+  z-index: 5;
+}
+.pc--drag .pc-svg {
+  transform: scale(1.12);
+  filter: drop-shadow(0 8px 10px rgb(0 0 0 / 0.35));
+}

@@ -1,0 +1,153 @@
+---
+// Shared layout for a playable page: back link, title, the game itself and a side panel.
+// Default slot = the game card; slot "side" = stats, controls and how-to-play.
+import Icon from "./Icon.astro";
+import { href } from "./site";
+
+interface Props {
+  title: string;
+  lede: string;
+  back: { label: string; path: string };
+}
+
+const { title, lede, back } = Astro.props;
+---
+
+<div class="wrap gf">
+  <a class="gf__back" href={href(back.path)}>
+    <Icon name="arrow" size={16} class="gf__back-icon" />
+    {back.label}
+  </a>
+  <header class="gf__head">
+    <h1>{title}</h1>
+    <p class="muted">{lede}</p>
+  </header>
+  <div class="gf__grid">
+    <div class="gf__main"><slot /></div>
+    <aside class="gf__side"><slot name="side" /></aside>
+  </div>
+</div>
+
+<style>
+  .gf {
+    padding-top: clamp(1.5rem, 4vw, 2.5rem);
+  }
+  .gf__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.25rem;
+    color: var(--text-2);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-decoration: none;
+  }
+  .gf__back:hover {
+    color: var(--text);
+  }
+  .gf__back :global(.gf__back-icon) {
+    transform: rotate(180deg);
+  }
+  .gf__head {
+    margin: 1rem 0 2rem;
+  }
+  .gf__head h1 {
+    font-size: clamp(2.25rem, 5vw, 3.25rem);
+    letter-spacing: -0.04em;
+  }
+  .gf__head p {
+    max-width: 56ch;
+    margin-top: 0.75rem;
+    font-size: 1.0625rem;
+  }
+  .gf__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+    gap: 1.5rem;
+    align-items: start;
+  }
+  .gf__main,
+  .gf__side {
+    min-width: 0;
+  }
+  .gf__side {
+    display: grid;
+    gap: 1rem;
+  }
+  @media (max-width: 56rem) {
+    .gf__grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* Side-panel building blocks, shared by every game page. */
+  .gf__side :global(.panel) {
+    padding: 1.25rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .gf__side :global(.panel h2) {
+    margin-bottom: 0.875rem;
+    color: var(--text-3);
+    font: 600 0.75rem/1.4 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .gf__side :global(.stats) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 0;
+  }
+  .gf__side :global(.stats div) {
+    padding: 0.75rem 0.875rem;
+    border-radius: var(--radius-s);
+    background: var(--surface-2);
+  }
+  .gf__side :global(.stats dt) {
+    color: var(--text-2);
+    font-size: 0.8125rem;
+  }
+  .gf__side :global(.stats dd) {
+    margin: 0.125rem 0 0;
+    font: 650 1.625rem/1.2 var(--mono);
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .gf__side :global(.howto) {
+    display: grid;
+    gap: 0.625rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text-2);
+    font-size: 0.9375rem;
+  }
+  .gf__side :global(.howto li) {
+    display: flex;
+    gap: 0.625rem;
+    align-items: baseline;
+  }
+  .gf__side :global(.howto .kbd) {
+    flex-shrink: 0;
+    color: var(--text);
+  }
+  .gf__side :global(.field) {
+    display: grid;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--text-2);
+  }
+  .gf__side :global(select),
+  .gf__main :global(select) {
+    min-height: 2.5rem;
+    padding: 0 0.75rem;
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius-s);
+    background: var(--surface-2);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.9375rem;
+  }
+</style>

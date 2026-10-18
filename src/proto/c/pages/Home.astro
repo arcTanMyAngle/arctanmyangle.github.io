@@ -1,0 +1,537 @@
+---
+import Shell from "../Shell.astro";
+import Icon from "../Icon.astro";
+import Board from "../Board.astro";
+import StackerPreview from "../StackerPreview.astro";
+import { fenAfter } from "../chessLine";
+import { chessLines, experiments, href, interests, numbered } from "../site";
+import repoData from "../../../data/github-repos.generated.json";
+
+const italian = chessLines.find((l) => l.slug === "italian")!;
+// Server-render the line's final position so the tile shows a real board before (or without) JS.
+const finalFen = fenAfter(italian.moves);
+
+const repos = repoData.repos.filter((r) => !r.fork && !r.archived).slice(0, 4);
+---
+
+<Shell title="Home" section="home">
+  <section class="hero wrap">
+    <p class="hero__pill">
+      <span class="hero__dots" aria-hidden="true">
+        <i data-hue="arcade"></i><i data-hue="chess"></i><i data-hue="lab"></i><i data-hue="tabs"></i><i
+          data-hue="skate"
+        ></i>
+      </span>
+      Arcade · Chess · Lab · Tabs · Skate
+    </p>
+    <h1>Things I play, build and keep coming back&nbsp;to.</h1>
+    <p class="hero__lede">
+      Small games you can play right here, the chess openings I actually use, a board for two, and experiments with
+      flight and event data. A skateboarding sim is in the works.
+    </p>
+    <div class="actions">
+      <a class="btn btn--primary" href={href("arcade/stacker")}>
+        <Icon name="play" size={16} /> Play Stacker
+      </a>
+      <a class="btn" href={href("chess/play")}>
+        <Icon name="users" size={16} /> Play chess with a friend
+      </a>
+    </div>
+  </section>
+
+  <section class="wrap bento" aria-label="Sections">
+    <!-- Arcade -->
+    <article class="card tile tile--arcade card--lift" data-hue="arcade" data-spotlight>
+      <div class="tile__body">
+        <span class="eyebrow">Arcade</span>
+        <h2><a class="card__link" href={href("arcade")}>Quick games, fair rules</a></h2>
+        <p>Stacker and Reaction. Keyboard or touch, best scores kept on this device.</p>
+      </div>
+      <StackerPreview />
+      <span class="tile__go" aria-hidden="true"><Icon name="arrow" /></span>
+    </article>
+
+    <!-- Chess -->
+    <article class="card tile tile--chess card--lift" data-hue="chess" data-spotlight>
+      <div class="tile__body">
+        <span class="eyebrow">Chess</span>
+        <h2><a class="card__link" href={href("chess")}>The lines I play</a></h2>
+        <p>{chessLines.length} openings, each on its own animated board. Or sit down with a friend and play.</p>
+      </div>
+      <div class="tile__board" data-line-mini data-moves={italian.moves.join(" ")}>
+        <Board fen={finalFen} mini label={`${italian.name}: ${numbered(italian.moves)}`} />
+      </div>
+      <a class="btn btn--small tile__extra" href={href("chess/play")}><Icon name="users" size={15} /> Play a friend</a>
+    </article>
+
+    <!-- Lab -->
+    <article class="card tile tile--lab card--lift" data-hue="lab" data-spotlight>
+      <div class="radar" aria-hidden="true">
+        <span class="radar__ring" style="--r:1"></span>
+        <span class="radar__ring" style="--r:2"></span>
+        <span class="radar__ring" style="--r:3"></span>
+        <span class="radar__sweep"></span>
+      </div>
+      <div class="tile__body">
+        <span class="eyebrow">Lab</span>
+        <h2><a class="card__link" href={href("lab")}>Data you can poke at</a></h2>
+        <p>{experiments.map((e) => e.title).join(" and ")}, on their way to the browser.</p>
+      </div>
+    </article>
+
+    <!-- Tabs -->
+    <article class="card tile tile--tabs card--lift" data-hue="tabs" data-spotlight>
+      <div class="strings" aria-hidden="true">
+        {[0, 1, 2, 3, 4, 5].map((i) => <span class="strings__s" style={`--i:${i}`} />)}
+        {[1, 2, 3, 4].map((i) => <span class="strings__fret" style={`--f:${i}`} />)}
+      </div>
+      <div class="tile__body">
+        <span class="eyebrow">Tabs</span>
+        <h2><a class="card__link" href={href("tabs")}>Guitar tabs</a></h2>
+        <p>Follow along one bar at a time. <span class="badge badge--muted">Coming soon</span></p>
+      </div>
+    </article>
+
+    <!-- Skate -->
+    <article class="card tile tile--skate card--lift" data-hue="skate" data-spotlight>
+      <div class="skate" aria-hidden="true">
+        <svg viewBox="0 0 200 90" class="skate__svg">
+          <ellipse class="skate__shadow" cx="100" cy="80" rx="62" ry="4"></ellipse>
+          <g class="skate__board">
+            <path class="skate__deck" d="M24 44q4 10 18 10h116q14 0 18-10"></path>
+            <rect class="skate__truck" x="52" y="55" width="16" height="5" rx="2"></rect>
+            <rect class="skate__truck" x="132" y="55" width="16" height="5" rx="2"></rect>
+            <circle class="skate__wheel" cx="56" cy="66" r="6"></circle>
+            <circle class="skate__wheel" cx="144" cy="66" r="6"></circle>
+          </g>
+        </svg>
+      </div>
+      <div class="tile__body">
+        <span class="eyebrow">Skate</span>
+        <h2><a class="card__link" href={href("skate")}>A skate sim, in the works</a></h2>
+        <p>Flatground first: ollies, kickflips, honest physics.</p>
+      </div>
+    </article>
+
+    <!-- Projects -->
+    <article class="card tile tile--projects card--lift" data-hue="projects" data-spotlight>
+      <div class="tile__body">
+        <span class="eyebrow">Projects</span>
+        <h2><a class="card__link" href={href("projects")}>Code on GitHub</a></h2>
+        <p>Everything public, straight from the repos.</p>
+      </div>
+      <ul class="repolist" role="list">
+        {
+          repos.map((r) => (
+            <li>
+              <span class="mono">{r.name}</span>
+              {r.language && <span class="repolist__lang">{r.language}</span>}
+            </li>
+          ))
+        }
+      </ul>
+    </article>
+
+    <!-- About -->
+    <article class="card tile tile--about card--lift" data-hue="about" data-spotlight>
+      <div class="tile__body">
+        <span class="eyebrow">About</span>
+        <h2><a class="card__link" href={href("about")}>What I'm into</a></h2>
+      </div>
+      <ul class="chips" role="list">
+        {interests.map((i) => <li data-hue={i.section}>{i.title}</li>)}
+      </ul>
+    </article>
+  </section>
+</Shell>
+
+<script>
+  import { mount } from "../chessLine";
+  const el = document.querySelector<HTMLElement>("[data-line-mini]");
+  if (el) mount(el, { stepMs: 1200 });
+</script>
+
+<style>
+  .hero {
+    position: relative;
+    padding-block: clamp(3.5rem, 10vw, 7rem) clamp(2.5rem, 6vw, 4rem);
+  }
+  .hero__pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.375rem 0.875rem 0.375rem 0.625rem;
+    border: 1px solid var(--line-2);
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--surface) 70%, transparent);
+    color: var(--text-2);
+    font: 500 0.8125rem/1.4 var(--mono);
+  }
+  .hero__dots {
+    display: inline-flex;
+  }
+  .hero__dots i {
+    width: 9px;
+    height: 9px;
+    margin-left: -2px;
+    border: 1.5px solid var(--surface);
+    border-radius: 50%;
+    background: var(--hue);
+  }
+  .hero h1 {
+    max-width: 15ch;
+    margin-top: 1.5rem;
+    font-size: clamp(2.75rem, 8vw, 5.75rem);
+    font-weight: 680;
+    letter-spacing: -0.045em;
+    line-height: 0.98;
+  }
+  .hero__lede {
+    max-width: 50ch;
+    margin-block: 1.5rem 2.25rem;
+    color: var(--text-2);
+    font-size: clamp(1.0625rem, 1.8vw, 1.3125rem);
+    line-height: 1.55;
+  }
+
+  /* ---------- Bento ---------- */
+  .bento {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .tile {
+    display: flex;
+    flex-direction: column;
+    min-height: 15rem;
+    padding: 1.5rem;
+  }
+  .tile > * {
+    position: relative;
+    z-index: 1;
+  }
+  .tile__body {
+    display: grid;
+    gap: 0.5rem;
+    align-content: start;
+  }
+  .tile h2 {
+    font-size: 1.375rem;
+    letter-spacing: -0.03em;
+  }
+  .tile p {
+    color: var(--text-2);
+    font-size: 0.9375rem;
+  }
+  .tile__go {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid var(--line-2);
+    border-radius: 50%;
+    color: var(--text-2);
+  }
+  .tile:hover .tile__go {
+    color: var(--hue);
+    border-color: var(--hue-line);
+  }
+  .tile__extra {
+    position: relative;
+    z-index: 3;
+    align-self: flex-start;
+    margin-top: 1rem;
+  }
+  .tile--arcade {
+    grid-column: span 7;
+    min-height: 26rem;
+  }
+  .tile--chess {
+    grid-column: span 5;
+    min-height: 26rem;
+  }
+  .tile--lab,
+  .tile--tabs,
+  .tile--skate {
+    grid-column: span 4;
+  }
+  .tile--projects {
+    grid-column: span 7;
+  }
+  .tile--about {
+    grid-column: span 5;
+  }
+  @media (max-width: 60rem) {
+    .tile--arcade,
+    .tile--chess,
+    .tile--projects,
+    .tile--about {
+      grid-column: span 12;
+    }
+    .tile--lab,
+    .tile--tabs,
+    .tile--skate {
+      grid-column: span 6;
+    }
+    .tile--skate {
+      grid-column: span 12;
+    }
+  }
+  @media (max-width: 40rem) {
+    .bento > .tile {
+      grid-column: span 12;
+    }
+    .tile--arcade,
+    .tile--chess {
+      min-height: 0;
+    }
+  }
+
+  /* ---------- Chess ---------- */
+  .tile__board {
+    width: min(100%, 17rem);
+    margin: 1.5rem auto 0;
+  }
+
+  /* ---------- Lab: radar ---------- */
+  .radar {
+    position: absolute !important;
+    right: -3.5rem;
+    bottom: -3.5rem;
+    width: 13rem;
+    aspect-ratio: 1;
+    z-index: 0 !important;
+  }
+  .radar__ring {
+    position: absolute;
+    inset: calc(50% - var(--r) * 16.6%);
+    border: 1px solid var(--hue-line);
+    border-radius: 50%;
+  }
+  .radar__sweep {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, color-mix(in oklab, var(--hue) 40%, transparent), transparent 22%);
+    mask-image: radial-gradient(circle, #000 0 70%, transparent 71%);
+  }
+  :global(:root[data-motion="full"]) .radar__sweep {
+    animation: spin 5s linear infinite;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+  .tile--lab .tile__body {
+    margin-top: auto;
+    max-width: 22ch;
+  }
+
+  /* ---------- Tabs: strings ---------- */
+  .strings {
+    position: relative;
+    height: 5.5rem;
+    margin: 0 -1.5rem 1.25rem;
+    border-block: 1px solid var(--line);
+    background: color-mix(in oklab, var(--hue) 5%, transparent);
+  }
+  .strings__s {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(12% + var(--i) * 15.2%);
+    height: calc(1px + var(--i) * 0.3px);
+    background: color-mix(in oklab, var(--text) 45%, transparent);
+    transform-origin: center;
+  }
+  .strings__fret {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(var(--f) * 22% - 6%);
+    width: 2px;
+    background: var(--line-2);
+  }
+  :global(:root[data-motion="full"]) .strings__s {
+    animation: pluck 3.2s ease-out infinite;
+    animation-delay: calc(var(--i) * 0.11s);
+  }
+  @keyframes pluck {
+    0%,
+    30%,
+    100% {
+      transform: none;
+      background: color-mix(in oklab, var(--text) 45%, transparent);
+    }
+    2% {
+      transform: translateY(-2px) scaleY(1.8);
+      background: var(--hue);
+    }
+    5% {
+      transform: translateY(1.5px);
+    }
+    8% {
+      transform: translateY(-1px);
+    }
+    11% {
+      transform: translateY(0.6px);
+    }
+    15% {
+      transform: none;
+      background: var(--hue);
+    }
+  }
+  .tile--tabs .tile__body p {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  /* ---------- Skate ---------- */
+  .skate {
+    margin: -0.5rem -0.5rem 0.75rem;
+  }
+  .skate__svg {
+    width: 100%;
+    max-width: 16rem;
+    height: auto;
+    overflow: visible;
+  }
+  .skate__deck {
+    fill: none;
+    stroke: var(--hue);
+    stroke-width: 7;
+    stroke-linecap: round;
+  }
+  .skate__truck {
+    fill: var(--text-3);
+  }
+  .skate__wheel {
+    fill: var(--surface-3);
+    stroke: var(--text-2);
+    stroke-width: 2;
+  }
+  .skate__shadow {
+    fill: color-mix(in oklab, var(--text) 12%, transparent);
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .skate__board {
+    transform-box: fill-box;
+    transform-origin: 12% 80%;
+  }
+  :global(:root[data-motion="full"]) .skate__board {
+    animation: ollie 2.8s cubic-bezier(0.35, 0, 0.25, 1) infinite;
+  }
+  :global(:root[data-motion="full"]) .skate__shadow {
+    animation: shadow 2.8s cubic-bezier(0.35, 0, 0.25, 1) infinite;
+  }
+  @keyframes ollie {
+    0%,
+    30% {
+      transform: none;
+    }
+    38% {
+      transform: rotate(-16deg);
+    }
+    52% {
+      transform: translateY(-30px) rotate(-5deg);
+    }
+    62% {
+      transform: translateY(-34px) rotate(1deg);
+    }
+    76% {
+      transform: translateY(0) rotate(0);
+    }
+    80% {
+      transform: translateY(1px);
+    }
+    84%,
+    100% {
+      transform: none;
+    }
+  }
+  @keyframes shadow {
+    0%,
+    38%,
+    80%,
+    100% {
+      transform: none;
+      opacity: 1;
+    }
+    60% {
+      transform: scaleX(0.6);
+      opacity: 0.5;
+    }
+  }
+
+  /* ---------- Projects ---------- */
+  .repolist {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin: auto 0 0;
+    padding: 1.25rem 0 0;
+    list-style: none;
+  }
+  .repolist li {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-width: 0;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    background: var(--surface-2);
+    font-size: 0.875rem;
+  }
+  .repolist li .mono {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .repolist__lang {
+    flex-shrink: 0;
+    color: var(--text-3);
+    font-size: 0.8125rem;
+  }
+  @media (max-width: 30rem) {
+    .repolist {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ---------- About ---------- */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: auto 0 0;
+    padding: 1.25rem 0 0;
+    list-style: none;
+  }
+  .chips li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.875rem;
+    border: 1px solid var(--hue-line);
+    border-radius: 999px;
+    background: var(--hue-soft);
+    font-size: 0.875rem;
+    font-weight: 550;
+  }
+  .chips li::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--hue);
+  }
+</style>

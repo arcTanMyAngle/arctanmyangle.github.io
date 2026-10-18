@@ -1,0 +1,159 @@
+---
+import Shell from "../Shell.astro";
+import GameFrame from "../GameFrame.astro";
+
+const rounds = [1, 2, 3, 4, 5];
+---
+
+<Shell title="Reaction" section="arcade" description="Wait for the signal, then hit it. Five rounds, averaged.">
+  <div data-reaction>
+    <GameFrame
+      title="Reaction"
+      lede="The pad turns green after a random wait. Hit it as fast as you can. Five rounds make one score, and false starts don't count."
+      back={{ label: "Arcade", path: "arcade" }}
+    >
+      <div class="card rx">
+        <button type="button" class="rx__pad" data-pad data-phase="idle">
+          <span class="rx__title" data-pad-title>Hit to start</span>
+          <span class="rx__sub" data-pad-sub>Needs JavaScript. Space, Enter or tap. Five rounds.</span>
+        </button>
+        <ol class="rx__rounds" aria-label="Round times">
+          {
+            rounds.map((n) => (
+              <li>
+                <span class="rx__n">Round {n}</span>
+                <span class="rx__t mono" data-round={n}>–</span>
+              </li>
+            ))
+          }
+        </ol>
+        <p class="sr-only" aria-live="polite" data-live></p>
+      </div>
+
+      <Fragment slot="side">
+        <section class="panel" aria-labelledby="rx-score">
+          <h2 id="rx-score">Score</h2>
+          <dl class="stats">
+            <div><dt>Average</dt><dd data-avg>–</dd></div>
+            <div><dt>Best average</dt><dd data-best>–</dd></div>
+          </dl>
+        </section>
+        <section class="panel" aria-labelledby="rx-howto">
+          <h2 id="rx-howto">How to play</h2>
+          <ul class="howto" role="list">
+            <li><span class="kbd">Space</span> Start, then hit when the pad turns green.</li>
+            <li><span class="kbd">Tap</span> On a phone, tap the pad.</li>
+            <li><span class="kbd">5</span> Rounds per score. Too early and the round is replayed.</li>
+          </ul>
+        </section>
+        <p class="muted rx__fine">
+          Times include your screen and input lag, so compare scores on the same device. Your best stays on this
+          device only.
+        </p>
+      </Fragment>
+    </GameFrame>
+  </div>
+</Shell>
+
+<script>
+  import { mount } from "../reaction";
+  const root = document.querySelector<HTMLElement>("[data-reaction]");
+  if (root) mount(root);
+</script>
+
+<style>
+  .rx {
+    padding: 1rem;
+  }
+  .rx__pad {
+    --pad: var(--surface-2);
+    --pad-text: var(--text);
+    display: grid;
+    place-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    min-height: clamp(18rem, 48vh, 26rem);
+    padding: 2rem 1.5rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--pad);
+    color: var(--pad-text);
+    text-align: center;
+    cursor: pointer;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .rx__title {
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+  }
+  .rx__sub {
+    max-width: 36ch;
+    margin-inline: auto;
+    font-size: 1rem;
+    opacity: 0.85;
+  }
+  /* Phase colours. "Waiting" is a warm red and "go" a strong green: told apart by the words too, never by colour alone. */
+  .rx__pad[data-phase="waiting"] {
+    --pad: #b42318;
+    --pad-text: #fff;
+    border-color: transparent;
+  }
+  .rx__pad[data-phase="go"] {
+    --pad: #15803d;
+    --pad-text: #fff;
+    border-color: transparent;
+  }
+  .rx__pad[data-phase="early"] {
+    --pad: color-mix(in oklab, var(--arcade) 18%, var(--surface-2));
+  }
+  .rx__pad[data-phase="result"],
+  .rx__pad[data-phase="done"] {
+    --pad: color-mix(in oklab, var(--hue) 10%, var(--surface-2));
+    border-color: var(--hue-line);
+  }
+  .rx__rounds {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .rx__rounds li {
+    display: grid;
+    gap: 0.125rem;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    background: var(--surface);
+  }
+  .rx__n {
+    color: var(--text-2);
+    font-size: 0.75rem;
+  }
+  .rx__t {
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .rx__t:global(.is-done) {
+    color: var(--text);
+  }
+  .rx__rounds li:has(.rx__t.is-current) {
+    border-color: var(--hue);
+  }
+  .rx__fine {
+    font-size: 0.875rem;
+  }
+  @media (max-width: 30rem) {
+    .rx__rounds {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

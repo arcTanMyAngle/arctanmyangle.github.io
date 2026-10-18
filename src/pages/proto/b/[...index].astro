@@ -1,0 +1,13 @@
+---
+// M1.1 visual-direction prototype. Dev-only: getStaticPaths returns nothing in a production
+// build, so `bun run build` never emits /proto/*. View with `bun run dev`. Each prototype has
+// its own route file so its global stylesheet is never bundled into the other one's page.
+import NightZine from "../../../proto/NightZine.astro";
+
+export function getStaticPaths() {
+  if (!import.meta.env.DEV) return [];
+  return [{ params: { index: undefined } }];
+}
+---
+
+<NightZine />

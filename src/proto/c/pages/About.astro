@@ -1,0 +1,137 @@
+---
+import Shell from "../Shell.astro";
+import Icon from "../Icon.astro";
+import { githubUrl, href, interests } from "../site";
+---
+
+<Shell title="About" section="about" description="Who's behind arcTanMyAngle, and why this site is built around the things I do.">
+  <header class="wrap page-head">
+    <span class="eyebrow">About</span>
+    <h1>Hi, I'm arcTanMyAngle.</h1>
+    <p class="lede">
+      I build things around what I'm into: games, chess, guitar, skating and data. This site is where those meet. Each
+      part is something you can open and use, not just read about.
+    </p>
+    <div class="actions">
+      <a class="btn btn--primary" href={href("arcade")}><Icon name="play" size={18} /> Play something</a>
+      <a class="btn" href={githubUrl}><Icon name="github" size={18} /> GitHub</a>
+    </div>
+  </header>
+
+  <section class="wrap" aria-labelledby="into-h">
+    <div class="section__head">
+      <div>
+        <h2 id="into-h">What I'm into</h2>
+        <p>Each one has its own corner of the site.</p>
+      </div>
+    </div>
+    <ul class="into" role="list">
+      {
+        interests.map((it) => (
+          <li class="card card--lift into__card" data-hue={it.section} data-spotlight>
+            <span class="into__dot" aria-hidden="true" />
+            <h3>
+              <a class="card__link" href={href(it.section)}>
+                {it.title}
+              </a>
+            </h3>
+            <p>{it.text}</p>
+            <span class="into__go" aria-hidden="true">
+              <Icon name="arrow" size={16} />
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="wrap section" aria-labelledby="site-h">
+    <div class="card colophon">
+      <h2 id="site-h">How this site is built</h2>
+      <ul class="colophon__list" role="list">
+        <li><strong>Static and fast.</strong> Astro pages with a little TypeScript where something needs to move.</li>
+        <li><strong>No trackers.</strong> Nothing to accept, nothing following you around.</li>
+        <li><strong>Works for everyone.</strong> Keyboard, screen readers, phones, and reduced motion are all first-class.</li>
+      </ul>
+    </div>
+  </section>
+</Shell>
+
+<style>
+  .into {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .into__card {
+    display: grid;
+    gap: 0.5rem;
+    align-content: start;
+    padding: 1.5rem;
+  }
+  .into__card > * {
+    position: relative;
+    z-index: 1;
+  }
+  .into__dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 50%;
+    background: var(--hue);
+    box-shadow: 0 0 0 5px var(--hue-soft);
+  }
+  .into__card h3 {
+    font-size: 1.25rem;
+    letter-spacing: -0.02em;
+  }
+  .into__card p {
+    color: var(--text-2);
+    font-size: 0.9375rem;
+  }
+  .into__go {
+    margin-top: 0.25rem;
+    color: var(--hue);
+  }
+  :global(:root[data-motion="full"]) .into__go {
+    transition: transform 200ms var(--ease);
+  }
+  .into__card:hover .into__go {
+    transform: translateX(4px);
+  }
+
+  .colophon {
+    display: grid;
+    gap: 1rem;
+    padding: clamp(1.25rem, 3vw, 2rem);
+  }
+  .colophon h2 {
+    font-size: 1.375rem;
+    letter-spacing: -0.03em;
+  }
+  .colophon__list {
+    display: grid;
+    gap: 0.625rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text-2);
+  }
+  .colophon__list strong {
+    color: var(--text);
+  }
+
+  @media (max-width: 60rem) {
+    .into {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 30rem) {
+    .into {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

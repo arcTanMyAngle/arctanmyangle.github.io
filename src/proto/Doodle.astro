@@ -1,0 +1,79 @@
+---
+// Hand-drawn accents for the prototypes: inline SVG, stroke = currentColor, decorative only.
+interface Props {
+  kind: "squiggle" | "loop" | "arrow" | "star" | "rule" | "swipe" | "tick" | "marker";
+  class?: string;
+}
+
+const { kind, class: className } = Astro.props;
+
+const shapes = {
+  squiggle: {
+    viewBox: "0 0 200 14",
+    stretch: true,
+    paths: ["M2 9 C 30 3, 52 13, 80 7 S 130 3, 158 9 S 188 7, 198 4"],
+  },
+  loop: {
+    viewBox: "0 0 220 80",
+    stretch: true,
+    paths: ["M122 7 C 62 2, 9 17, 11 42 C 13 69, 88 78, 150 72 C 201 66, 217 45, 208 26 C 197 7, 142 1, 90 11"],
+  },
+  arrow: {
+    viewBox: "0 0 80 50",
+    stretch: false,
+    paths: ["M5 7 C 19 38, 45 45, 70 31", "M57 23 L71 30.5 L61 42"],
+  },
+  star: {
+    viewBox: "0 0 40 40",
+    stretch: false,
+    paths: ["M20 3 L23.5 15.5 L37 14.5 L26.5 23 L31 36 L20 28.5 L8.5 36.5 L13.5 23.5 L3 15 L16 15.8 Z"],
+  },
+  rule: {
+    viewBox: "0 0 600 10",
+    stretch: true,
+    paths: ["M2 6 C 90 3, 190 8, 300 5 S 480 8, 598 4"],
+  },
+  swipe: {
+    viewBox: "0 0 300 60",
+    stretch: true,
+    paths: ["M6 34 C 70 22, 160 26, 294 18", "M10 44 C 90 34, 190 38, 290 30"],
+  },
+  tick: {
+    viewBox: "0 0 30 24",
+    stretch: false,
+    paths: ["M3 13 L11 21 L27 3"],
+  },
+  // A fat highlighter pass. Unlike the others its stroke scales with the box, so it always
+  // covers the same share of the word behind it whatever the font size.
+  marker: {
+    viewBox: "0 0 300 60",
+    stretch: true,
+    paths: ["M10 33 C 80 27, 170 35, 290 27"],
+  },
+} as const;
+
+const shape = shapes[kind];
+const scaleStroke = kind === "marker";
+---
+
+<svg
+  class:list={["doodle", `doodle--${kind}`, className]}
+  viewBox={shape.viewBox}
+  preserveAspectRatio={shape.stretch ? "none" : "xMidYMid meet"}
+  aria-hidden="true"
+  focusable="false"
+>
+  {
+    shape.paths.map((d) => (
+      <path
+        d={d}
+        fill="none"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width={scaleStroke ? 50 : undefined}
+        vector-effect={scaleStroke ? undefined : "non-scaling-stroke"}
+      />
+    ))
+  }
+</svg>

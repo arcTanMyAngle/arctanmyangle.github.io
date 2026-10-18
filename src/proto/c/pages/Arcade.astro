@@ -1,0 +1,255 @@
+---
+import Shell from "../Shell.astro";
+import Icon from "../Icon.astro";
+import StackerPreview from "../StackerPreview.astro";
+import { games, href } from "../site";
+
+const stacker = games.find((g) => g.slug === "stacker")!;
+const reaction = games.find((g) => g.slug === "reaction")!;
+---
+
+<Shell title="Arcade" section="arcade" description="Small games that play right in the browser, on a keyboard or a phone.">
+  <header class="wrap page-head">
+    <span class="eyebrow">Arcade</span>
+    <h1>Quick games, fair rules.</h1>
+    <p class="lede">
+      Each one loads instantly, plays with one key or one tap, and keeps your best score on this device. No accounts,
+      no ads.
+    </p>
+  </header>
+
+  <section class="wrap games" aria-label="Games">
+    <article class="card game card--lift" data-spotlight>
+      <div class="game__art game__art--stacker">
+        <StackerPreview />
+      </div>
+      <div class="game__body">
+        <div class="game__meta">
+          <span class="badge">Playable</span>
+          <span class="kbd">{stacker.controls}</span>
+        </div>
+        <h2><a class="card__link" href={href(`arcade/${stacker.slug}`)}>{stacker.title}</a></h2>
+        <p>{stacker.blurb}</p>
+        <span class="game__cta" aria-hidden="true">Play <Icon name="arrow" size={16} /></span>
+      </div>
+    </article>
+
+    <article class="card game card--lift" data-spotlight>
+      <div class="game__art game__art--reaction" aria-hidden="true">
+        <div class="rxmini">
+          <span class="rxmini__wait">Wait…</span>
+          <span class="rxmini__go">Go!</span>
+        </div>
+      </div>
+      <div class="game__body">
+        <div class="game__meta">
+          <span class="badge">Playable</span>
+          <span class="kbd">{reaction.controls}</span>
+        </div>
+        <h2><a class="card__link" href={href(`arcade/${reaction.slug}`)}>{reaction.title}</a></h2>
+        <p>{reaction.blurb}</p>
+        <span class="game__cta" aria-hidden="true">Play <Icon name="arrow" size={16} /></span>
+      </div>
+    </article>
+
+    <article class="card game game--wide card--lift" data-hue="chess" data-spotlight>
+      <div class="game__body">
+        <div class="game__meta">
+          <span class="badge">Two players</span>
+          <span class="kbd">Click · drag · keys</span>
+        </div>
+        <h2><a class="card__link" href={href("chess/play")}>Chess for two</a></h2>
+        <p>One board, two people, pass and play. Clocks, undo and a move list, and the game is saved if you close the tab.</p>
+        <span class="game__cta" aria-hidden="true">Sit down <Icon name="arrow" size={16} /></span>
+      </div>
+      <div class="game__art game__art--chess" aria-hidden="true">
+        {Array.from({ length: 16 }, (_, i) => <span class:list={["mini-sq", (Math.floor(i / 4) + i) % 2 ? "is-dark" : ""]} />)}
+      </div>
+    </article>
+  </section>
+
+  <section class="wrap section">
+    <p class="note">
+      <Icon name="clock" size={18} />
+      <span>
+        Next up: a flatground skateboarding sim. Follow along on the <a href={href("skate")}>skate page</a>.
+      </span>
+    </p>
+  </section>
+</Shell>
+
+<style>
+  .games {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .game {
+    display: flex;
+    flex-direction: column;
+  }
+  .game > * {
+    position: relative;
+    z-index: 1;
+  }
+  .game__art {
+    display: grid;
+    place-items: center;
+    min-height: 16rem;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--line);
+    background:
+      radial-gradient(26rem 14rem at 50% 100%, var(--hue-soft), transparent 70%),
+      var(--surface-2);
+  }
+  .game__art--stacker :global(.stackmini) {
+    margin-top: 0;
+  }
+  .game__body {
+    display: grid;
+    gap: 0.625rem;
+    align-content: start;
+    padding: 1.5rem;
+  }
+  .game__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .game__meta .kbd {
+    color: var(--text-2);
+    font-size: 0.75rem;
+  }
+  .game h2 {
+    font-size: 1.5rem;
+    letter-spacing: -0.03em;
+  }
+  .game p {
+    max-width: 46ch;
+    color: var(--text-2);
+  }
+  .game__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: 0.5rem;
+    color: var(--hue);
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+  :global(:root[data-motion="full"]) .game:hover .game__cta :global(.icon) {
+    transform: translateX(3px);
+    transition: transform 200ms var(--ease);
+  }
+
+  /* Reaction preview: the pad flips between "wait" and "go". Static "Go!" under reduced motion. */
+  .rxmini {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: min(100%, 17rem);
+    aspect-ratio: 16 / 10;
+    border-radius: var(--radius);
+    background: #15803d;
+    color: #fff;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    box-shadow: 0 18px 40px -24px rgb(0 0 0 / 0.6);
+  }
+  .rxmini > span {
+    grid-area: 1 / 1;
+  }
+  .rxmini__wait {
+    visibility: hidden;
+  }
+  :global(:root[data-motion="full"]) .rxmini {
+    animation: rx-pad 3.6s steps(1, end) infinite;
+  }
+  :global(:root[data-motion="full"]) .rxmini__wait {
+    animation: rx-wait 3.6s steps(1, end) infinite;
+  }
+  :global(:root[data-motion="full"]) .rxmini__go {
+    animation: rx-go 3.6s steps(1, end) infinite;
+  }
+  @keyframes rx-pad {
+    0% {
+      background: #b42318;
+    }
+    68% {
+      background: #15803d;
+    }
+  }
+  @keyframes rx-wait {
+    0% {
+      visibility: visible;
+    }
+    68% {
+      visibility: hidden;
+    }
+  }
+  @keyframes rx-go {
+    0% {
+      visibility: hidden;
+    }
+    68% {
+      visibility: visible;
+    }
+  }
+
+  /* Chess-for-two card: horizontal on wide screens. */
+  .game--wide {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: stretch;
+  }
+  .game--wide .game__body {
+    flex: 1;
+    align-content: center;
+  }
+  .game__art--chess {
+    display: grid;
+    grid-template-columns: repeat(4, 2.75rem);
+    grid-auto-rows: 2.75rem;
+    gap: 0;
+    place-content: center;
+    min-height: 0;
+    min-width: 18rem;
+    border-bottom: 0;
+    border-left: 1px solid var(--line);
+  }
+  .mini-sq {
+    background: var(--board-light);
+  }
+  .mini-sq.is-dark {
+    background: var(--board-dark);
+  }
+  .mini-sq:first-child {
+    border-top-left-radius: 8px;
+  }
+  .mini-sq:nth-child(4) {
+    border-top-right-radius: 8px;
+  }
+  .mini-sq:nth-child(13) {
+    border-bottom-left-radius: 8px;
+  }
+  .mini-sq:last-child {
+    border-bottom-right-radius: 8px;
+  }
+
+  @media (max-width: 48rem) {
+    .games {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .game--wide {
+      flex-direction: column-reverse;
+    }
+    .game__art--chess {
+      min-width: 0;
+      padding-block: 1.5rem;
+      border-left: 0;
+      border-bottom: 1px solid var(--line);
+    }
+  }
+</style>

@@ -1,0 +1,143 @@
+---
+import Shell from "../Shell.astro";
+import GameFrame from "../GameFrame.astro";
+import { COLS, ROWS } from "../stacker";
+---
+
+<Shell title="Stacker" section="arcade" description="Stop the sliding row in time and build to the top.">
+  <div data-stacker>
+    <GameFrame
+      title="Stacker"
+      lede="Stop the sliding row over the one below. Whatever hangs over the edge falls off, so the row gets narrower as you go. Reach the top to win."
+      back={{ label: "Arcade", path: "arcade" }}
+    >
+      <div class="card stk">
+        <div class="stk__bar">
+          <span class="badge" data-state aria-hidden="true">Press Space or tap to start</span>
+          <button type="button" class="btn btn--primary btn--small" data-act="main">Start</button>
+        </div>
+        <div
+          class="stk__pad"
+          data-pad
+          role="img"
+          aria-label="Stacker board. Press Space or Enter anywhere on the page, or tap the board, to start and to place each row."
+        >
+          <div class="stk__grid" style={`--cols:${COLS};--rows:${ROWS}`}>
+            {Array.from({ length: COLS * ROWS }, (_, i) => <span class="stk__cell" data-cell data-top={i < COLS ? "" : undefined} />)}
+          </div>
+        </div>
+        <p class="sr-only" aria-live="polite" data-live></p>
+        <noscript><p class="note stk__noscript">Stacker needs JavaScript to run.</p></noscript>
+      </div>
+
+      <Fragment slot="side">
+        <section class="panel" aria-labelledby="stk-score">
+          <h2 id="stk-score">Score</h2>
+          <dl class="stats">
+            <div><dt>Height</dt><dd data-height>0</dd></div>
+            <div><dt>Best</dt><dd data-best>–</dd></div>
+          </dl>
+        </section>
+        <section class="panel" aria-labelledby="stk-settings">
+          <h2 id="stk-settings">Speed</h2>
+          <label class="field">
+            How fast the row slides
+            <select data-difficulty>
+              <option value="easy">Easy</option>
+              <option value="normal" selected>Normal</option>
+              <option value="hard">Hard</option>
+            </select>
+          </label>
+        </section>
+        <section class="panel" aria-labelledby="stk-howto">
+          <h2 id="stk-howto">How to play</h2>
+          <ul class="howto" role="list">
+            <li><span class="kbd">Space</span> Start, then place the moving row.</li>
+            <li><span class="kbd">Tap</span> Same thing on a phone: tap the board.</li>
+            <li><span class="kbd">{ROWS}</span> Rows to the top. It speeds up as you climb.</li>
+          </ul>
+        </section>
+        <p class="muted stk__fine">Your best height stays on this device only.</p>
+      </Fragment>
+    </GameFrame>
+  </div>
+</Shell>
+
+<script>
+  import { mount } from "../stacker";
+  const root = document.querySelector<HTMLElement>("[data-stacker]");
+  if (root) mount(root);
+</script>
+
+<style>
+  .stk {
+    padding: 1rem;
+  }
+  .stk__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .stk__pad {
+    display: grid;
+    place-items: center;
+    padding: clamp(0.75rem, 3vw, 1.5rem);
+    border-radius: var(--radius);
+    background:
+      radial-gradient(28rem 18rem at 50% 100%, var(--hue-soft), transparent 70%),
+      var(--surface-2);
+    cursor: pointer;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .stk__grid {
+    --cell: min(2.5rem, calc((100vw - 5rem) / var(--cols)), calc((100vh - 16rem) / var(--rows)));
+    display: grid;
+    grid-template-columns: repeat(var(--cols), var(--cell));
+    grid-auto-rows: var(--cell);
+    gap: 3px;
+  }
+  .stk__cell {
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--text) 5%, transparent);
+  }
+  .stk__cell[data-top] {
+    box-shadow: inset 0 2px 0 var(--hue-line);
+  }
+  .stk__cell:global(.is-on) {
+    background: color-mix(in oklab, var(--hue) 60%, var(--surface-3));
+  }
+  .stk__cell:global(.is-mover) {
+    background: var(--hue);
+    box-shadow: 0 0 18px -4px var(--hue);
+  }
+  :global(:root[data-motion="full"]) .stk__cell:global(.is-cut) {
+    animation: cut 520ms var(--ease);
+  }
+  @keyframes cut {
+    0% {
+      background: var(--hue);
+      transform: translateY(0);
+    }
+    100% {
+      background: transparent;
+      transform: translateY(18px);
+    }
+  }
+  :global([data-game="won"]) .stk__cell:global(.is-on) {
+    background: var(--hue);
+  }
+  :global([data-game="over"]) .stk__pad {
+    background: var(--surface-2);
+  }
+  .stk__noscript {
+    margin-top: 1rem;
+  }
+  .stk__fine {
+    font-size: 0.875rem;
+  }
+</style>

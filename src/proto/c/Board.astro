@@ -1,0 +1,44 @@
+---
+// Server-rendered chess board: squares, an empty marker layer and the pieces for `fen`.
+// Scripts (chessLine.ts, chessPlay.ts) take over the marker and piece layers on mount, so a
+// visitor without JS still sees a real position.
+import { isLightSquare, pieceSvg, piecesFromFen, squareXY, squaresInOrder, START_FEN } from "./pieces";
+
+interface Props {
+  fen?: string;
+  flipped?: boolean;
+  mini?: boolean;
+  label?: string;
+  class?: string;
+}
+
+const { fen = START_FEN, flipped = false, mini = false, label, class: className } = Astro.props;
+const squares = squaresInOrder(flipped);
+const pieces = piecesFromFen(fen).map((p) => ({ ...p, ...squareXY(p.square, flipped) }));
+const bottomRank = flipped ? "8" : "1";
+const leftFile = flipped ? "h" : "a";
+---
+
+<div
+  class:list={["board", { "board--mini": mini }, className]}
+  role={label ? "img" : undefined}
+  aria-label={label}
+  data-board
+  data-flipped={flipped ? "" : undefined}
+>
+  <div class="board__squares" aria-hidden="true">
+    {
+      squares.map((sq) => (
+        <div class:list={["sq", isLightSquare(sq) ? "sq--light" : "sq--dark"]} data-sq={sq}>
+          {sq[1] === bottomRank && <span class="sq__file">{sq[0]}</span>}
+          {sq[0] === leftFile && <span class="sq__rank">{sq[1]}</span>}
+        </div>
+      ))
+    }
+  </div>
+  <div class="board__marks" aria-hidden="true" data-marks></div>
+  <div class="board__pieces" aria-hidden="true" data-pieces>
+    {pieces.map((p) => <span class="pc" style={`--x:${p.x};--y:${p.y}`} set:html={pieceSvg(p.color, p.type)} />)}
+  </div>
+  <slot />
+</div>
