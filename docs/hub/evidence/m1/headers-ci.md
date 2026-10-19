@@ -1,7 +1,7 @@
 # M1 headers, budgets and CI (2026-10-18)
 
 Environment: Win 11, Bun, `bun run build` then `bun run serve:dist` (local Cloudflare stand-in on :4322, reads
-`dist/_headers` once at startup). Nothing here was run against Cloudflare yet: the Pages projects aren't created.
+`dist/_headers` once at startup). The same checks on Cloudflare are in `cloudflare.md`.
 
 ## `dist/_headers` (generated, D-17)
 
@@ -27,7 +27,7 @@ Plus `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cro
 `Permissions-Policy: camera=(), microphone=(), geolocation=()`.
 
 `curl -I` against the stand-in: `/` 200 with the CSP above; `/_astro/*.js` immutable; `/nope/` 404;
-`/chess` 308 → `/chess/` (Cloudflare's own behaviour for a trailing-slash miss is still to check, T-M1-06).
+`/chess` 308 → `/chess/` (Cloudflare does the same: `cloudflare.md`).
 
 Browser check under the CSP: every route renders; theme, motion, palette, menu; chess move + save; Stacker and
 Reaction run; the home and `/chess/` boards animate (32 pieces, positions change). No CSP violations from site code.
@@ -60,4 +60,7 @@ On every push and PR: `bun install --frozen-lockfile`, `bunx tsc --noEmit`, `bun
 `bun run build`, `bun run budgets`. Locally: tsc OK, check 0 errors / 0 warnings, 24/24 tests, build OK, budgets
 all within. Not yet run on GitHub (not pushed).
 
-Not covered yet: Playwright + axe (T-M1-04), Lighthouse CI, both origins (needs Cloudflare).
+Since D-19 a `deploy` job uploads the verified `dist` to Pages project A on every push (skipped until the repo has
+`CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`).
+
+Not covered yet: Playwright + axe (T-M1-04), Lighthouse CI, origin G (no content yet).

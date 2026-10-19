@@ -1,12 +1,13 @@
-# STATE (updated 2026-10-18, M1.3 headers + CI + budgets done locally)
+# STATE (updated 2026-10-18, Cloudflare projects created, branch preview checked)
 
-Milestone: M1 in progress (M1.1, M1.2, M1.3 done)
+Milestone: M1 in progress (M1.1, M1.2, M1.3 done; Cloudflare A + G created, D-19)
 Done: M0 (b6df977). M1.1: A/B rejected, C approved (D-14, D-15). M1.2: C is the real site (D-16). M1.3: hashed CSP
 `_headers` (D-17), build-time chess plies so `/` ships no chess.js (D-18), `bun run budgets`, CI workflow, tests
-Next exact task: owner approves the two Cloudflare Pages projects (A + G); then deploy this branch to A's preview,
-run T-M1-02/03/06 there with `curl -I`, add Playwright + axe (T-M1-04), then the M1 contracts
-Blocked: Cloudflare projects on owner approval; Q-01 tabs content (M5), Q-02 projects (M3), Q-03 about (M5)
-Live: GitHub Pages (old site) until M6 cut-over
+Next exact task: owner adds repo secrets `CLOUDFLARE_API_TOKEN` (Account → Cloudflare Pages: Edit) and
+`CLOUDFLARE_ACCOUNT_ID`, then pushes `hub/m1-proto-c` so CI runs on GitHub for the first time and the `deploy` job
+redeploys the preview; then Playwright + axe (T-M1-04), the M1 contracts, and G's `play/` source (T-M1-03 on G)
+Blocked: CI deploy on the two repo secrets; Q-01 tabs content (M5), Q-02 projects (M3), Q-03 about (M5)
+Live: GitHub Pages (old site) until M6 cut-over. Preview: `https://hub-m1-proto-c.arctanmyangle.pages.dev`
 Budgets: see PLAN §4; baseline: `evidence/baseline/` (recorded; all routes already meet A-PERF-01 and A-PERF-05)
 Risks top-3: Supabase pause; Lab data rights; Stacker name/trade dress + "$1/tickets/Jackpot" framing
 
@@ -27,7 +28,7 @@ changing anything a D-entry covers. `HANDOFF.md` at the repo root describes the 
 ## Approvals still needed (owner)
 
 - Create the new Supabase project (never reuse "Chemclicks") — M2.
-- Create the two Cloudflare Pages projects — M1.
+- Add the two Cloudflare secrets to the GitHub repo, then push — M1.
 - Create the GitHub OAuth app — M2.
 
 ## Carry-forward (act on these, don't re-audit)
@@ -50,13 +51,21 @@ changing anything a D-entry covers. `HANDOFF.md` at the repo root describes the 
 - `bun run serve:dist` mimics Cloudflare headers, 308 trailing slash and 404.html; restart it after each build.
 - CI has never run on GitHub (branch not pushed). Lighthouse CI and Playwright/axe aren't in it yet.
 - Run `list_extensions` for `pg_jsonschema` right after the M2 Supabase project exists.
+- Cloudflare (D-19): A = `arctanmyangle`, G = `arctanmyangle-play`, classic Pages, direct upload, production branch
+  `main`, account `fe4a741c62c89442fe0fcc12b6949753`. `--force` was only needed for `pages project create`; don't
+  pass it to `pages deploy`. Direct upload can't switch to Git integration and has no deploy hook, so D-10's
+  publish hook becomes a GitHub `repository_dispatch` that re-runs CI (confirm in M2).
+- Cloudflare adds `Access-Control-Allow-Origin: *` to every response by default. Harmless for a static site; add
+  `! Access-Control-Allow-Origin` under `/*` in `build-headers.mjs` if A or G ever serves anything private.
+- Cloudflare's trailing-slash redirect is 308, not 301 (PLAN T-M1-06 wording); it's single-hop and permanent.
+- A new branch alias's TLS cert takes 1–2 min after the first deploy; curl fails with a TLS alert until then.
 
 ## Last handoff
 
-M1.3 (2026-10-18). `bun run build` = `astro build && bun scripts/build-headers.mjs`. New: `scripts/check-budgets.mjs`
-(`bun run budgets`, gzip-9, walks static imports, skips dynamic `import()`), `scripts/serve-dist.mjs`
-(`bun run serve:dist`, :4322), `.github/workflows/ci.yml`, `tests/*.test.mjs` (`bun test`), `src/lib/chessLinePlan.ts`
-(build-time only; pages pass `data-plies`). Evidence: `evidence/m1/headers-ci.md`.
-Checked: tsc, `bun run check` 0 errors / 0 warnings, 24/24 tests, build, budgets (max `/chess/play/` 21.7 KiB JS);
-every route under the CSP in the browser, boards animate, no site-caused CSP violations.
-Not checked: anything on Cloudflare, CI on GitHub, axe, Lighthouse.
+Cloudflare (2026-10-18). Owner ran `wrangler login`; created Pages projects A and G (D-19), deployed this branch's
+`dist` to A's preview by hand. `ci.yml` gains a `deploy` job (needs `verify`, push only, downloads the verified
+`dist` artifact, `bunx wrangler@4.151.1 pages deploy`, token scoped to that job, skipped without secrets); Bun
+pinned to 1.3.14 in CI. Evidence: `evidence/m1/cloudflare.md`.
+Checked on the preview: T-M1-02 PASS, T-M1-03 PASS for A, T-M1-06 PASS (308), `_redirects` 301s, every route in the
+browser with no site CSP violations. Not checked: CI on GitHub (never pushed), the `deploy` job itself, origin G,
+axe, Lighthouse.

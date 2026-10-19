@@ -18,8 +18,8 @@ records result, commit, environment, steps and evidence path. Anything not run i
 | M0.9 | M0 | Astro CSP support (confirmed); `pg_jsonschema` documented, live check deferred to M2 | coordinator | DONE | — | — | `evidence/inventory.md` §6 |
 | M1.1 | M1 | Dev-only prototypes: `/proto/a/` + `/proto/b/` (rejected, D-14); prototype C `/proto/c/` (pro modern full site, D-14/D-15) | coordinator | DONE (owner OK'd C, 2026-10-18) | A-A11Y-01 | — | deleted in M1.2 (git history) |
 | M1.2 | M1 | Promote C to the real site: tokens, `BaseLayout`, pages, toys; delete `src/proto/` + `src/pages/proto/`, old pages/toys, `motion`; `_redirects` (D-16) | coordinator | DONE | A-A11Y-01 | — | `src/layouts/BaseLayout.astro`, `src/pages/` |
-| M1.3 | M1 | `_headers` with hashed CSP + `frame-ancestors` (D-17), budget gate, CI, build-time chess plies (D-18), `serve:dist` stand-in | coordinator | DONE (local; not yet on Cloudflare) | A-OPS-01, A-PERF-01/02 | T-M1-01, T-M1-03, T-M1-05 | `evidence/m1/headers-ci.md` |
-| M1.x | M1 | Cloudflare projects, contracts, axe/Playwright, Cloudflare checks | coordinator + A | TODO (Cloudflare blocked on owner) | A-SHELL-01/02, A-OPS-01..04, A-PERF-01/02, A-A11Y-01 | T-M1-01..06 | `evidence/m1/` |
+| M1.3 | M1 | `_headers` with hashed CSP + `frame-ancestors` (D-17), budget gate, CI, build-time chess plies (D-18), `serve:dist` stand-in | coordinator | DONE (on A's Cloudflare preview since 2026-10-18) | A-OPS-01, A-PERF-01/02 | T-M1-01, T-M1-03, T-M1-05 | `evidence/m1/headers-ci.md` |
+| M1.x | M1 | Cloudflare projects (DONE: A + G, D-19; branch preview deployed), CI deploy job (needs repo secrets), contracts, axe/Playwright, G `play/` | coordinator + A | DOING | A-SHELL-01/02, A-OPS-01..04, A-PERF-01/02, A-A11Y-01 | T-M1-01..06 | `evidence/m1/` |
 | M2.x | M2 | Supabase project, RLS, RPCs, admin, Stacker bundle slice | coordinator + A | TODO | A-ADMIN-01..06, A-SEC-01..06 | T-M2-01..10 | `evidence/m2/` |
 | M3.x | M3 | Stacker tier + mobile, Reaction, game page, projects; Lab spikes | A + B | TODO | A-ARC-01..06, A-PROJ-01, A-LAB-00 | T-M3-01..06 | `evidence/m3/` |
 | L.x | Track L | look-above, global_unrest ports | B | TODO | A-LAB-01..06 | T-L-01..05 | `evidence/rights/`, `evidence/lab/` |
@@ -33,11 +33,11 @@ records result, commit, environment, steps and evidence path. Anything not run i
 |---|---|---|---|---|---|
 | T-M0-01 | DONE | PASS: rerun perf medians 100/100/100 vs 100/100/100 (Δ0, allowed ±5) | 74831d2 + uncommitted `docs/hub` | Lighthouse 12.8.2, HeadlessChrome 155, Win 11, mobile `simulate`; live github.io | `evidence/baseline/lighthouse.md` |
 | T-M1-01 | PARTIAL | `/` requests no chess.js, no G, no Supabase; still loads the mini-board replay (3.4 KiB) + piece art (2.1 KiB), see STATE | uncommitted | `serve:dist`, in-app browser | `evidence/m1/headers-ci.md` |
-| T-M1-02 | PLANNED | local stand-in: every route 200, unknown path 404; Cloudflare not checked | | | |
-| T-M1-03 | PARTIAL | origin A headers correct on the local stand-in; both origins on Cloudflare not checked | uncommitted | `serve:dist`, curl | `evidence/m1/headers-ci.md` |
+| T-M1-02 | PASS | origin A: all 11 routes 200; `/nope/`, `/games/` 404 with the 404 page | uncommitted (dist of 5dbcc9c + CI edits) | A preview `hub-m1-proto-c.arctanmyangle.pages.dev`, curl + in-app browser | `evidence/m1/cloudflare.md` |
+| T-M1-03 | PARTIAL | origin A PASS on Cloudflare: CSP byte-identical to `dist/_headers`, br/gzip, immutable `/_astro/*`; origin G empty until `play/` | uncommitted | A preview, curl | `evidence/m1/cloudflare.md` |
 | T-M1-04 | PLANNED | | | | |
 | T-M1-05 | PASS | seeded 200 KiB bundle fails A-PERF-01; over-weight `/` fails A-PERF-02; script exits 1 | uncommitted | `bun test` | `tests/budgets.test.mjs` |
-| T-M1-06 | PLANNED | stand-in gives one 308; Cloudflare not checked | | | |
+| T-M1-06 | PASS | one permanent redirect to the slash URL, then 200; Cloudflare sends 308, not the 301 the test text names (no setting) | uncommitted | A preview, curl | `evidence/m1/cloudflare.md` |
 | T-M2-01 … T-M2-10 | PLANNED | | | | |
 | T-M3-01 … T-M3-06 | PLANNED | | | | |
 | T-L-01 … T-L-05 | PLANNED | | | | |
