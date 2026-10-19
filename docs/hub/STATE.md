@@ -1,4 +1,4 @@
-# STATE (updated 2026-10-17, M1.1 prototype C built, uncommitted until owner OK)
+# STATE (updated 2026-10-18, M1.1 prototype C committed 355af5a, A/B files deleted)
 
 Milestone: M1 in progress (M1.1 prototype C built, waiting on owner)
 Done: M0 (committed b6df977). M1.1: prototypes A and B rejected (D-14); prototype C `/proto/c/` built: the full
@@ -44,7 +44,7 @@ changing anything a D-entry covers. `HANDOFF.md` at the repo root describes the 
 - Reaction needs 6 QG fixes before publishing (`evidence/inventory.md` §3).
 - Astro CSP meta can't carry `frame-ancestors`: put it in `_headers`.
 - Run `list_extensions` for `pg_jsonschema` right after the M2 Supabase project exists.
-- Delete `src/proto/` and `src/pages/proto/` once the shell lands (they're throwaway; A/B files can go now).
+- Delete `src/proto/` and `src/pages/proto/` once the shell lands (only C remains; A/B deleted 2026-10-18).
 
 ## Last handoff
 
