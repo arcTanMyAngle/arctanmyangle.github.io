@@ -3,7 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import Icon from "../components/Icon.astro";
 import Board from "../components/Board.astro";
 import StackerPreview from "../components/StackerPreview.astro";
-import { fenAfter } from "../components/chessLine";
+import { fenAfter, linePlies } from "../lib/chessLinePlan";
 import { chessLines, experiments, href, interests, numbered } from "../data/site";
 import repoData from "../data/github-repos.generated.json";
 
@@ -58,7 +58,7 @@ const repos = repoData.repos.filter((r) => !r.fork && !r.archived).slice(0, 4);
         <h2><a class="card__link" href={href("chess")}>The lines I play</a></h2>
         <p>{chessLines.length} openings, each on its own animated board. Or sit down with a friend and play.</p>
       </div>
-      <div class="tile__board" data-line-mini data-moves={italian.moves.join(" ")}>
+      <div class="tile__board" data-line-mini data-plies={JSON.stringify(linePlies(italian.moves))}>
         <Board fen={finalFen} mini label={`${italian.name}: ${numbered(italian.moves)}`} />
       </div>
       <a class="btn btn--small tile__extra" href={href("chess/play")}><Icon name="users" size={15} /> Play a friend</a>

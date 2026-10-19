@@ -1,11 +1,11 @@
 // Animated opening board: plays one line move by move, pieces gliding between squares.
-// Contract: mount(root, options) => { destroy() }. `root` carries data-moves (SAN, space-separated)
-// and contains a Board.astro ([data-board]); optional controls are [data-act="play|prev|next|restart"],
+// Contract: mount(root, options) => { destroy() }. `root` carries data-plies (JSON of the line's
+// plies from lib/chessLinePlan.ts, worked out at build time so chess.js stays off the page) and contains a Board.astro ([data-board]); optional controls are [data-act="play|prev|next|restart"],
 // move text spans are [data-ply="n"] (1-based) and [data-status] shows the current move.
 //
 // Autoplay only under data-motion="full", only while the board is on screen and the tab is visible.
 // Otherwise the board rests on the final position (what the server rendered) and steps by hand.
-import { Chess } from "chess.js";
+import type { Ply } from "../lib/chessLinePlan";
 import { pieceSvg, piecesFromFen, squareXY, START_FEN, type PieceColor, type PieceType } from "../lib/pieces";
 
 interface Frame {
@@ -24,8 +24,7 @@ interface Tracked {
   type: PieceType;
 }
 
-export function buildFrames(moves: string[]): { pieces: Tracked[]; frames: Frame[] } {
-  const chess = new Chess();
+export function buildFrames(plies: Ply[]): { pieces: Tracked[]; frames: Frame[] } {
   const start = piecesFromFen(START_FEN);
   const pieces: Tracked[] = start.map((p, id) => ({ id, color: p.color, type: p.type }));
   let bySquare = new Map(start.map((p, id) => [p.square, id] as [string, number]));
@@ -38,33 +37,24 @@ export function buildFrames(moves: string[]): { pieces: Tracked[]; frames: Frame
   };
 
   const frames: Frame[] = [snapshot()];
-  for (const san of moves) {
-    const m = chess.move(san);
+  for (const m of plies) {
     const next = new Map(bySquare);
     const id = next.get(m.from)!;
     next.delete(m.from);
-    if (m.isEnPassant()) next.delete(`${m.to[0]}${m.from[1]}`);
+    if (m.ep) next.delete(m.ep);
     next.set(m.to, id);
-    if (m.isKingsideCastle() || m.isQueensideCastle()) {
-      const rank = m.from[1];
-      const [rf, rt] = m.isKingsideCastle() ? ["h", "f"] : ["a", "d"];
-      const rook = next.get(`${rf}${rank}`)!;
-      next.delete(`${rf}${rank}`);
-      next.set(`${rt}${rank}`, rook);
+    if (m.rook) {
+      const [rf, rt] = m.rook;
+      const rook = next.get(rf)!;
+      next.delete(rf);
+      next.set(rt, rook);
     }
     bySquare = next;
-    if (m.promotion) {
+    if (m.promo) {
       types = new Map(types);
-      types.set(id, m.promotion as PieceType);
+      types.set(id, m.promo);
     }
-    let check: string | undefined;
-    if (chess.inCheck()) {
-      const turn = chess.turn();
-      for (const [sq, pid] of bySquare) {
-        if (types.get(pid) === "k" && pieces[pid].color === turn) check = sq;
-      }
-    }
-    frames.push(snapshot({ from: m.from, to: m.to, moved: id, check, san: m.san }));
+    frames.push(snapshot({ from: m.from, to: m.to, moved: id, check: m.check, san: m.san }));
   }
   return { pieces, frames };
 }
@@ -78,7 +68,7 @@ interface Options {
 
 export function mount(root: HTMLElement, options: Options = {}) {
   const { autoplay = true, stepMs = 1050 } = options;
-  const moves = (root.dataset.moves ?? "").split(/\s+/).filter(Boolean);
+  const plies: Ply[] = JSON.parse(root.dataset.plies ?? "[]");
   const board = root.querySelector<HTMLElement>("[data-board]")!;
   const flipped = board.hasAttribute("data-flipped");
   const piecesLayer = board.querySelector<HTMLElement>("[data-pieces]")!;
@@ -87,7 +77,7 @@ export function mount(root: HTMLElement, options: Options = {}) {
   const statusEl = root.querySelector<HTMLElement>("[data-status]");
   const plyEls = Array.from(root.querySelectorAll<HTMLElement>("[data-ply]"));
 
-  const { pieces, frames } = buildFrames(moves);
+  const { pieces, frames } = buildFrames(plies);
   const last = frames.length - 1;
   const motionOK = () => document.documentElement.dataset.motion === "full";
 
@@ -258,11 +248,4 @@ export function mount(root: HTMLElement, options: Options = {}) {
       document.removeEventListener("visibilitychange", onVis);
     },
   };
-}
-
-/** FEN after playing `moves` from the start, for server-rendering a line's final position. */
-export function fenAfter(moves: string[]): string {
-  const chess = new Chess();
-  for (const san of moves) chess.move(san);
-  return chess.fen();
 }

@@ -2,7 +2,7 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Board from "../../components/Board.astro";
 import Icon from "../../components/Icon.astro";
-import { fenAfter } from "../../components/chessLine";
+import { fenAfter, linePlies } from "../../lib/chessLinePlan";
 import { chessLines, href, numbered } from "../../data/site";
 
 const lines = chessLines.map((line) => ({
@@ -48,7 +48,7 @@ const groups = [
         </div>
         <div class="lines">
           {group.lines.map((line) => (
-            <article class="card line" data-line data-moves={line.moves.join(" ")} aria-labelledby={`line-${line.slug}`}>
+            <article class="card line" data-line data-plies={JSON.stringify(linePlies(line.moves))} aria-labelledby={`line-${line.slug}`}>
               <div class="line__board">
                 <Board fen={line.fen} flipped={line.flipped} label={`${line.name}: ${numbered(line.moves)}`} />
               </div>

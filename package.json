@@ -8,7 +8,9 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && bun scripts/build-headers.mjs",
+    "serve:dist": "bun scripts/serve-dist.mjs",
+    "budgets": "bun scripts/check-budgets.mjs",
     "preview": "astro preview",
     "sync:github": "bun scripts/sync-github.mjs",
     "check": "astro check"
