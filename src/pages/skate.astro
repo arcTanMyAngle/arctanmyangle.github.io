@@ -1,7 +1,7 @@
 ---
-import Shell from "../Shell.astro";
-import Icon from "../Icon.astro";
-import { href } from "../site";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Icon from "../components/Icon.astro";
+import { href } from "../data/site";
 
 const tricks = [
   { id: "ollie", name: "Ollie", text: "Pop the tail, slide the front foot up, and the board rises with you." },
@@ -16,7 +16,7 @@ const aims = [
 ];
 ---
 
-<Shell title="Skate" section="skate" description="A flatground skateboarding sim for the browser, in the works.">
+<BaseLayout title="Skate" section="skate" description="A flatground skateboarding sim for the browser, in the works.">
   <header class="wrap page-head">
     <span class="eyebrow">Skate</span>
     <h1>A skate sim, in the works.</h1>
@@ -98,7 +98,7 @@ const aims = [
       <span>While you wait, the <a href={href("arcade")}>arcade</a> has games you can play right now.</span>
     </p>
   </section>
-</Shell>
+</BaseLayout>
 
 <script>
   const root = document.querySelector<HTMLElement>("[data-skate]");

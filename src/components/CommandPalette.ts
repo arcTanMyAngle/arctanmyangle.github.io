@@ -1,4 +1,4 @@
-import { getShineMode, setShineMode, getReducedEffects, setReducedEffects } from "../lib/clientState";
+import { getReducedEffects, getTheme, setReducedEffects, setTheme } from "../lib/clientState";
 
 interface Command {
   id: string;
@@ -7,57 +7,46 @@ interface Command {
   run: () => void;
 }
 
-const KONAMI_SEQUENCE = [
-  "ArrowUp",
-  "ArrowUp",
-  "ArrowDown",
-  "ArrowDown",
-  "ArrowLeft",
-  "ArrowRight",
-  "ArrowLeft",
-  "ArrowRight",
-  "b",
-  "a",
-];
-
 function navCommands(): Command[] {
   const go = (href: string) => () => {
     window.location.href = href;
   };
   return [
+    { id: "stacker", label: "Play Stacker", hint: "/arcade/stacker", run: go("/arcade/stacker/") },
+    { id: "reaction", label: "Play Reaction", hint: "/arcade/reaction", run: go("/arcade/reaction/") },
+    { id: "chess", label: "Open chess lines", hint: "/chess", run: go("/chess/") },
+    { id: "chess-play", label: "Play chess for two", hint: "/chess/play", run: go("/chess/play/") },
     { id: "home", label: "Go to Home", hint: "/", run: go("/") },
-    { id: "projects", label: "Go to Projects", hint: "/projects", run: go("/projects/") },
-    { id: "lab", label: "Go to Lab", hint: "/lab", run: go("/lab/") },
     { id: "arcade", label: "Go to Arcade", hint: "/arcade", run: go("/arcade/") },
+    { id: "lab", label: "Go to Lab", hint: "/lab", run: go("/lab/") },
+    { id: "tabs", label: "Go to Tabs", hint: "/tabs", run: go("/tabs/") },
+    { id: "skate", label: "Go to Skate", hint: "/skate", run: go("/skate/") },
+    { id: "projects", label: "Go to Projects", hint: "/projects", run: go("/projects/") },
     { id: "about", label: "Go to About", hint: "/about", run: go("/about/") },
-    { id: "contact", label: "Go to Contact", hint: "/contact", run: go("/contact/") },
-    { id: "notes", label: "Go to Field Notes", hint: "/field-notes", run: go("/field-notes/") },
   ];
 }
 
+// Toggles go through the visible buttons when they exist, so their labels stay in step (DisplayControls).
 function toggleCommands(): Command[] {
+  const viaButton = (selector: string, fallback: () => void) => () => {
+    const button = document.querySelector<HTMLButtonElement>(selector);
+    if (button) button.click();
+    else fallback();
+  };
   return [
     {
-      id: "toggle-shine",
-      label: "Toggle chrome shine",
-      hint: getShineMode() ? "currently on" : "currently off",
-      run: () => setShineMode(!getShineMode()),
+      id: "toggle-theme",
+      label: "Toggle light/dark theme",
+      hint: `currently ${getTheme()}`,
+      run: viaButton("[data-theme-toggle]", () => setTheme(getTheme() === "dark" ? "light" : "dark")),
     },
     {
       id: "toggle-motion",
       label: "Toggle low-motion mode",
       hint: getReducedEffects() ? "currently reduced" : "currently full",
-      run: () => setReducedEffects(!getReducedEffects()),
+      run: viaButton("[data-toggle-motion]", () => setReducedEffects(!getReducedEffects())),
     },
   ];
-}
-
-// Featured-project / random-project commands are injected via registerProjectCommands()
-// once page-level project data is available (see /projects and /projects/[slug] pages),
-// keeping this module itself free of any project-data import at the global-chrome level.
-let extraCommands: Command[] = [];
-export function registerProjectCommands(commands: Command[]): void {
-  extraCommands = commands;
 }
 
 export function mount(root: HTMLElement): { destroy(): void } {
@@ -81,11 +70,10 @@ export function mount(root: HTMLElement): { destroy(): void } {
   let lastFocused: HTMLElement | null = null;
 
   function allCommands(): Command[] {
-    return [...navCommands(), ...toggleCommands(), ...extraCommands];
+    return [...navCommands(), ...toggleCommands()];
   }
 
-  // Command labels can carry repo names straight from the GitHub snapshot, so
-  // never interpolate them into innerHTML raw.
+  // Labels are static today, but never interpolate them into innerHTML raw.
   function escapeHtml(value: string): string {
     return value.replace(/[&<>"']/g, (ch) =>
       ch === "&" ? "&amp;" : ch === "<" ? "&lt;" : ch === ">" ? "&gt;" : ch === '"' ? "&quot;" : "&#39;",
@@ -171,25 +159,11 @@ export function mount(root: HTMLElement): { destroy(): void } {
   trigger?.addEventListener("click", open);
 
   // Global Ctrl/Cmd+K listener, active for the lifetime of the page.
-  let konamiBuffer: string[] = [];
   function onGlobalKeydown(e: KeyboardEvent) {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
       e.preventDefault();
       if (backdrop.hidden) open();
       else close();
-      return;
-    }
-
-    // Konami code easter egg: toggles "arcade attract mode".
-    // No-op entirely when reduced-motion is active, per spec.
-    konamiBuffer.push(e.key);
-    konamiBuffer = konamiBuffer.slice(-KONAMI_SEQUENCE.length);
-    if (konamiBuffer.length === KONAMI_SEQUENCE.length && konamiBuffer.every((k, i) => k === KONAMI_SEQUENCE[i])) {
-      konamiBuffer = [];
-      if (!getReducedEffects()) {
-        const html = document.documentElement;
-        html.dataset.attract = html.dataset.attract === "true" ? "false" : "true";
-      }
     }
   }
   document.addEventListener("keydown", onGlobalKeydown);

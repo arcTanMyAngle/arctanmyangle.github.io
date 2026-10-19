@@ -1,5 +1,5 @@
-/* Prototype C chess board. Global because the line boards and the two-player board build their
-   piece and marker elements on the client. Imported once, from Shell.astro. */
+/* Chess board. Global because the line boards and the two-player board build their piece and
+   marker elements on the client. Imported once, from BaseLayout.astro. */
 
 .board {
   position: relative;

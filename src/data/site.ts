@@ -1,8 +1,8 @@
-// Prototype C ("pro modern", D-14): site map, section hues and shared copy.
-// Dev-only. Every link goes through `href()` so promoting C to the real routes is a one-line BASE change.
+// Site map, section hues and shared copy (the pro-modern design, D-14).
+// Every internal link goes through `href()`, so a base path (if the site ever needs one) is a one-line change.
 // Only facts the owner gave or the plan commits to appear here: no invented counts, dates or results.
 
-export const BASE = "/proto/c";
+export const BASE = "";
 
 export function href(path = ""): string {
   const clean = path.replace(/^\/+|\/+$/g, "");

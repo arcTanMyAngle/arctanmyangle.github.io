@@ -1,11 +1,11 @@
 ---
-import Shell from "../Shell.astro";
-import GameFrame from "../GameFrame.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import GameFrame from "../../components/GameFrame.astro";
 
 const rounds = [1, 2, 3, 4, 5];
 ---
 
-<Shell title="Reaction" section="arcade" description="Wait for the signal, then hit it. Five rounds, averaged.">
+<BaseLayout title="Reaction" section="arcade" description="Wait for the signal, then hit it. Five rounds, averaged.">
   <div data-reaction>
     <GameFrame
       title="Reaction"
@@ -53,10 +53,10 @@ const rounds = [1, 2, 3, 4, 5];
       </Fragment>
     </GameFrame>
   </div>
-</Shell>
+</BaseLayout>
 
 <script>
-  import { mount } from "../reaction";
+  import { mount } from "../../components/reaction";
   const root = document.querySelector<HTMLElement>("[data-reaction]");
   if (root) mount(root);
 </script>

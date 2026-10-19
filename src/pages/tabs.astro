@@ -1,6 +1,6 @@
 ---
-import Shell from "../Shell.astro";
-import Icon from "../Icon.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Icon from "../components/Icon.astro";
 
 // Open chord shapes, low E string first. -1 = not played, 0 = open, n = fret.
 const chords = [
@@ -14,7 +14,7 @@ const first = chords[0];
 const chordJson = JSON.stringify(chords.map(({ id, frets }) => ({ id, frets })));
 ---
 
-<Shell title="Tabs" section="tabs" description="Guitar tabs you can follow one bar at a time. Coming soon.">
+<BaseLayout title="Tabs" section="tabs" description="Guitar tabs you can follow one bar at a time. Coming soon.">
   <header class="wrap page-head">
     <span class="eyebrow">Tabs</span>
     <h1>Guitar tabs, one bar at a time.</h1>
@@ -73,7 +73,7 @@ const chordJson = JSON.stringify(chords.map(({ id, frets }) => ({ id, frets })))
       <li class="card"><Icon name="restart" /><strong>Loop a bar</strong><span>Repeat the hard part until it sticks.</span></li>
     </ul>
   </section>
-</Shell>
+</BaseLayout>
 
 <script>
   const root = document.querySelector<HTMLElement>("[data-chords]");

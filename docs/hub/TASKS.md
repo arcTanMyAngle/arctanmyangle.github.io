@@ -16,7 +16,8 @@ records result, commit, environment, steps and evidence path. Anything not run i
 | M0.7 | M0 | Route + asset inventory | coordinator | DONE | A-M0-03 | — | `evidence/inventory.md` §1–2 |
 | M0.8 | M0 | Licence check: chess.js, cm-chessboard | coordinator | DONE | — | — | `evidence/inventory.md` §5 |
 | M0.9 | M0 | Astro CSP support (confirmed); `pg_jsonschema` documented, live check deferred to M2 | coordinator | DONE | — | — | `evidence/inventory.md` §6 |
-| M1.1 | M1 | Dev-only prototypes: `/proto/a/` + `/proto/b/` (rejected, D-14); prototype C `/proto/c/` (pro modern full site, D-14/D-15) | coordinator | DOING (C built; awaiting owner review) | A-A11Y-01 | — | `src/proto/`, `src/pages/proto/` |
+| M1.1 | M1 | Dev-only prototypes: `/proto/a/` + `/proto/b/` (rejected, D-14); prototype C `/proto/c/` (pro modern full site, D-14/D-15) | coordinator | DONE (owner OK'd C, 2026-10-18) | A-A11Y-01 | — | deleted in M1.2 (git history) |
+| M1.2 | M1 | Promote C to the real site: tokens, `BaseLayout`, pages, toys; delete `src/proto/` + `src/pages/proto/`, old pages/toys, `motion`; `_redirects` (D-16) | coordinator | DONE | A-A11Y-01 | — | `src/layouts/BaseLayout.astro`, `src/pages/` |
 | M1.x | M1 | Shell, tokens, contracts, headers, CI, Cloudflare projects | coordinator + A | TODO | A-SHELL-01/02, A-OPS-01..04, A-PERF-01/02, A-A11Y-01 | T-M1-01..06 | `evidence/m1/` |
 | M2.x | M2 | Supabase project, RLS, RPCs, admin, Stacker bundle slice | coordinator + A | TODO | A-ADMIN-01..06, A-SEC-01..06 | T-M2-01..10 | `evidence/m2/` |
 | M3.x | M3 | Stacker tier + mobile, Reaction, game page, projects; Lab spikes | A + B | TODO | A-ARC-01..06, A-PROJ-01, A-LAB-00 | T-M3-01..06 | `evidence/m3/` |

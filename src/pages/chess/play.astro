@@ -1,9 +1,9 @@
 ---
-import Shell from "../Shell.astro";
-import GameFrame from "../GameFrame.astro";
-import Board from "../Board.astro";
-import Icon from "../Icon.astro";
-import { chessLines } from "../site";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import GameFrame from "../../components/GameFrame.astro";
+import Board from "../../components/Board.astro";
+import Icon from "../../components/Icon.astro";
+import { chessLines } from "../../data/site";
 
 const linesJson = JSON.stringify(chessLines.map(({ slug, name, side, moves }) => ({ slug, name, side, moves })));
 const seats = [
@@ -12,7 +12,7 @@ const seats = [
 ] as const;
 ---
 
-<Shell title="Chess for two" section="chess" description="Pass-and-play chess on one screen, with clocks, undo and a move list.">
+<BaseLayout title="Chess for two" section="chess" description="Pass-and-play chess on one screen, with clocks, undo and a move list.">
   <div data-chess-play data-lines={linesJson}>
     <GameFrame
       title="Chess for two"
@@ -119,10 +119,10 @@ const seats = [
     </GameFrame>
     <p class="sr-only" aria-live="polite" data-live></p>
   </div>
-</Shell>
+</BaseLayout>
 
 <script>
-  import { mount } from "../chessPlay";
+  import { mount } from "../../components/chessPlay";
   const root = document.querySelector<HTMLElement>("[data-chess-play]");
   if (root) mount(root);
 </script>

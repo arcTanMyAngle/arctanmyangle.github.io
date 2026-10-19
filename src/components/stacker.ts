@@ -5,10 +5,11 @@
 //
 // Ticks are a setTimeout chain, not a rAF loop: the row moves in whole cells, so there is nothing
 // to interpolate. A hidden tab pauses the chain and the visible tab picks it up where it was.
+import { STORAGE_KEYS } from "../lib/clientState";
 
 export const COLS = 7;
 export const ROWS = 15;
-const BEST_KEY = "proto-c-stacker-best";
+const BEST_KEY = STORAGE_KEYS.stackerBest;
 const MULT = { easy: 0.72, normal: 1, hard: 1.45 } as const;
 type Difficulty = keyof typeof MULT;
 type State = "idle" | "playing" | "over" | "won";

@@ -6,9 +6,10 @@
 // the second animation frame after the colour change (the first frame the change can be on screen),
 // and the hit is the input event's own timeStamp. A hidden tab aborts the round rather than
 // producing a bogus time.
+import { STORAGE_KEYS } from "../lib/clientState";
 
 const ROUNDS = 5;
-const BEST_KEY = "proto-c-reaction-best";
+const BEST_KEY = STORAGE_KEYS.reactionBest;
 const MIN_MS = 100; // Faster than any human: treat as an anticipation, i.e. a false start.
 
 type Phase = "idle" | "waiting" | "go" | "result" | "early" | "done";

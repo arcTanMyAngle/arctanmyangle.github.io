@@ -6,7 +6,7 @@
 // Autoplay only under data-motion="full", only while the board is on screen and the tab is visible.
 // Otherwise the board rests on the final position (what the server rendered) and steps by hand.
 import { Chess } from "chess.js";
-import { pieceSvg, piecesFromFen, squareXY, START_FEN, type PieceColor, type PieceType } from "./pieces";
+import { pieceSvg, piecesFromFen, squareXY, START_FEN, type PieceColor, type PieceType } from "../lib/pieces";
 
 interface Frame {
   at: Map<number, string>;

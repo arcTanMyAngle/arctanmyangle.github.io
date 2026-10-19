@@ -9,6 +9,7 @@
 // down. Mouse and touch go through pointer events on the same layer, so click-to-move and drag both work.
 // Pieces keep their identity between positions, so moves, undo and a new game all glide.
 import { Chess, type Move, type Square } from "chess.js";
+import { STORAGE_KEYS } from "../lib/clientState";
 import {
   FILES,
   PIECE_NAMES,
@@ -19,10 +20,10 @@ import {
   xyToSquare,
   type PieceColor,
   type PieceType,
-} from "./pieces";
+} from "../lib/pieces";
 
-const STORE_KEY = "proto-c-chess-game";
-const BACKUP_KEY = "proto-c-chess-backup";
+const STORE_KEY = STORAGE_KEYS.chessGame;
+const BACKUP_KEY = STORAGE_KEYS.chessBackup;
 
 export type TimeControl = "off" | "3+2" | "5+0" | "10+0";
 const CLOCKS: Record<Exclude<TimeControl, "off">, [base: number, inc: number]> = {
@@ -514,7 +515,7 @@ export function mount(root: HTMLElement) {
     overEl.hidden = false;
   }
 
-  function refresh(snap = false) {
+  function refresh(snap = false): Result | null {
     ended = result();
     if (ended) {
       selected = null;
@@ -532,6 +533,7 @@ export function mount(root: HTMLElement) {
     renderButtons();
     renderOver();
     root.dataset.state = ended ? "over" : "play";
+    return ended;
   }
 
   // ---- Moves ----
@@ -598,8 +600,9 @@ export function mount(root: HTMLElement) {
     selTargets = new Map();
     focusSq = m.to;
     lastTick = performance.now();
-    refresh();
-    say(`${describe(m)}${ended ? ` ${ended.text}` : ""}`);
+    // Read the outcome from refresh(): TS still has `ended` narrowed to null from the guard above.
+    const over = refresh();
+    say(`${describe(m)}${over ? ` ${over.text}` : ""}`);
     save();
     scheduleAutoFlip();
   }

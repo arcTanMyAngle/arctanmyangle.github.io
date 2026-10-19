@@ -1,21 +1,32 @@
 ---
-import SiteHeader from "../components/SiteHeader.astro";
-import SiteFooter from "../components/SiteFooter.astro";
+// Document shell: meta, theme + motion init, header, footer, display controls and the command palette.
+// Pages pass their section so the nav marks it and the page picks up that section's hue.
+import Icon from "../components/Icon.astro";
+import { githubUrl, href, nav, type Section } from "../data/site";
 import "../styles/tokens.css";
 import "../styles/global.css";
 import "../styles/effects.css";
+import "../styles/board.css";
 
 interface Props {
   title: string;
-  description: string;
+  description?: string;
+  section: Section;
   ogImage?: string;
   ogType?: "website" | "article";
 }
 
-const { title, description, ogImage = "/og-default.png", ogType = "website" } = Astro.props;
+const {
+  title,
+  description = "Games, chess, guitar tabs, data experiments and a skate sim in progress.",
+  section,
+  ogImage = "/og-default.png",
+  ogType = "website",
+} = Astro.props;
 
 const siteName = "arcTanMyAngle";
-const pageTitle = title === siteName ? title : `${title} // ${siteName}`;
+// Only the home route goes by the bare site name; the 404 also sits in "home" but keeps its own title.
+const pageTitle = Astro.url.pathname === "/" ? siteName : `${title} · ${siteName}`;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 const ogImageUrl = new URL(ogImage, Astro.site);
 
@@ -26,25 +37,25 @@ const jsonLd = {
       "@type": "WebSite",
       "@id": `${Astro.site}#website`,
       url: Astro.site,
-      name: "arcTanMyAngle // project signal deck",
-      description: "A fast, static-first portfolio of real-time systems, Rust/C++ tools, edge ML, and games.",
+      name: siteName,
+      description: "Games, chess, guitar tabs, data experiments and a skate sim in progress.",
     },
     {
       "@type": "Person",
       "@id": `${Astro.site}#person`,
-      name: "arcTanMyAngle",
+      name: siteName,
       url: Astro.site,
-      sameAs: ["https://github.com/arcTanMyAngle"],
+      sameAs: [githubUrl],
     },
   ],
 };
 ---
 
 <!doctype html>
-<html lang="en" data-shine="on" data-motion="full">
+<html lang="en" data-theme="dark" data-motion="full">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonicalUrl} />
@@ -66,77 +77,171 @@ const jsonLd = {
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
 
     <script is:inline>
-      // Blocking, non-module script: must run before first paint to avoid a
-      // flash of wrong shine/motion state on every full MPA navigation.
-      // Key strings duplicated from src/lib/clientState.ts STORAGE_KEYS —
-      // keep in sync if those change.
+      // Blocking, non-module script: runs before first paint so a full navigation never flashes the
+      // wrong theme or motion state. Dark unless the visitor chose light. Key strings duplicated from
+      // src/lib/clientState.ts STORAGE_KEYS: keep in sync if those change.
       (function () {
+        var html = document.documentElement;
+        var theme = null;
+        var motion = null;
         try {
-          var shine = localStorage.getItem("atma:shine-mode");
-          var motion = localStorage.getItem("atma:reduced-effects");
-          var html = document.documentElement;
-          html.dataset.shine = shine === "off" ? "off" : "on";
-          var reduced =
-            motion === "on" ||
-            (motion !== "off" && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-          html.dataset.motion = reduced ? "reduced" : "full";
-          // Arm scroll-reveal only when JS + full motion are both live, so a
-          // no-JS visitor never lands on permanently invisible content.
-          html.dataset.revealState = reduced ? "off" : "armed";
+          theme = localStorage.getItem("atma:theme");
+          motion = localStorage.getItem("atma:reduced-effects");
         } catch (e) {
-          /* localStorage unavailable — defaults already set on <html> */
+          /* localStorage unavailable: defaults already set on <html> */
         }
+        if (theme === "light" || theme === "dark") html.dataset.theme = theme;
+        var reduced =
+          motion === "on" ||
+          (motion !== "off" && !!window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+        html.dataset.motion = reduced ? "reduced" : "full";
       })();
     </script>
   </head>
-  <body>
-    <a class="skip-link" href="#main-content">Skip to content</a>
-    <canvas class="bg-beam" id="bg-beam" aria-hidden="true"></canvas>
+  <body data-section={section}>
+    <a class="skip" href="#main">Skip to content</a>
+    <div class="glow" aria-hidden="true"></div>
 
-    <SiteHeader />
+    <header class="site-header">
+      <div class="wrap site-header__inner">
+        <a class="brand" href={href()} aria-label="arcTanMyAngle, home">
+          <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+            <rect x="1" y="1" width="30" height="30" rx="9" class="brand__tile"></rect>
+            <path d="M8 23h16" class="brand__ray"></path>
+            <path d="M8 23 22 9" class="brand__ray"></path>
+            <path d="M15 23a7 7 0 0 0-2-5" class="brand__arc"></path>
+          </svg>
+          <span class="brand__word">arcTanMyAngle</span>
+        </a>
 
-    <main id="main-content" class="site-main" tabindex="-1">
+        <nav class="site-nav" id="site-nav" aria-label="Main">
+          <ul role="list">
+            {
+              nav.map((item) => (
+                <li>
+                  <a
+                    href={href(item.path)}
+                    data-hue={item.section}
+                    aria-current={item.section === section ? "page" : undefined}
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+
+        <div class="site-header__actions">
+          <button type="button" class="icon-btn" data-theme-toggle aria-label="Switch to light theme">
+            <Icon name="sun" class="only-dark" />
+            <Icon name="moon" class="only-light" />
+          </button>
+          <a class="icon-btn" href={githubUrl} aria-label="arcTanMyAngle on GitHub">
+            <Icon name="github" />
+          </a>
+          <button
+            type="button"
+            class="icon-btn menu-btn"
+            aria-controls="site-nav"
+            aria-expanded="false"
+            aria-label="Open menu"
+            data-menu-toggle
+          >
+            <Icon name="menu" class="menu-btn__open" />
+            <Icon name="close" class="menu-btn__close" />
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" tabindex="-1">
       <slot />
     </main>
 
-    <SiteFooter />
-
-    <script>
-      import { mount } from "../components/BeamBackground";
-      import { revealAll } from "../lib/reveal";
-
-      const canvas = document.getElementById("bg-beam") as HTMLCanvasElement | null;
-      if (canvas) mount(canvas);
-      revealAll();
-    </script>
+    <footer class="site-footer">
+      <div class="wrap site-footer__inner">
+        <div class="site-footer__brand">
+          <a class="brand" href={href()}>
+            <span class="brand__word">arcTanMyAngle</span>
+          </a>
+          <p>Games, chess, guitar, skateboarding and code. Built by hand, no tracking.</p>
+        </div>
+        <nav class="site-footer__cols" aria-label="Footer">
+          <div>
+            <h2>Play</h2>
+            <ul role="list">
+              <li><a href={href("arcade/stacker")}>Stacker</a></li>
+              <li><a href={href("arcade/reaction")}>Reaction</a></li>
+              <li><a href={href("chess/play")}>Chess for two</a></li>
+            </ul>
+          </div>
+          <div>
+            <h2>Explore</h2>
+            <ul role="list">
+              <li><a href={href("chess")}>Chess lines</a></li>
+              <li><a href={href("lab")}>Lab</a></li>
+              <li><a href={href("tabs")}>Tabs</a></li>
+              <li><a href={href("skate")}>Skate sim</a></li>
+            </ul>
+          </div>
+          <div>
+            <h2>More</h2>
+            <ul role="list">
+              <li><a href={href("projects")}>Projects</a></li>
+              <li><a href={href("about")}>About</a></li>
+              <li><a href={githubUrl}>GitHub</a></li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+      <div class="wrap site-footer__base">
+        <span>System fonts · no trackers · <kbd>Ctrl</kbd> <kbd>K</kbd> for commands</span>
+        <div class="display-controls">
+          <button type="button" data-toggle-motion aria-pressed="true" hidden>Motion on</button>
+        </div>
+      </div>
+    </footer>
 
     <div id="command-palette-root"></div>
+
     <script>
-      import { mount, registerProjectCommands } from "../components/CommandPalette";
-      import { getFeaturedProjects, getAllProjects } from "../lib/projects";
+      import { mount as mountDisplayControls } from "../components/DisplayControls";
+      import { mount as mountPalette } from "../components/CommandPalette";
 
-      registerProjectCommands([
-        ...getFeaturedProjects().map((p) => ({
-          id: `open-project-${p.slug}`,
-          label: `Open project: ${p.displayName}`,
-          hint: "featured",
-          run: () => {
-            window.location.href = `/projects/${p.slug}/`;
-          },
-        })),
-        {
-          id: "random-project",
-          label: "Open a random project",
-          run: () => {
-            const all = getAllProjects();
-            const pick = all[Math.floor(Math.random() * all.length)];
-            if (pick) window.location.href = `/projects/${pick.slug}/`;
-          },
+      mountDisplayControls(document.body);
+      const paletteRoot = document.getElementById("command-palette-root");
+      if (paletteRoot) mountPalette(paletteRoot);
+
+      // Mobile menu.
+      const menuButton = document.querySelector<HTMLButtonElement>("[data-menu-toggle]");
+      const setMenu = (open: boolean) => {
+        menuButton?.setAttribute("aria-expanded", String(open));
+        menuButton?.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+        document.body.classList.toggle("menu-open", open);
+      };
+      menuButton?.addEventListener("click", () => setMenu(menuButton.getAttribute("aria-expanded") !== "true"));
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && document.body.classList.contains("menu-open")) {
+          setMenu(false);
+          menuButton?.focus();
+        }
+      });
+      window.matchMedia("(min-width: 52.01rem)").addEventListener("change", (e) => e.matches && setMenu(false));
+
+      // Pointer spotlight on interactive cards. One delegated listener; CSS only shows it under full motion.
+      document.addEventListener(
+        "pointermove",
+        (e) => {
+          if (e.pointerType !== "mouse") return;
+          const card = (e.target as Element | null)?.closest<HTMLElement>("[data-spotlight]");
+          if (!card) return;
+          const r = card.getBoundingClientRect();
+          card.style.setProperty("--mx", `${e.clientX - r.left}px`);
+          card.style.setProperty("--my", `${e.clientY - r.top}px`);
         },
-      ]);
-
-      const root = document.getElementById("command-palette-root");
-      if (root) mount(root);
+        { passive: true }
+      );
     </script>
   </body>
 </html>

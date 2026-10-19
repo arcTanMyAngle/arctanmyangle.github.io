@@ -1,73 +1,46 @@
-// Footer display toggles. The same two settings live in the command palette,
-// but a first-time visitor never opens Ctrl+K — so they get a visible control
-// too. Both write through clientState so the blocking head script picks the
-// choice up on the next navigation.
-import { getShineMode, setShineMode, getReducedEffects, setReducedEffects } from "../lib/clientState";
-
-interface Toggle {
-  button: HTMLButtonElement;
-  read: () => boolean;
-  write: (value: boolean) => void;
-  onLabel: string;
-  offLabel: string;
-}
+// Display toggles: the header theme button and the footer motion button. The same two settings live in
+// the command palette, but a first-time visitor never opens Ctrl+K, so they get visible controls too.
+// Both write through clientState so the blocking head script picks the choice up on the next navigation.
+import { getReducedEffects, getTheme, setReducedEffects, setTheme } from "../lib/clientState";
 
 export function mount(root: HTMLElement): { destroy(): void } {
-  const shineButton = root.querySelector<HTMLButtonElement>("[data-toggle-shine]");
-  const motionButton = root.querySelector<HTMLButtonElement>("[data-toggle-motion]");
+  const themeButtons = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-theme-toggle]"));
+  const motionButtons = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-toggle-motion]"));
 
-  const toggles: Toggle[] = [];
+  // The theme button holds sun/moon icons, so only its label changes.
+  const syncTheme = () => {
+    const next = getTheme() === "dark" ? "light" : "dark";
+    for (const b of themeButtons) b.setAttribute("aria-label", `Switch to ${next} theme`);
+  };
+  // Inverted on purpose: the button reads "Motion on", not "reduced on".
+  const syncMotion = () => {
+    const on = !getReducedEffects();
+    for (const b of motionButtons) {
+      b.setAttribute("aria-pressed", String(on));
+      b.textContent = on ? "Motion on" : "Motion off";
+      // Rendered hidden so a no-JS visitor never sees a dead control.
+      b.hidden = false;
+    }
+  };
 
-  if (shineButton) {
-    toggles.push({
-      button: shineButton,
-      read: getShineMode,
-      write: setShineMode,
-      onLabel: "Shine on",
-      offLabel: "Shine off",
-    });
-  }
+  const onTheme = () => {
+    setTheme(getTheme() === "dark" ? "light" : "dark");
+    syncTheme();
+  };
+  const onMotion = () => {
+    setReducedEffects(!getReducedEffects());
+    syncMotion();
+  };
 
-  if (motionButton) {
-    toggles.push({
-      button: motionButton,
-      // Inverted on purpose: the button reads "Motion on", not "reduced on".
-      read: () => !getReducedEffects(),
-      write: (value) => {
-        setReducedEffects(!value);
-        // Reveal-hiding CSS is armed by the head script. If motion is switched
-        // off mid-session, disarm it so nothing stays permanently invisible.
-        if (!value) document.documentElement.dataset.revealState = "off";
-      },
-      onLabel: "Motion on",
-      offLabel: "Motion off",
-    });
-  }
-
-  function sync(toggle: Toggle): void {
-    const on = toggle.read();
-    toggle.button.setAttribute("aria-pressed", String(on));
-    toggle.button.textContent = on ? toggle.onLabel : toggle.offLabel;
-  }
-
-  const handlers = toggles.map((toggle) => {
-    const handler = () => {
-      toggle.write(!toggle.read());
-      sync(toggle);
-    };
-    toggle.button.addEventListener("click", handler);
-    sync(toggle);
-    return { toggle, handler };
-  });
-
-  // Buttons are rendered hidden so a no-JS visitor never sees a dead control.
-  root.hidden = false;
+  for (const b of themeButtons) b.addEventListener("click", onTheme);
+  for (const b of motionButtons) b.addEventListener("click", onMotion);
+  syncTheme();
+  syncMotion();
 
   return {
     destroy() {
-      for (const { toggle, handler } of handlers) {
-        toggle.button.removeEventListener("click", handler);
-      }
+      for (const b of themeButtons) b.removeEventListener("click", onTheme);
+      for (const b of motionButtons) b.removeEventListener("click", onMotion);
     },
   };
 }

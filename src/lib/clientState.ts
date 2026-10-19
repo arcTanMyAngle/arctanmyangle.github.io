@@ -1,14 +1,18 @@
 // Central registry of localStorage keys + typed get/set helpers.
 // The FOUC-prevention script in BaseLayout.astro's <head> duplicates the
-// shineMode/reducedEffects key strings inline (it must be a blocking, non-module
+// theme/reducedEffects key strings inline (it must be a blocking, non-module
 // classic script, so it can't import this file) — keep them in sync if you
 // change a key here.
 export const STORAGE_KEYS = {
-  shineMode: "atma:shine-mode",
+  theme: "atma:theme",
   reducedEffects: "atma:reduced-effects",
-  reactionBestScore: "atma:reaction-best",
-  lastProjectCategory: "atma:last-category",
+  stackerBest: "atma:stacker-best",
+  reactionBest: "atma:reaction-best-ms",
+  chessGame: "atma:chess-game",
+  chessBackup: "atma:chess-backup",
 } as const;
+
+export type Theme = "dark" | "light";
 
 function readLocalStorage(key: string): string | null {
   try {
@@ -26,13 +30,13 @@ function writeLocalStorage(key: string, value: string): void {
   }
 }
 
-export function getShineMode(): boolean {
-  return readLocalStorage(STORAGE_KEYS.shineMode) !== "off";
+export function getTheme(): Theme {
+  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
 }
 
-export function setShineMode(on: boolean): void {
-  writeLocalStorage(STORAGE_KEYS.shineMode, on ? "on" : "off");
-  document.documentElement.dataset.shine = on ? "on" : "off";
+export function setTheme(theme: Theme): void {
+  writeLocalStorage(STORAGE_KEYS.theme, theme);
+  document.documentElement.dataset.theme = theme;
 }
 
 export function getReducedEffects(): boolean {
@@ -45,22 +49,4 @@ export function getReducedEffects(): boolean {
 export function setReducedEffects(reduced: boolean): void {
   writeLocalStorage(STORAGE_KEYS.reducedEffects, reduced ? "on" : "off");
   document.documentElement.dataset.motion = reduced ? "reduced" : "full";
-}
-
-export function getReactionBestScore(): number | null {
-  const raw = readLocalStorage(STORAGE_KEYS.reactionBestScore);
-  const parsed = raw === null ? NaN : Number(raw);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-export function setReactionBestScore(msAverage: number): void {
-  writeLocalStorage(STORAGE_KEYS.reactionBestScore, String(Math.round(msAverage)));
-}
-
-export function getLastProjectCategory(): string | null {
-  return readLocalStorage(STORAGE_KEYS.lastProjectCategory);
-}
-
-export function setLastProjectCategory(category: string): void {
-  writeLocalStorage(STORAGE_KEYS.lastProjectCategory, category);
 }

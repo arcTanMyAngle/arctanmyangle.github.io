@@ -1,89 +1,33 @@
-/* Motion + flourish layer.
-   Every animated rule here is gated on the attributes the blocking init script
-   in BaseLayout.astro sets on <html>: data-shine (chrome flourishes on/off) and
-   data-motion (full/reduced). No component defines its own prefers-reduced-motion
-   query -- the script resolves the preference once, everything reads the result. */
-
-/* Titlebar sheen: the one place gloss survives the de-gradient pass, and only
-   when the visitor has flourishes switched on. */
-:root[data-shine="on"] .window-frame__titlebar {
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 60%);
+/* Motion: every transition and hover flourish keys off :root[data-motion="full"], set once by
+   the blocking script in BaseLayout.astro. Never add a prefers-reduced-motion check elsewhere. */
+:root[data-motion="full"] .btn,
+:root[data-motion="full"] .icon-btn,
+:root[data-motion="full"] .site-nav a,
+:root[data-motion="full"] .card {
+  transition:
+    background-color 160ms var(--ease),
+    border-color 160ms var(--ease),
+    color 160ms var(--ease),
+    transform 220ms var(--ease),
+    box-shadow 220ms var(--ease);
 }
-
-/* Scroll reveal ------------------------------------------------------------
-   data-reveal is armed by the head script only when JS is running and motion is
-   full, so a no-JS visitor never gets stuck with invisible content. */
-:root[data-reveal-state="armed"] [data-reveal] {
-  opacity: 0;
-  will-change: opacity, transform;
+:root[data-motion="full"] .card--lift:hover {
+  transform: translateY(-3px);
 }
-
-/* Status light -------------------------------------------------------------- */
-@keyframes status-blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.35;
-  }
-}
-:root[data-motion="full"] .status-dot--on {
-  animation: status-blink 2.4s var(--ease-out) infinite;
-}
-
-/* Beam sweep on the section rule: a 2px highlight travelling the hairline,
-   echoing the background scanner without adding another full-bleed effect. */
-@keyframes rule-scan {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
-.section-head__rule {
-  position: relative;
-  overflow: hidden;
-}
-:root[data-motion="full"][data-shine="on"] .section-head__rule::after {
+:root[data-motion="full"] [data-spotlight]::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, var(--color-cyan), transparent);
-  animation: rule-scan 6.2s linear infinite;
-}
-
-/* Attract mode: Konami-code easter egg, toggled from the command palette. ---- */
-@keyframes attract-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 1px var(--color-border-bright);
-  }
-  50% {
-    box-shadow: 0 0 0 1px var(--color-magenta), 0 0 18px rgba(255, 92, 214, 0.35);
-  }
-}
-:root[data-attract="true"][data-motion="full"] .window-frame {
-  animation: attract-pulse 3.2s var(--ease-out) infinite;
-}
-:root[data-attract="true"] .site-logo {
-  color: var(--color-magenta);
-}
-
-/* Global reduced-motion kill switch ------------------------------------------ */
-:root[data-motion="reduced"] *,
-:root[data-motion="reduced"] *::before,
-:root[data-motion="reduced"] *::after {
-  animation-duration: 0.001ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.001ms !important;
-  scroll-behavior: auto !important;
-}
-
-/* Group reveal: children of a [data-reveal-group] start hidden under the same
-   armed-only guard as [data-reveal]. */
-:root[data-reveal-state="armed"] [data-reveal-group] > * {
+  z-index: 0;
+  pointer-events: none;
   opacity: 0;
-  will-change: opacity, transform;
+  background: radial-gradient(
+    22rem circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in oklab, var(--hue) 12%, transparent),
+    transparent 70%
+  );
+  transition: opacity 240ms var(--ease);
+}
+:root[data-motion="full"] [data-spotlight]:hover::before {
+  opacity: 1;
 }

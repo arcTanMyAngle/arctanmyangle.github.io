@@ -2,7 +2,7 @@
 // Server-rendered chess board: squares, an empty marker layer and the pieces for `fen`.
 // Scripts (chessLine.ts, chessPlay.ts) take over the marker and piece layers on mount, so a
 // visitor without JS still sees a real position.
-import { isLightSquare, pieceSvg, piecesFromFen, squareXY, squaresInOrder, START_FEN } from "./pieces";
+import { isLightSquare, pieceSvg, piecesFromFen, squareXY, squaresInOrder, START_FEN } from "../lib/pieces";
 
 interface Props {
   fen?: string;

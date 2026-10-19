@@ -1,14 +1,14 @@
 ---
-import Shell from "../Shell.astro";
-import Icon from "../Icon.astro";
-import StackerPreview from "../StackerPreview.astro";
-import { games, href } from "../site";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Icon from "../../components/Icon.astro";
+import StackerPreview from "../../components/StackerPreview.astro";
+import { games, href } from "../../data/site";
 
 const stacker = games.find((g) => g.slug === "stacker")!;
 const reaction = games.find((g) => g.slug === "reaction")!;
 ---
 
-<Shell title="Arcade" section="arcade" description="Small games that play right in the browser, on a keyboard or a phone.">
+<BaseLayout title="Arcade" section="arcade" description="Small games that play right in the browser, on a keyboard or a phone.">
   <header class="wrap page-head">
     <span class="eyebrow">Arcade</span>
     <h1>Quick games, fair rules.</h1>
@@ -76,7 +76,7 @@ const reaction = games.find((g) => g.slug === "reaction")!;
       </span>
     </p>
   </section>
-</Shell>
+</BaseLayout>
 
 <style>
   .games {

@@ -1,107 +1,272 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import SectionHead from "../components/SectionHead.astro";
-import WindowFrame from "../components/WindowFrame.astro";
-import ToyMount from "../components/ToyMount.astro";
+import Icon from "../components/Icon.astro";
+import { experiments, href } from "../data/site";
 
-const title = "Lab";
-const description = "Interactive demo toys standing in for five real projects — radar, spectrogram, signal map, reaction trainer, terminal.";
+const radar = experiments.find((e) => e.slug === "look-above")!;
+const unrest = experiments.find((e) => e.slug === "global_unrest")!;
 
-const TOYS = [
-  {
-    toy: "radar",
-    title: "look-above :: radar.demo",
-    href: "/projects/look-above/",
-    label: "Synthetic radar scope with dead-reckoned tracks — needs JavaScript.",
-  },
-  {
-    toy: "spectrogram",
-    title: "bird_acoustics :: spectrogram.demo",
-    href: "/projects/bird_acoustics/",
-    label: "Procedural spectrogram bars — needs JavaScript.",
-  },
-  {
-    toy: "signal-map",
-    title: "global_unrest :: signal-map.demo",
-    href: "/projects/global_unrest/",
-    label: "Scrubable 35-day synthetic signal map — needs JavaScript.",
-  },
-  {
-    toy: "reaction",
-    title: "real-timereaction :: reaction.demo",
-    href: "/projects/real-timereaction/",
-    label: "Reaction-time trainer, five rounds per set — needs JavaScript.",
-  },
-] as const;
+// Decorative blips and heat cells: fixed positions, not data.
+const blips = [
+  { x: 64, y: 30, d: 0.6 },
+  { x: 28, y: 58, d: 1.9 },
+  { x: 72, y: 70, d: 3.1 },
+];
+const cells = Array.from({ length: 35 }, (_, i) => {
+  const r = Math.floor(i / 7);
+  const c = i % 7;
+  const heat = Math.max(0, 1 - Math.hypot(c - 4.2, r - 1.8) / 4.2);
+  return { heat: Math.round(heat * 100) / 100, delay: ((c + r) % 5) * 0.4 };
+});
 ---
 
-<BaseLayout title={title} description={description}>
-  <div class="shell lab">
-    <SectionHead label="The lab" meta="five live demos" />
-    <p class="prose">
-      Everything on this page is a synthetic stand-in — no live flight feeds, no microphone, no real unrest data.
-      Each demo mirrors the actual project's UI language; the project pages explain what's real.
+<BaseLayout title="Lab" section="lab" description="Data experiments on their way to the browser: a flight radar and an event map.">
+  <header class="wrap page-head">
+    <span class="eyebrow">Lab</span>
+    <h1>Data you can poke at.</h1>
+    <p class="lede">
+      Two experiments that run as desktop apps today. The plan is to bring each one to this site as something you can
+      open and play with, not a screenshot.
     </p>
+  </header>
 
-    <div class="lab__grid" data-reveal-group>
-      {
-        TOYS.map((t) => (
-          <WindowFrame title={t.title} class="cv-auto">
-            <ToyMount toy={t.toy} label={t.label} />
-            <p class="lab__link">
-              <a href={t.href}>Read about the real project &rarr;</a>
-            </p>
-          </WindowFrame>
-        ))
-      }
-      <WindowFrame title="terminal.exe" class="cv-auto">
-        <ToyMount toy="terminal" label="Interactive terminal — type `help` once JavaScript loads." minHeight="300px" />
-      </WindowFrame>
-    </div>
-  </div>
+  <section class="wrap exps" aria-label="Experiments">
+    <article class="card exp card--lift" data-spotlight>
+      <div class="exp__art" aria-hidden="true">
+        <div class="scope">
+          <span class="scope__ring" style="--r:1"></span>
+          <span class="scope__ring" style="--r:2"></span>
+          <span class="scope__ring" style="--r:3"></span>
+          <span class="scope__cross"></span>
+          <span class="scope__sweep"></span>
+          {blips.map((b) => <span class="scope__blip" style={`--x:${b.x}%;--y:${b.y}%;--d:${b.d}s`} />)}
+        </div>
+      </div>
+      <div class="exp__body">
+        <div class="exp__meta">
+          <span class="badge badge--muted">Not live yet</span>
+          <span class="kbd">{radar.language}</span>
+        </div>
+        <h2><a class="card__link mono" href={radar.source}>{radar.title}</a></h2>
+        <p>{radar.blurb}</p>
+        <ul class="exp__list" role="list">
+          <li>Only feeds that allow it. Nothing is scraped.</li>
+          <li>Aircraft that ask for privacy stay anonymous.</li>
+          <li>No tail-number search and no alerts.</li>
+        </ul>
+        <span class="exp__cta" aria-hidden="true"><Icon name="github" size={16} /> Source on GitHub</span>
+      </div>
+    </article>
+
+    <article class="card exp card--lift" data-spotlight>
+      <div class="exp__art" aria-hidden="true">
+        <div class="heat">
+          {cells.map((c) => <span class="heat__cell" style={`--h:${c.heat};--d:${c.delay}s`} />)}
+        </div>
+      </div>
+      <div class="exp__body">
+        <div class="exp__meta">
+          <span class="badge badge--muted">Not live yet</span>
+          <span class="kbd">{unrest.language}</span>
+        </div>
+        <h2><a class="card__link mono" href={unrest.source}>{unrest.title}</a></h2>
+        <p>{unrest.blurb}</p>
+        <ul class="exp__list" role="list">
+          <li>Runs offline from sample data. No keys needed.</li>
+          <li>A heatmap of attention, with events marked on top.</li>
+          <li>A time slider to replay how things changed.</li>
+        </ul>
+        <span class="exp__cta" aria-hidden="true"><Icon name="github" size={16} /> Source on GitHub</span>
+      </div>
+    </article>
+  </section>
+
+  <section class="wrap section">
+    <p class="note">
+      <Icon name="clock" size={18} />
+      <span>
+        Both still need a browser version. Until then, the <a href={href("projects")}>projects page</a> has the code
+        and what each one does.
+      </span>
+    </p>
+  </section>
 </BaseLayout>
 
-<script>
-  import { lazyMount } from "../lib/lazyMount";
-
-  const TOY_LOADERS: Record<string, () => Promise<{ mount(root: HTMLElement): { destroy(): void } }>> = {
-    radar: () => import("../components/RadarToy"),
-    spectrogram: () => import("../components/SpectrogramToy"),
-    "signal-map": () => import("../components/SignalMapToy"),
-    reaction: () => import("../components/ReactionMiniGame"),
-    terminal: () => import("../components/TerminalToy"),
-  };
-
-  document.querySelectorAll<HTMLElement>("[data-toy]").forEach((el) => {
-    const loader = TOY_LOADERS[el.dataset.toy ?? ""];
-    if (!loader) return;
-    lazyMount(el, async (root) => {
-      const mod = await loader();
-      mod.mount(root);
-    });
-  });
-</script>
-
 <style>
-  .lab {
+  .exps {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .exp {
     display: flex;
     flex-direction: column;
-    gap: var(--space-5);
   }
-  .lab__grid {
+  .exp > * {
+    position: relative;
+    z-index: 1;
+  }
+  .exp__art {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-    gap: var(--space-5);
+    place-items: center;
+    min-height: 17rem;
+    padding: 1.5rem;
+    overflow: hidden;
+    border-bottom: 1px solid var(--line);
+    background:
+      radial-gradient(26rem 14rem at 50% 100%, var(--hue-soft), transparent 70%),
+      var(--surface-2);
   }
-  .lab__link {
-    margin-top: var(--space-3);
-    font-size: var(--text-sm);
+  .exp__body {
+    display: grid;
+    gap: 0.625rem;
+    align-content: start;
+    padding: 1.5rem;
   }
-  .lab__link a {
-    color: var(--color-cyan);
-    text-decoration: none;
+  .exp__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
   }
-  .lab__link a:hover {
-    text-shadow: var(--glow-cyan);
+  .exp__meta .kbd {
+    color: var(--text-2);
+    font-size: 0.75rem;
+  }
+  .exp h2 {
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
+  }
+  .exp p {
+    max-width: 46ch;
+    color: var(--text-2);
+  }
+  .exp__list {
+    display: grid;
+    gap: 0.375rem;
+    margin: 0.25rem 0 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text-2);
+    font-size: 0.9375rem;
+  }
+  .exp__list li {
+    position: relative;
+    padding-left: 1.125rem;
+  }
+  .exp__list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.6em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--hue);
+  }
+  .exp__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: 0.5rem;
+    color: var(--hue);
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+
+  /* Radar scope */
+  .scope {
+    position: relative;
+    width: min(100%, 14rem);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: color-mix(in oklab, var(--hue) 6%, var(--surface));
+    box-shadow: 0 0 0 1px var(--hue-line);
+  }
+  .scope__ring {
+    position: absolute;
+    inset: calc(50% - var(--r) * 16.6%);
+    border: 1px solid var(--hue-line);
+    border-radius: 50%;
+  }
+  .scope__cross {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(var(--hue-line), var(--hue-line)) center / 1px 100% no-repeat,
+      linear-gradient(var(--hue-line), var(--hue-line)) center / 100% 1px no-repeat;
+  }
+  .scope__sweep {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, color-mix(in oklab, var(--hue) 45%, transparent), transparent 20%);
+  }
+  .scope__blip {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: 8px;
+    height: 8px;
+    margin: -4px;
+    border-radius: 50%;
+    background: var(--hue);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--hue) 25%, transparent);
+  }
+  :global(:root[data-motion="full"]) .scope__sweep {
+    animation: lab-spin 4s linear infinite;
+  }
+  :global(:root[data-motion="full"]) .scope__blip {
+    animation: lab-blip 4s ease-out infinite;
+    animation-delay: var(--d);
+  }
+  @keyframes lab-spin {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+  @keyframes lab-blip {
+    0%,
+    100% {
+      transform: scale(0.7);
+      opacity: 0.35;
+    }
+    6% {
+      transform: scale(1.25);
+      opacity: 1;
+    }
+    40% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+  }
+
+  /* Heat grid */
+  .heat {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    width: min(100%, 17rem);
+  }
+  .heat__cell {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    background: color-mix(in oklab, var(--hue) calc(var(--h) * 85% + 6%), var(--surface));
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  :global(:root[data-motion="full"]) .heat__cell {
+    animation: lab-pulse 3.2s ease-in-out infinite;
+    animation-delay: var(--d);
+  }
+  @keyframes lab-pulse {
+    50% {
+      filter: brightness(1.25);
+    }
+  }
+
+  @media (max-width: 48rem) {
+    .exps {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 </style>

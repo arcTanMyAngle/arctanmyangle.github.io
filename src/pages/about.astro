@@ -1,123 +1,137 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import SectionHead from "../components/SectionHead.astro";
-import WindowFrame from "../components/WindowFrame.astro";
-
-const title = "About";
-const description = "Who built this — languages, systems, and what's currently being learned.";
-
-const SKILL_GROUPS = [
-  {
-    label: "Languages",
-    skills: ["Rust", "C++17", "Python", "TypeScript", "C"],
-  },
-  {
-    label: "Systems & real-time",
-    skills: ["tokio", "rayon", "crossbeam", "wgpu", "OpenGL", "SDL2", "macroquad", "raylib", "Three.js"],
-  },
-  {
-    label: "ML & data",
-    skills: ["PyTorch", "timm", "TensorFlow Lite Micro", "GradCAM/ScoreCAM", "DuckDB", "SQLite", "Parquet", "H3"],
-  },
-  {
-    label: "Hardware & tooling",
-    skills: ["ESP32-S3 / ESP-IDF", "CMake", "Catch2", "Gradio", "Google Colab"],
-  },
-];
-
-const EXPLORING = ["CUDA / parallel programming", "wgpu render pipelines beyond look-above's current M0 scope", "ACLED-style verified-event data pipelines"];
+import Icon from "../components/Icon.astro";
+import { githubUrl, href, interests } from "../data/site";
 ---
 
-<BaseLayout title={title} description={description}>
-  <div class="shell about">
-    <SectionHead label="About" meta="what is actually shipped" />
-
-    <div class="about__stack" data-reveal-group>
-    <WindowFrame title="who.txt" class="cv-auto">
-      <p class="prose">
-        arcTanMyAngle builds real-time systems, native tools, and small ML models that run on hardware you can
-        actually hold — a flight radar built on public feeds, a bird classifier that fits on a microcontroller, a
-        reaction-time trainer that treats latency as the whole point. Every project on this site is a real GitHub
-        repo; nothing here is a mockup.
-      </p>
-      <p class="prose">
-        The throughline across the flagship projects is a preference for doing the harder, more honest version of a
-        thing: dead-reckoning between real ADS-B updates instead of faking smoothness, separating media attention
-        from verified events instead of implying certainty, publishing the model candidates that lost instead of
-        only the one that won.
-      </p>
-    </WindowFrame>
-
-    <WindowFrame title="skills.matrix" class="cv-auto">
-      <div class="about__skill-groups">
-        {
-          SKILL_GROUPS.map((group) => (
-            <div class="about__skill-group">
-              <h3>{group.label}</h3>
-              <div class="about__chips">
-                {group.skills.map((s) => (
-                  <span class="chip chip--lang">{s}</span>
-                ))}
-              </div>
-            </div>
-          ))
-        }
-      </div>
-    </WindowFrame>
-
-    <WindowFrame title="currently_exploring.log" class="cv-auto">
-      <ul class="about__exploring">
-        {EXPLORING.map((item) => <li>{item}</li>)}
-      </ul>
-    </WindowFrame>
-
-    </div>
-
-    <p class="about__cta" data-reveal>
-      <a class="beveled-button beveled-button--primary" href="https://github.com/arcTanMyAngle" target="_blank" rel="noopener noreferrer">
-        See the repos on GitHub
-      </a>
+<BaseLayout title="About" section="about" description="Who's behind arcTanMyAngle, and why this site is built around the things I do.">
+  <header class="wrap page-head">
+    <span class="eyebrow">About</span>
+    <h1>Hi, I'm arcTanMyAngle.</h1>
+    <p class="lede">
+      I build things around what I'm into: games, chess, guitar, skating and data. This site is where those meet. Each
+      part is something you can open and use, not just read about.
     </p>
-  </div>
+    <div class="actions" id="contact">
+      <a class="btn btn--primary" href={href("arcade")}><Icon name="play" size={18} /> Play something</a>
+      <a class="btn" href={githubUrl}><Icon name="github" size={18} /> GitHub</a>
+    </div>
+  </header>
+
+  <section class="wrap" aria-labelledby="into-h">
+    <div class="section__head">
+      <div>
+        <h2 id="into-h">What I'm into</h2>
+        <p>Each one has its own corner of the site.</p>
+      </div>
+    </div>
+    <ul class="into" role="list">
+      {
+        interests.map((it) => (
+          <li class="card card--lift into__card" data-hue={it.section} data-spotlight>
+            <span class="into__dot" aria-hidden="true" />
+            <h3>
+              <a class="card__link" href={href(it.section)}>
+                {it.title}
+              </a>
+            </h3>
+            <p>{it.text}</p>
+            <span class="into__go" aria-hidden="true">
+              <Icon name="arrow" size={16} />
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="wrap section" aria-labelledby="site-h">
+    <div class="card colophon">
+      <h2 id="site-h">How this site is built</h2>
+      <ul class="colophon__list" role="list">
+        <li><strong>Static and fast.</strong> Astro pages with a little TypeScript where something needs to move.</li>
+        <li><strong>No trackers.</strong> Nothing to accept, nothing following you around.</li>
+        <li><strong>Works for everyone.</strong> Keyboard, screen readers, phones, and reduced motion are all first-class.</li>
+      </ul>
+    </div>
+  </section>
 </BaseLayout>
 
 <style>
-  .about {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-5);
-  }
-  .about__stack {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-5);
-  }
-  .about__skill-groups {
+  .into {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: var(--space-5);
-  }
-  .about__skill-group h3 {
-    color: var(--color-cyan);
-    margin-bottom: var(--space-3);
-  }
-  .about__chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-  }
-  .about__exploring {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
     list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    color: var(--color-text-dim);
   }
-  .about__exploring li::before {
-    content: "> ";
-    color: var(--color-amber);
+  .into__card {
+    display: grid;
+    gap: 0.5rem;
+    align-content: start;
+    padding: 1.5rem;
   }
-  .about__cta {
-    text-align: center;
+  .into__card > * {
+    position: relative;
+    z-index: 1;
+  }
+  .into__dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 50%;
+    background: var(--hue);
+    box-shadow: 0 0 0 5px var(--hue-soft);
+  }
+  .into__card h3 {
+    font-size: 1.25rem;
+    letter-spacing: -0.02em;
+  }
+  .into__card p {
+    color: var(--text-2);
+    font-size: 0.9375rem;
+  }
+  .into__go {
+    margin-top: 0.25rem;
+    color: var(--hue);
+  }
+  :global(:root[data-motion="full"]) .into__go {
+    transition: transform 200ms var(--ease);
+  }
+  .into__card:hover .into__go {
+    transform: translateX(4px);
+  }
+
+  .colophon {
+    display: grid;
+    gap: 1rem;
+    padding: clamp(1.25rem, 3vw, 2rem);
+  }
+  .colophon h2 {
+    font-size: 1.375rem;
+    letter-spacing: -0.03em;
+  }
+  .colophon__list {
+    display: grid;
+    gap: 0.625rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text-2);
+  }
+  .colophon__list strong {
+    color: var(--text);
+  }
+
+  @media (max-width: 60rem) {
+    .into {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 30rem) {
+    .into {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 </style>

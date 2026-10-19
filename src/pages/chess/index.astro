@@ -1,9 +1,9 @@
 ---
-import Shell from "../Shell.astro";
-import Board from "../Board.astro";
-import Icon from "../Icon.astro";
-import { fenAfter } from "../chessLine";
-import { chessLines, href, numbered } from "../site";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Board from "../../components/Board.astro";
+import Icon from "../../components/Icon.astro";
+import { fenAfter } from "../../components/chessLine";
+import { chessLines, href, numbered } from "../../data/site";
 
 const lines = chessLines.map((line) => ({
   ...line,
@@ -20,7 +20,7 @@ const groups = [
 ];
 ---
 
-<Shell title="Chess" section="chess" description="The openings I play, each on its own animated board, and a board for two.">
+<BaseLayout title="Chess" section="chess" description="The openings I play, each on its own animated board, and a board for two.">
   <header class="wrap page-head">
     <span class="eyebrow">Chess</span>
     <h1>The openings I play.</h1>
@@ -109,10 +109,10 @@ const groups = [
       </span>
     </a>
   </section>
-</Shell>
+</BaseLayout>
 
 <script>
-  import { mount } from "../chessLine";
+  import { mount } from "../../components/chessLine";
   document.querySelectorAll<HTMLElement>("[data-line]").forEach((el) => mount(el));
 </script>
 

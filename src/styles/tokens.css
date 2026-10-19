@@ -1,105 +1,108 @@
-/*
-  Design tokens. CSS custom properties only — no selectors beyond :root.
-  Palette: Y2K chrome/blue futurism, but disciplined — a dark instrument
-  panel with hairline bevels, where gloss is a highlight reserved for ONE
-  primary action per view rather than the default state of every surface.
-*/
+/* Design tokens: custom properties only. Dark is the default; light applies under
+   :root[data-theme="light"], set by the blocking script in BaseLayout.astro. Each section
+   (body[data-section]) or element with data-hue gets one accent, exposed as --hue. */
 :root {
-  /* -- surfaces -- */
-  --color-bg: #050912;
-  --color-bg-raised: #0d1428;
-  --color-bg-inset: #01030a;
-  --color-bg-panel: #0b1224;
-  --color-bg-glass: rgba(13, 20, 40, 0.72);
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+  --radius-s: 8px;
+  --radius: 14px;
+  --radius-l: 22px;
+  --wrap: 76rem;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --header-h: 4rem;
+}
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #09090b;
+  --surface: #131418;
+  --surface-2: #1a1c21;
+  --surface-3: #23252c;
+  --line: #25272e;
+  --line-2: #363943;
+  --text: #ededf0;
+  --text-2: #a5a8b2;
+  --text-3: #8a8e99;
+  --on-solid: #09090b;
+  --solid: #ededf0;
+  --shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 20px 40px -24px rgb(0 0 0 / 0.8);
+  --arcade: #ff8a65;
+  --chess: #f6c453;
+  --lab: #4dd4c6;
+  --tabs: #b69cff;
+  --skate: #a8e05f;
+  --projects: #6aa8ff;
+  --about: #ff8fc7;
+  --board-light: #e9e4d8;
+  --board-dark: #8495b0;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f7f7f8;
+  --surface: #ffffff;
+  --surface-2: #f2f2f4;
+  --surface-3: #e7e7ea;
+  --line: #e2e2e6;
+  --line-2: #cfd0d6;
+  --text: #0b0b0f;
+  --text-2: #4b4e57;
+  --text-3: #5f626b;
+  --on-solid: #ffffff;
+  --solid: #0b0b0f;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 16px 32px -20px rgb(0 0 0 / 0.18);
+  --arcade: #c2410c;
+  --chess: #9a5800;
+  --lab: #0f766e;
+  --tabs: #6d4ad6;
+  --skate: #4d7c0f;
+  --projects: #1d5fd1;
+  --about: #be185d;
+  --board-light: #efe9dc;
+  --board-dark: #7d8eaa;
+}
 
-  /* -- ink -- */
-  --color-text: #eef2fb;
-  --color-text-dim: #9caac8;
-  --color-text-faint: #5b6688;
-
-  /* -- signal colors -- */
-  --color-blue: #4fb2ff;
-  --color-blue-dim: #2f6fb8;
-  --color-amber: #ffcf5c;
-  --color-cyan: #6df3ff;
-  --color-magenta: #d268ff;
-
-  --color-danger: #ff4d6a;
-  --color-ok: var(--color-blue);
-
-  /* -- borders / chrome -- */
-  --color-border: #1c2740;
-  --color-border-bright: #2c3c60;
-  --bevel-light: rgba(255, 255, 255, 0.09);
-  --bevel-dark: rgba(0, 0, 0, 0.5);
-  --hairline: inset 0 1px 0 var(--bevel-light);
-
-  /* -- chrome surfaces --
-     Only --chrome-primary carries a real gradient. Everything else is a flat
-     tone plus a 1px top highlight; that hairline is what reads as "bevel". */
-  --chrome-titlebar: linear-gradient(180deg, #16233d 0%, #0d1526 100%);
-  --chrome-button: #131e35;
-  --chrome-button-hover: #1b2a49;
-  --chrome-button-active: #0c1425;
-  --chrome-primary: linear-gradient(180deg, #4a97e8 0%, #2168c0 100%);
-  --chrome-primary-hover: linear-gradient(180deg, #5da8f5 0%, #2a75cf 100%);
-
-  /* -- fonts: system-only, no remote loading -- */
-  --font-mono: ui-monospace, "Cascadia Code", "Consolas", "SFMono-Regular", Menlo, Monaco,
-    "Liberation Mono", "Courier New", monospace;
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-
-  /* -- type scale: fluid at the display sizes so the hero never overflows -- */
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-md: 1.125rem;
-  --text-lg: 1.375rem;
-  --text-xl: clamp(1.5rem, 1.29rem + 0.95vw, 1.875rem);
-  --text-2xl: clamp(1.9rem, 1.5rem + 1.8vw, 2.5rem);
-  --text-3xl: clamp(2.5rem, 1.75rem + 3.4vw, 4rem);
-
-  /* -- spacing scale -- */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.5rem;
-  --space-6: 2rem;
-  --space-7: 3rem;
-  --space-8: 4rem;
-  --space-9: 6rem;
-
-  /* -- radius -- */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-pill: 999px;
-
-  /* -- effects -- */
-  --shadow-window: 0 18px 40px rgba(2, 5, 14, 0.55);
-  --shadow-lift: 0 10px 26px rgba(2, 5, 14, 0.5);
-  --glow-blue: 0 0 8px rgba(79, 178, 255, 0.5);
-  --glow-cyan: 0 0 8px rgba(109, 243, 255, 0.5);
-  --glow-amber: 0 0 8px rgba(255, 207, 92, 0.5);
-  --glow-magenta: 0 0 8px rgba(210, 104, 255, 0.5);
-
-  /* -- z-index scale -- */
-  --z-bg: 0;
-  --z-content: 1;
-  --z-chrome: 10;
-  --z-overlay: 100;
-  --z-palette: 1000;
-
-  /* -- motion -- */
-  --dur-fast: 120ms;
-  --dur-med: 240ms;
-  --dur-slow: 600ms;
-  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-out: cubic-bezier(0, 0, 0.2, 1);
-
-  /* -- focus ring: double ring so it reads against any surface -- */
-  --focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-cyan);
-
-  /* -- container width -- */
-  --shell-width: 72rem;
+/* Each section (and any element with data-hue) gets its own accent. */
+:root {
+  --hue: var(--text);
+}
+[data-section="arcade"],
+[data-hue="arcade"] {
+  --hue: var(--arcade);
+}
+[data-section="chess"],
+[data-hue="chess"] {
+  --hue: var(--chess);
+}
+[data-section="lab"],
+[data-hue="lab"] {
+  --hue: var(--lab);
+}
+[data-section="tabs"],
+[data-hue="tabs"] {
+  --hue: var(--tabs);
+}
+[data-section="skate"],
+[data-hue="skate"] {
+  --hue: var(--skate);
+}
+[data-section="projects"],
+[data-hue="projects"] {
+  --hue: var(--projects);
+}
+[data-section="about"],
+[data-hue="about"] {
+  --hue: var(--about);
+}
+[data-section="home"] {
+  --hue: var(--projects);
+}
+:root {
+  --hue-soft: color-mix(in oklab, var(--hue) 14%, transparent);
+  --hue-line: color-mix(in oklab, var(--hue) 40%, var(--line));
+}
+[data-section],
+[data-hue] {
+  --hue-soft: color-mix(in oklab, var(--hue) 14%, transparent);
+  --hue-line: color-mix(in oklab, var(--hue) 40%, var(--line));
 }
