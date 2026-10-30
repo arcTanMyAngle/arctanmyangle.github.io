@@ -1,0 +1,26 @@
+# Origin G (arctanmyangle-play.pages.dev): third-party game bundles, framed only by origin A.
+# Cloudflare joins a header set by two matching rules with a comma, which for CSP means two policies that must both
+# pass. So /* carries only frame-ancestors and the shared lockdown, and each bundle adds its own policy on top.
+# Only hextris and a-dark-room get 'unsafe-eval': their save code calls eval (jsonfn, state_manager.js).
+
+/*
+  Content-Security-Policy: frame-ancestors https://arctanmyangle.pages.dev https://*.arctanmyangle.pages.dev; object-src 'none'; base-uri 'none'; form-action 'none'
+  Cross-Origin-Resource-Policy: same-site
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+/
+  Content-Security-Policy: default-src 'none'; style-src 'self'; img-src 'self'
+
+/404.html
+  Content-Security-Policy: default-src 'none'; style-src 'self'; img-src 'self'
+
+/g/2048/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; media-src 'self'
+
+/g/hextris/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; media-src 'self'
+
+/g/a-dark-room/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; media-src 'self'

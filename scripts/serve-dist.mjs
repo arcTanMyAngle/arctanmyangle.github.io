@@ -4,15 +4,22 @@
 // Lets the CSP be checked in a browser before the Pages projects exist. Not a
 // production server; `_redirects` is not applied.
 //
-//   bun scripts/serve-dist.mjs [--port 4322]
+//   bun scripts/serve-dist.mjs [--port 4322] [--dir play] [--allow-parent http://localhost:4322]
+//
+// --dir serves another folder, e.g. origin G's play/. --allow-parent adds a local origin to every frame-ancestors
+// list, so G can be framed by a local A with the rest of its policy still on.
 
 import { stat } from "node:fs/promises";
-import { join, normalize } from "node:path";
+import { join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const DIST = fileURLToPath(new URL("../dist/", import.meta.url));
-const portArg = process.argv.indexOf("--port");
-const PORT = Number(portArg > -1 ? process.argv[portArg + 1] : process.env.PORT ?? 4322);
+const arg = (name) => {
+  const i = process.argv.indexOf(name);
+  return i > -1 ? process.argv[i + 1] : undefined;
+};
+const DIST = arg("--dir") ? resolve(arg("--dir")) : fileURLToPath(new URL("../dist/", import.meta.url));
+const PORT = Number(arg("--port") ?? process.env.PORT ?? 4322);
+const PARENT = arg("--allow-parent");
 
 /** Parses Cloudflare `_headers` into [{ pattern: RegExp, headers: [name, value][] }]. */
 export function parseHeaders(text) {
@@ -53,7 +60,12 @@ async function isFile(path) {
 async function main() {
   const headersFile = Bun.file(join(DIST, "_headers"));
   const rules = (await headersFile.exists()) ? parseHeaders(await headersFile.text()) : [];
-  if (!rules.length) console.warn("[serve-dist] no dist/_headers — run `bun run build` first.");
+  if (!rules.length) console.warn(`[serve-dist] no _headers in ${DIST} — run "bun run build" first.`);
+  if (PARENT) {
+    for (const rule of rules) {
+      for (const h of rule.headers) h[1] = h[1].replace(/frame-ancestors [^;,]+/g, (m) => `${m} ${PARENT}`);
+    }
+  }
 
   Bun.serve({
     port: PORT,
@@ -80,7 +92,7 @@ async function main() {
       return new Response(body, { status, headers });
     },
   });
-  console.log(`[serve-dist] http://localhost:${PORT}/ (dist/ with _headers applied)`);
+  console.log(`[serve-dist] http://localhost:${PORT}/ (${DIST} with _headers applied)`);
 }
 
 if (import.meta.main) await main();

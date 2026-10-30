@@ -80,6 +80,26 @@ jobs:
         with:
           bun-version: 1.3.14
 
+      # Origin G (D-19) is plain files, so it deploys straight from the repo. It goes first so A never frames a game
+      # that G doesn't have yet.
+      - name: Get origin G's files
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: play
+          path: src-g
+
+      - name: Deploy to Cloudflare Pages (origin G)
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: >-
+          bunx wrangler@4.151.1 pages deploy src-g/play
+          --project-name arctanmyangle-play
+          --branch "$BRANCH"
+          --commit-hash "$GITHUB_SHA"
+          --commit-message "$GITHUB_SHA"
+
       - name: Deploy to Cloudflare Pages (origin A)
         if: env.CLOUDFLARE_API_TOKEN != ''
         env:

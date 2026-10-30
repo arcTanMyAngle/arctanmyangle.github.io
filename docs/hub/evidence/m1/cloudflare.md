@@ -35,7 +35,7 @@ strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(),
 404s carry the CSP and `Cache-Control: no-store`.
 
 Cloudflare adds `Access-Control-Allow-Origin: *` to every response by default, and `X-Robots-Tag: noindex` on
-previews only. Origin G has no content to check yet.
+previews only. Origin G: see below.
 
 `frame-ancestors 'none'` is enforced: framing any page, even same-origin, is blocked.
 
@@ -51,3 +51,17 @@ Every route above loaded with no CSP violations from site code. `/` requests onl
 `clientState`, `chessLine`, `pieces` (no chess.js). `/chess/play/` renders its board (32 pieces, controls). The board
 animation wasn't re-checked here because the pane was in the background (`document.hidden`, so the board correctly
 waits). The same `dist` animated in the local check (`headers-ci.md`).
+
+## T-M1-03 on origin G (local stand-in only, 2026-10-30)
+
+Not yet deployed to `arctanmyangle-play`. Checked with `bun scripts/serve-dist.mjs --dir play --port 4330
+--allow-parent http://localhost:4322` against A's `dist` on 4322, phone viewport 375x812:
+
+- `/` and every `/g/<slug>/` get `frame-ancestors https://arctanmyangle.pages.dev https://*.arctanmyangle.pages.dev`
+  (plus the local parent); each game also gets its own `default-src 'self'` policy with no other host
+  (`tests/play.test.mjs`).
+- A's `dist/_headers` has `frame-src https://arctanmyangle-play.pages.dev`, so A can frame G and nothing else.
+- In the frame: 2048 starts, takes swipes and Exit returns to the poster; Hextris reaches `gameState 1`; A Dark Room
+  plays in landscape (844x390) and clips in portrait as its `phoneNote` says. No CSP violations from game code.
+- Still to check on Cloudflare: that `/g/<slug>/*` matches and the two CSP rules are comma-joined as `serve-dist`
+  does, and `Content-Type` on `CHANGES.md` / `LICENSE.*`.

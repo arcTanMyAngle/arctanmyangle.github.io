@@ -1,0 +1,29 @@
+{
+  "protocol": "play/v1",
+  "games": [
+    {
+      "slug": "2048",
+      "title": "2048",
+      "license": "MIT",
+      "source": "https://github.com/gabrielecirulli/2048",
+      "commit": "478b6ec346e3787f589e4af751378d06ded4cbbc",
+      "changes": "removed the app-store note and startup images; swipe hint; bridge script"
+    },
+    {
+      "slug": "hextris",
+      "title": "Hextris",
+      "license": "GPL-3.0",
+      "source": "https://github.com/Hextris/hextris",
+      "commit": "3f4847dc8fd7dab3d1c87e6324b9159d92fbd396",
+      "changes": "removed ads, Google Analytics, Google Fonts, share buttons, app-store badges, score beacon and remote a.js; plain pause text; bridge script"
+    },
+    {
+      "slug": "a-dark-room",
+      "title": "A Dark Room",
+      "license": "MPL-2.0",
+      "source": "https://github.com/doublespeakgames/adarkroom",
+      "commit": "1fada4620b6c66bd07bf15a3f1eb8223df8bc1d7",
+      "changes": "English only (lang/ removed); local jQuery instead of the Google CDN; removed Google Analytics, Dropbox save and the phone redirect; inline scripts moved to script/boot.js; bridge script"
+    }
+  ]
+}

@@ -22,6 +22,10 @@ const DIST = fileURLToPath(new URL("../dist/", import.meta.url));
 // origin G or get deleted (owner call), so they are not covered by A's policy.
 const SKIP_DIRS = new Set(["games"]);
 const MAX_LINE = 2000;
+// Origin G, the only thing A may frame (PLAN §3.1). Keep the fallback in step with PLAY_ORIGIN in src/data/play.ts;
+// tests/play.test.mjs checks that they match.
+export const DEFAULT_PLAY_ORIGIN = "https://arctanmyangle-play.pages.dev";
+const PLAY_ORIGIN = (process.env.PUBLIC_PLAY_ORIGIN || DEFAULT_PLAY_ORIGIN).replace(/\/+$/, "");
 
 // Script types the browser doesn't execute, so CSP doesn't apply to them.
 const DATA_BLOCK_TYPES = new Set(["application/ld+json", "application/json", "importmap", "speculationrules"]);
@@ -43,8 +47,8 @@ export function inlineHashes(html) {
   return { scripts, styles };
 }
 
-/** Builds the policy string from hash sets. */
-export function buildCsp({ scripts, styles }) {
+/** Builds the policy string from hash sets. `playOrigin` is the one origin allowed in frames. */
+export function buildCsp({ scripts, styles }, { playOrigin = DEFAULT_PLAY_ORIGIN } = {}) {
   const list = (set) => [...set].sort().join(" ");
   return [
     "default-src 'self'",
@@ -55,6 +59,7 @@ export function buildCsp({ scripts, styles }) {
     "img-src 'self' data:",
     "font-src 'self'",
     "connect-src 'self'",
+    `frame-src ${playOrigin}`,
     "object-src 'none'",
     "base-uri 'none'",
     "form-action 'self'",
@@ -103,7 +108,7 @@ async function main() {
     for (const h of scripts) all.scripts.add(h);
     for (const h of styles) all.styles.add(h);
   }
-  const csp = buildCsp(all);
+  const csp = buildCsp(all, { playOrigin: PLAY_ORIGIN });
   const headers = buildHeaders(csp);
   const longest = Math.max(...headers.split("\n").map((l) => l.length));
   if (longest > MAX_LINE) {

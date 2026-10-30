@@ -37,6 +37,13 @@ describe("buildCsp", () => {
     expect(csp).not.toContain("unsafe-eval");
     expect(csp).not.toMatch(/script-src[^;]*unsafe-inline/);
   });
+
+  test("frames only origin G", () => {
+    expect(csp).toContain("frame-src https://arctanmyangle-play.pages.dev;");
+    const local = buildCsp({ scripts: new Set(), styles: new Set() }, { playOrigin: "http://localhost:4330" });
+    expect(local).toContain("frame-src http://localhost:4330;");
+    expect(local).not.toContain("*");
+  });
 });
 
 describe("_headers round trip", () => {

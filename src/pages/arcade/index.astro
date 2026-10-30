@@ -2,7 +2,9 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Icon from "../../components/Icon.astro";
 import StackerPreview from "../../components/StackerPreview.astro";
+import PlayPoster from "../../components/PlayPoster.astro";
 import { games, href } from "../../data/site";
+import { hostedGames, linkedGames } from "../../data/play";
 
 const stacker = games.find((g) => g.slug === "stacker")!;
 const reaction = games.find((g) => g.slug === "reaction")!;
@@ -13,8 +15,8 @@ const reaction = games.find((g) => g.slug === "reaction")!;
     <span class="eyebrow">Arcade</span>
     <h1>Quick games, fair rules.</h1>
     <p class="lede">
-      Each one loads instantly, plays with one key or one tap, and keeps your best score on this device. No accounts,
-      no ads.
+      Each one loads instantly, plays with a keyboard or a phone, and keeps your progress on this device. No accounts,
+      and no ads on anything hosted here.
     </p>
   </header>
 
@@ -51,6 +53,44 @@ const reaction = games.find((g) => g.slug === "reaction")!;
         <span class="game__cta" aria-hidden="true">Play <Icon name="arrow" size={16} /></span>
       </div>
     </article>
+
+    {hostedGames.map((g) => (
+      <article class="card game card--lift" data-spotlight>
+        <div class="game__art">
+          <PlayPoster slug={g.slug} />
+        </div>
+        <div class="game__body">
+          <div class="game__meta">
+            <span class="badge">Playable</span>
+            <span class="kbd">{g.controls}</span>
+          </div>
+          <h2><a class="card__link" href={href(`arcade/${g.slug}`)}>{g.title}</a></h2>
+          <p>{g.blurb}</p>
+          <span class="game__cta" aria-hidden="true">Play <Icon name="arrow" size={16} /></span>
+        </div>
+      </article>
+    ))}
+
+    {linkedGames.map((g) => (
+      <article class="card game game--linked card--lift" data-spotlight>
+        <div class="game__art game__art--linked" aria-hidden="true">
+          <div class="rails"><span /><span /><span /></div>
+        </div>
+        <div class="game__body">
+          <div class="game__meta">
+            <span class="badge badge--muted">On {g.host}</span>
+            <span class="kbd">{g.controls}</span>
+          </div>
+          <h2>
+            <a class="card__link" href={g.url} target="_blank" rel="noopener noreferrer">
+              {g.title}<span class="sr-only"> (opens {g.host} in a new tab)</span>
+            </a>
+          </h2>
+          <p>{g.blurb}</p>
+          <span class="game__cta" aria-hidden="true">Opens in new tab ↗</span>
+        </div>
+      </article>
+    ))}
 
     <article class="card game game--wide card--lift" data-hue="chess" data-spotlight>
       <div class="game__body">
@@ -196,6 +236,19 @@ const reaction = games.find((g) => g.slug === "reaction")!;
     68% {
       visibility: visible;
     }
+  }
+
+  /* Linked-out card: three tracks in perspective, no third-party art. */
+  .rails {
+    display: flex;
+    gap: 1.25rem;
+    height: 11rem;
+    transform: perspective(14rem) rotateX(38deg);
+  }
+  .rails span {
+    width: 2.25rem;
+    border-inline: 3px solid var(--text-2);
+    background: repeating-linear-gradient(to bottom, transparent 0 0.875rem, var(--line) 0.875rem 1.125rem);
   }
 
   /* Chess-for-two card: horizontal on wide screens. */
