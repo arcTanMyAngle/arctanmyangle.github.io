@@ -7,6 +7,8 @@ This copy of A Dark Room is modified from https://github.com/doublespeakgames/ad
 - local jQuery instead of the Google CDN
 - removed Google Analytics, Dropbox save and the phone redirect
 - inline scripts moved to script/boot.js
+- phones: a viewport tag, css/phone.css (below 940px the notification log moves to a strip above the game) and
+  script/fit.js (scales the page down to fit a frame narrower than the layout)
 - bridge script
 
 Everything else is as upstream.

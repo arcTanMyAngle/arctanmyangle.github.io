@@ -1,14 +1,13 @@
-# STATE (updated 2026-10-30, origin G `play/` built: 2048, Hextris, A Dark Room; Subway Surfers link)
+# STATE (updated 2026-10-30: G has 6 games and is deployed to the branch preview; chess vs computer added)
 
 Milestone: M1 in progress (M1.1, M1.2, M1.3 done; Cloudflare A + G created, D-19)
 Done: M0 (b6df977). M1.1: A/B rejected, C approved (D-14, D-15). M1.2: C is the real site (D-16). M1.3: hashed CSP
 `_headers` (D-17), build-time chess plies so `/` ships no chess.js (D-18), `bun run budgets`, CI workflow, tests
 Next exact task: owner adds repo secrets `CLOUDFLARE_API_TOKEN` (Account → Cloudflare Pages: Edit) and
 `CLOUDFLARE_ACCOUNT_ID`, then pushes `hub/m1-proto-c` so CI runs on GitHub for the first time and the `deploy` job
-redeploys both previews (G first, then A). Before that, or instead, deploy G by hand
-(`bunx wrangler@4.151.1 pages deploy play --project-name arctanmyangle-play --branch hub-m1-proto-c`) and curl the CSP
-on `/`, `/g/2048/`, `/g/hextris/`, `/g/a-dark-room/` to close T-M1-03 on G; then Playwright + axe (T-M1-04) and the
-M1 contracts
+redeploys both previews (G first, then A). Both previews are already up by hand (see carry-forward for the exact
+commands). Then curl G's per-game CSP to close T-M1-03 on G, Playwright + axe (T-M1-04) and the M1 contracts.
+Owner may also pick up the offered originals: a 3-lane runner and a run-and-gun boss fight (own art and names)
 Blocked: CI deploy on the two repo secrets; Q-01 tabs content (M5), Q-02 projects (M3), Q-03 about (M5)
 Live: GitHub Pages (old site) until M6 cut-over. Preview: `https://hub-m1-proto-c.arctanmyangle.pages.dev`
 Budgets: see PLAN §4; baseline: `evidence/baseline/` (recorded; all routes already meet A-PERF-01 and A-PERF-05)
@@ -72,10 +71,28 @@ changing anything a D-entry covers. `HANDOFF.md` at the repo root describes the 
 - Games we won't host: anything paid or pirated (Cuphead was asked for and declined; its free copies are pirated) and
   anything whose licence doesn't allow redistribution. Third-party web games go in `linkedGames` as plain links.
 - A Dark Room is a fixed 700px layout: fits a landscape phone, clips in portrait; the page says so (`phoneNote`).
+  Its white page is the game's own look ("lights off" in its footer), not a failed load.
+- Hand deploys use the clean alias `hub-m1-proto-c` (a "/" in `--branch` gets a random suffix):
+  `PUBLIC_PLAY_ORIGIN=https://hub-m1-proto-c.arctanmyangle-play.pages.dev bun run build`, then
+  `bunx wrangler@4.151.1 pages deploy dist --project-name arctanmyangle --branch hub-m1-proto-c --commit-dirty=true`
+  (G: same with `play` and `arctanmyangle-play`). Production (`--branch main`) needs the owner's OK. If wrangler
+  throws MODULE_NOT_FOUND, delete the stale `bunx-*-wrangler@4.151.1` folder in `%TEMP%`.
+- Fullscreen in `playFrame.ts`: some embedded browsers never settle `requestFullscreen()`, so after 800 ms it pins
+  the frame instead (`data-pseudo-fs`); `main` is lifted to z-index 150 while pinned or the footer paints over it.
+- Chess vs computer (`/chess/play/`): `src/lib/chessEngine.ts` (alpha-beta + quiescence on chess.js internals,
+  Easy/Medium/Hard), run in `chessWorker.ts` (a module Worker from `/_astro/`, allowed by `script-src 'self'`),
+  falling back to the page thread if the Worker can't start. `tests/chessEngine.test.mjs` pins the chess.js internals.
 
 ## Last handoff
 
-Origin G games (2026-10-30). `play/` holds 2048 (MIT), Hextris (GPL-3.0) and A Dark Room (MPL-2.0), pinned to
+Games + chess AI (2026-10-30). G gained T-Rex Runner, Clumsy Bird and Tower Building (rights docs in
+`evidence/rights/`), A Dark Room got a phone fit, and both previews were deployed by hand to the `hub-m1-proto-c`
+alias. `/chess/play/` can seat the computer on either side (Easy/Medium/Hard, undo takes back both plies).
+Checked on the Cloudflare preview at 375x812: the AI keeps answering, undo works, the seat name fits, fullscreen
+falls back to the pinned frame and exits. Subway Surfers stays a link; Cuphead declined (paid, no legal free copy).
+Gates: check 0 errors, tsc, bun test (59 pass), build, budgets. Not checked: CI on GitHub, axe, Lighthouse.
+
+Earlier: Origin G games (2026-10-30). `play/` holds 2048 (MIT), Hextris (GPL-3.0) and A Dark Room (MPL-2.0), pinned to
 upstream commits, with ads, analytics, remote fonts/scripts and outbound calls removed (`games-manifest.json`,
 `evidence/rights/`). A gets `/arcade/<slug>/` (`[slug].astro` + `playFrame.ts`): poster, Play creates a sandboxed
 iframe (`allow-scripts allow-same-origin allow-pointer-lock`, no popups/forms/top-nav), hidden until the game posts

@@ -60,6 +60,47 @@ export const hostedGames: HostedGame[] = [
     source: "https://github.com/doublespeakgames/adarkroom",
     phoneNote: "Built for a wide screen. On a phone, turn it sideways or use Open in new tab.",
   },
+  {
+    slug: "t-rex-runner",
+    title: "T-Rex Runner",
+    blurb: "The dinosaur from Chrome's offline page. Jump the cacti, duck the birds, see how far you get.",
+    controls: "Space · tap",
+    howto: [
+      { key: "Space", text: "Jump. ↑ also jumps, ↓ ducks." },
+      { key: "Tap", text: "On a phone, tap anywhere to jump." },
+      { key: "Click", text: "On a computer, a click jumps too." },
+    ],
+    credit: "The Chromium Authors, packaged by wayou",
+    license: "BSD-3-Clause",
+    source: "https://github.com/wayou/t-rex-runner",
+  },
+  {
+    slug: "clumsy-bird",
+    title: "Clumsy Bird",
+    blurb: "Flap through the gaps between the pipes. One touch and it's over. Your best score stays.",
+    controls: "Space · tap",
+    howto: [
+      { key: "Space", text: "Flap. A tap or a click flaps too." },
+      { key: "M", text: "Mute." },
+    ],
+    credit: "Ellison Leão",
+    license: "GPL-3.0",
+    source: "https://github.com/ellisonleao/clumsy-bird",
+  },
+  {
+    slug: "tower-blocks",
+    title: "Tower Building",
+    blurb: "A block swings from the crane. Drop it square on the one below and build as high as you can.",
+    controls: "Tap · click",
+    howto: [
+      { key: "Tap", text: "Drop the block. A click works too." },
+      { key: "Aim", text: "A clean landing scores more. Miss three times and the tower is done." },
+    ],
+    credit: "BMQB, Inc.",
+    license: "MIT",
+    source: "https://github.com/iamkun/tower_game",
+    phoneNote: "Made for a phone held upright. Fullscreen gives it the most room.",
+  },
 ];
 
 /** Linked out, not hosted: the game stays on its publisher's site. */

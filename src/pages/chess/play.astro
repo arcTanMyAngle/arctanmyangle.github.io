@@ -12,11 +12,11 @@ const seats = [
 ] as const;
 ---
 
-<BaseLayout title="Chess for two" section="chess" description="Pass-and-play chess on one screen, with clocks, undo and a move list.">
+<BaseLayout title="Play chess" section="chess" description="Chess against the computer (easy, medium or hard) or pass and play with a friend, with clocks, undo and a move list.">
   <div data-chess-play data-lines={linesJson}>
     <GameFrame
-      title="Chess for two"
-      lede="One board, two people, pass and play. Drag or click a piece, or use the arrow keys and Enter. The game is saved on this device, so a closed tab doesn't end it."
+      title="Play chess"
+      lede="Play the computer, or pass and play with a friend: pick in Settings. Drag or click a piece, or use the arrow keys and Enter. The game is saved on this device, so a closed tab doesn't end it."
       back={{ label: "Chess", path: "chess" }}
     >
       <div class="note cp-note" data-note hidden>
@@ -90,6 +90,22 @@ const seats = [
           <h2 id="cp-settings">Settings</h2>
           <div class="cp-settings">
             <label class="field">
+              Opponent
+              <select data-opponent>
+                <option value="friend">A friend on this screen</option>
+                <option value="easy">Computer: Easy</option>
+                <option value="medium">Computer: Medium</option>
+                <option value="hard">Computer: Hard</option>
+              </select>
+            </label>
+            <label class="field" data-side-field hidden>
+              You play
+              <select data-side>
+                <option value="w">White</option>
+                <option value="b">Black</option>
+              </select>
+            </label>
+            <label class="field">
               Clock
               <select data-tc>
                 <option value="off">Off</option>
@@ -132,6 +148,7 @@ const seats = [
     flex-wrap: wrap;
     margin-bottom: 1rem;
   }
+  .cp-settings [hidden],
   .cp-note[hidden],
   .cp-note [hidden] {
     display: none;
@@ -203,7 +220,7 @@ const seats = [
   }
   .seat__name {
     flex: 0 1 9rem;
-    min-width: 5rem;
+    min-width: 7.5rem;
   }
   .seat__name input {
     width: 100%;
@@ -214,6 +231,7 @@ const seats = [
     background: transparent;
     color: var(--text);
     font: 600 0.9375rem var(--sans);
+    text-overflow: ellipsis;
   }
   .seat__name input::placeholder {
     color: var(--text);

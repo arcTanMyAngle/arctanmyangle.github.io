@@ -105,6 +105,32 @@ const host = new URL(url).host;
     height: 100%;
     background: var(--bg, #000);
   }
+  /* Pseudo fullscreen (playFrame.ts): the frame and its bar cover the screen where the Fullscreen API is missing. */
+  .pf[data-pseudo-fs] {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    grid-template-rows: 1fr auto;
+    height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    background: var(--bg, #000);
+  }
+  .pf[data-pseudo-fs] .pf__stage {
+    height: auto;
+    min-height: 0;
+  }
+  .pf[data-pseudo-fs] .pf__bar {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+  :global(html.pf-locked),
+  :global(html.pf-locked body) {
+    overflow: hidden;
+  }
+  /* main is its own stacking context (global.css), so lift it over the header and footer; the palette (200) stays on top. */
+  :global(html.pf-locked main) {
+    z-index: 150;
+  }
   .pf__panel {
     display: grid;
     gap: 1.25rem;

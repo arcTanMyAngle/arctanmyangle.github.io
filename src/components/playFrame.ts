@@ -7,6 +7,8 @@
 // shows the failure panel. Only messages from the frame's own window and from G's exact origin are trusted.
 
 const READY_MS = 10_000;
+// Some embedded browsers leave a fullscreen request pending forever; after this long the frame is pinned instead.
+const FS_WAIT_MS = 800;
 const SANDBOX = "allow-scripts allow-same-origin allow-pointer-lock";
 
 type State = "idle" | "loading" | "playing" | "failed";
@@ -83,6 +85,7 @@ export function mount(root: HTMLElement, options: { origin: string }) {
   const stop = () => {
     removeFrame();
     if (document.fullscreenElement === stage) void document.exitFullscreen().catch(() => {});
+    setPseudo(false);
     show("idle");
     say(`${title} closed.`);
     play.focus();
@@ -115,22 +118,54 @@ export function mount(root: HTMLElement, options: { origin: string }) {
     frame.contentWindow.postMessage({ v: 1, type: document.hidden ? "pause" : "resume" }, origin);
   };
 
-  const canFullscreen = typeof stage.requestFullscreen === "function" && document.fullscreenEnabled;
-  const onFullscreenClick = () => {
-    if (document.fullscreenElement === stage) void document.exitFullscreen().catch(() => {});
-    else void stage.requestFullscreen().catch(() => {});
-  };
-  const onFullscreenChange = () => {
+  // iPhone Safari has no Fullscreen API for anything but video. There the frame and its bar are pinned over the
+  // whole screen instead ("pseudo" fullscreen), and Exit fullscreen or Escape puts them back.
+  const native = typeof stage.requestFullscreen === "function" && document.fullscreenEnabled;
+  let pseudo = false;
+  const setLabel = (on: boolean) => {
     if (!fullscreen) return;
-    const on = document.fullscreenElement === stage;
     fullscreen.setAttribute("aria-pressed", String(on));
     const label = fullscreen.querySelector("[data-fs-label]");
     if (label) label.textContent = on ? "Exit fullscreen" : "Fullscreen";
+  };
+  const setPseudo = (on: boolean) => {
+    if (pseudo === on) return;
+    pseudo = on;
+    if (on) root.setAttribute("data-pseudo-fs", "");
+    else root.removeAttribute("data-pseudo-fs");
+    document.documentElement.classList.toggle("pf-locked", on);
+    setLabel(on);
+    frame?.focus();
+  };
+  let fsWait = 0;
+  const onFullscreenClick = () => {
+    window.clearTimeout(fsWait);
+    if (pseudo) setPseudo(false);
+    else if (!native) setPseudo(true);
+    else if (document.fullscreenElement === stage) void document.exitFullscreen().catch(() => {});
+    else {
+      fsWait = window.setTimeout(() => {
+        if (document.fullscreenElement !== stage) setPseudo(true);
+      }, FS_WAIT_MS);
+      void stage.requestFullscreen().catch(() => {
+        window.clearTimeout(fsWait);
+        setPseudo(true);
+      });
+    }
+  };
+  const onFullscreenChange = () => {
+    const on = document.fullscreenElement === stage;
+    // A request that was given up on can still land late; the real thing wins.
+    if (on) setPseudo(false);
+    setLabel(on);
     if (!on) frame?.focus();
+  };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === "Escape" && pseudo) setPseudo(false);
   };
 
   if (fullscreen) {
-    fullscreen.hidden = !canFullscreen;
+    fullscreen.hidden = false;
     fullscreen.addEventListener("click", onFullscreenClick);
   }
   play.addEventListener("click", start);
@@ -139,6 +174,7 @@ export function mount(root: HTMLElement, options: { origin: string }) {
   window.addEventListener("message", onMessage);
   document.addEventListener("visibilitychange", onVisibility);
   document.addEventListener("fullscreenchange", onFullscreenChange);
+  document.addEventListener("keydown", onKey);
   play.disabled = false;
   show("idle");
 
@@ -152,6 +188,9 @@ export function mount(root: HTMLElement, options: { origin: string }) {
       window.removeEventListener("message", onMessage);
       document.removeEventListener("visibilitychange", onVisibility);
       document.removeEventListener("fullscreenchange", onFullscreenChange);
+      document.removeEventListener("keydown", onKey);
+      window.clearTimeout(fsWait);
+      setPseudo(false);
     },
   };
 }

@@ -23,7 +23,31 @@
       "license": "MPL-2.0",
       "source": "https://github.com/doublespeakgames/adarkroom",
       "commit": "1fada4620b6c66bd07bf15a3f1eb8223df8bc1d7",
-      "changes": "English only (lang/ removed); local jQuery instead of the Google CDN; removed Google Analytics, Dropbox save and the phone redirect; inline scripts moved to script/boot.js; bridge script"
+      "changes": "English only (lang/ removed); local jQuery instead of the Google CDN; removed Google Analytics, Dropbox save and the phone redirect; inline scripts moved to script/boot.js; phone layout (css/phone.css, script/fit.js, viewport tag); bridge script"
+    },
+    {
+      "slug": "t-rex-runner",
+      "title": "T-Rex Runner",
+      "license": "BSD-3-Clause",
+      "source": "https://github.com/wayou/t-rex-runner",
+      "commit": "5455bfa408ec6b707c7300ff194b7390733a766d",
+      "changes": "removed Google Fonts and the inline onclick/keydown scripts (now boot.js, which also lets a click jump or restart); iPadOS counts as iOS for touch; bridge script"
+    },
+    {
+      "slug": "clumsy-bird",
+      "title": "Clumsy Bird",
+      "license": "GPL-3.0",
+      "source": "https://github.com/ellisonleao/clumsy-bird",
+      "commit": "fae3d487d5102af29fb3f78431cbd45e9b83aed3",
+      "changes": "removed the site-verification, Open Graph and Twitter tags; inline start-up script moved to boot.js; game centred vertically; bridge script"
+    },
+    {
+      "slug": "tower-blocks",
+      "title": "Tower Building",
+      "license": "MIT",
+      "source": "https://github.com/iamkun/tower_game",
+      "commit": "c6fa84afe179b661fa71cf7cc8788d0c47ca2875",
+      "changes": "removed Google Analytics, the invite button and the WeChat share overlay; inline start-up script moved to boot.js with no alert(), which also lets a mouse drop blocks on touch-screen computers; bridge script"
     }
   ]
 }

@@ -1,14 +1,19 @@
-// Chess for two: pass and play on one device.
+// Chess for two: pass and play on one device, or play the computer.
 // Contract: mount(root) => { destroy() }. `root` holds a Board.astro ([data-board]) inside [data-table],
 // two seats [data-seat="w|b"] (each with input[data-name], [data-captured], [data-clock] > [data-time]),
 // [data-status], the move list [data-moves] (+ [data-moves-empty]), action buttons [data-act=...],
-// select[data-tc], input[data-autoflip], [data-tc-hint], a polite [data-live] region, the preload note
-// [data-note] (+ [data-note-text]) and data-lines (JSON of the opening lines, for ?line=<slug>).
+// select[data-tc], input[data-autoflip], [data-tc-hint], select[data-opponent] (friend | easy | medium | hard),
+// select[data-side] inside [data-side-field], a polite [data-live] region, the preload note [data-note]
+// (+ [data-note-text]) and data-lines (JSON of the opening lines, for ?line=<slug>).
+//
+// Against the computer, src/lib/chessEngine.ts thinks in a Web Worker (src/lib/chessWorker.ts) so the board never
+// freezes; if a worker can't start, the engine is loaded on the page instead.
 //
 // The board is 64 real buttons with a roving tabindex: arrow keys move, Enter/Space picks up and puts
 // down. Mouse and touch go through pointer events on the same layer, so click-to-move and drag both work.
 // Pieces keep their identity between positions, so moves, undo and a new game all glide.
 import { Chess, type Move, type Square } from "chess.js";
+import type { EngineMove, Level } from "../lib/chessEngine";
 import { STORAGE_KEYS } from "../lib/clientState";
 import {
   FILES,
@@ -26,6 +31,10 @@ const STORE_KEY = STORAGE_KEYS.chessGame;
 const BACKUP_KEY = STORAGE_KEYS.chessBackup;
 
 export type TimeControl = "off" | "3+2" | "5+0" | "10+0";
+export type Opponent = "friend" | Level;
+const LEVEL_NAME: Record<Level, string> = { easy: "Easy", medium: "Medium", hard: "Hard" };
+/** The computer never answers faster than this, so its move reads as a reply rather than a flicker. */
+const MIN_THINK_MS = 450;
 const CLOCKS: Record<Exclude<TimeControl, "off">, [base: number, inc: number]> = {
   "3+2": [180_000, 2_000],
   "5+0": [300_000, 0],
@@ -51,6 +60,10 @@ interface Saved {
   end: ManualEnd | null;
   flipped: boolean;
   autoFlip: boolean;
+  /** Missing in games saved before the computer opponent existed: those were two-player games. */
+  opponent?: Opponent;
+  /** The computer's colour when `opponent` is a level. */
+  aiColor?: PieceColor;
 }
 interface LineData {
   slug: string;
@@ -84,6 +97,8 @@ function fresh(tc: TimeControl): Saved {
     end: null,
     flipped: false,
     autoFlip: false,
+    opponent: "friend",
+    aiColor: "b",
   };
 }
 
@@ -133,6 +148,9 @@ export function mount(root: HTMLElement) {
   const tcSel = q<HTMLSelectElement>("select[data-tc]");
   const tcHint = q("[data-tc-hint]");
   const autoFlipBox = q<HTMLInputElement>("input[data-autoflip]");
+  const oppSel = q<HTMLSelectElement>("select[data-opponent]");
+  const sideSel = q<HTMLSelectElement>("select[data-side]");
+  const sideField = q("[data-side-field]");
   const btn = (act: string) => q<HTMLButtonElement>(`[data-act="${act}"]`);
   const seats = { w: q('[data-seat="w"]')!, b: q('[data-seat="b"]')! };
   const nameInputs = {
@@ -165,10 +183,24 @@ export function mount(root: HTMLElement) {
     over: string | null;
   } | null = null;
 
+  // ---- The computer opponent ----
+  let worker: Worker | null = null;
+  let workerFailed = false;
+  let thinkId = 0;
+  let thinking = false;
+  let aiTimer = 0;
+  const level = (): Level | null => (state.opponent && state.opponent !== "friend" ? state.opponent : null);
+  const aiColor = (): PieceColor => state.aiColor ?? "b";
+  /** It's the computer's move, so the board ignores the player. */
+  const aiTurn = () => !!level() && !ended && chess.turn() === aiColor();
+
   const say = (t: string) => {
     if (live) live.textContent = t;
   };
-  const nameOf = (c: PieceColor) => nameInputs[c].value.trim() || COLOR_NAME[c];
+  const nameOf = (c: PieceColor) => {
+    const lv = level();
+    return lv && c === aiColor() ? `Computer (${LEVEL_NAME[lv]})` : nameInputs[c].value.trim() || COLOR_NAME[c];
+  };
   const save = () => write(STORE_KEY, state);
 
   // ---- Layers built on the client ----
@@ -259,6 +291,7 @@ export function mount(root: HTMLElement) {
     if (tcSel) tcSel.value = s.nextTc;
     if (autoFlipBox) autoFlipBox.checked = s.autoFlip;
     if (s.autoFlip) state.flipped = chess.turn() === "b";
+    applyOpponent();
     selected = null;
     selTargets = new Map();
     overHidden = false;
@@ -413,7 +446,7 @@ export function mount(root: HTMLElement) {
       if (sq === selected) label += ", selected";
       else if (t) label += t.captured ? ", capture" : ", move here";
       b.setAttribute("aria-label", label);
-      b.toggleAttribute("data-own", !ended && !!p && p.color === turn);
+      b.toggleAttribute("data-own", !ended && !aiTurn() && !!p && p.color === turn);
       b.toggleAttribute("data-target", !!t);
       b.tabIndex = sq === focusSq ? 0 : -1;
       place(b, sq);
@@ -481,7 +514,11 @@ export function mount(root: HTMLElement) {
   function renderStatus() {
     if (!statusEl) return;
     const turn = chess.turn();
-    statusEl.textContent = ended ? ended.text : `${nameOf(turn)} to move${chess.inCheck() ? ", in check" : ""}.`;
+    statusEl.textContent = ended
+      ? ended.text
+      : thinking
+        ? `${nameOf(turn)} is thinking…`
+        : `${nameOf(turn)} to move${chess.inCheck() ? ", in check" : ""}.`;
     statusEl.dataset.turn = turn;
     statusEl.dataset.state = ended ? "over" : "play";
   }
@@ -492,13 +529,15 @@ export function mount(root: HTMLElement) {
       const b = btn(act);
       if (b) b.disabled = disabled;
     };
-    set("undo", (!any && !state.end) || !!promoFor);
+    // Against the computer, undo takes back your move, so there's nothing to undo before you've made one.
+    const yours = level() ? chess.history({ verbose: true }).some((m) => m.color !== aiColor()) : any;
+    set("undo", (!yours && !state.end) || !!promoFor);
     set("resign", !!ended || !!promoFor);
-    set("draw", !!ended || !any || !!promoFor);
+    set("draw", !!ended || !any || !!promoFor || !!level());
     set("copy", !any);
     const resign = btn("resign");
     const label = resign?.querySelector("[data-label]");
-    if (resign && label && !("confirming" in resign.dataset)) label.textContent = `Resign as ${COLOR_NAME[chess.turn()]}`;
+    if (resign && label && !("confirming" in resign.dataset)) label.textContent = level() ? "Resign" : `Resign as ${COLOR_NAME[chess.turn()]}`;
     if (tcHint) tcHint.hidden = state.nextTc === state.tc;
   }
 
@@ -567,7 +606,7 @@ export function mount(root: HTMLElement) {
 
   function scheduleAutoFlip() {
     clearTimeout(flipTimer);
-    if (!state.autoFlip || ended) return;
+    if (!state.autoFlip || ended || level()) return;
     const want = chess.turn() === "b";
     if (want === state.flipped) return;
     flipTimer = window.setTimeout(
@@ -605,6 +644,82 @@ export function mount(root: HTMLElement) {
     say(`${describe(m)}${over ? ` ${over.text}` : ""}`);
     save();
     scheduleAutoFlip();
+    think();
+  }
+
+  /** Start the computer's move if it's its turn. Waits while the tab is hidden; onVis picks it back up. */
+  function think() {
+    const lv = level();
+    if (!lv || !aiTurn() || thinking || promoFor || document.hidden) return;
+    const id = ++thinkId;
+    const t0 = performance.now();
+    thinking = true;
+    renderStatus();
+    const answer = (move: EngineMove | null) => {
+      if (id !== thinkId) return;
+      aiTimer = window.setTimeout(
+        () => {
+          if (id !== thinkId) return;
+          thinking = false;
+          if (move && aiTurn()) play(move);
+          else renderStatus();
+        },
+        Math.max(0, MIN_THINK_MS - (performance.now() - t0))
+      );
+    };
+    const onPage = () =>
+      import("../lib/chessEngine").then(
+        ({ bestMove }) => answer(id === thinkId ? bestMove(chess.history(), lv) : null),
+        () => answer(null)
+      );
+    if (!worker && !workerFailed) {
+      try {
+        worker = new Worker(new URL("../lib/chessWorker.ts", import.meta.url), { type: "module" });
+      } catch {
+        workerFailed = true;
+      }
+    }
+    if (!worker) {
+      void onPage();
+      return;
+    }
+    // Rebound on every call: the handlers must close over this call's id and answer, not the first one's.
+    worker.onmessage = (e: MessageEvent<{ id: number; move: EngineMove | null }>) => {
+      if (e.data.id === id) answer(e.data.move);
+    };
+    worker.onerror = () => {
+      worker?.terminate();
+      worker = null;
+      workerFailed = true;
+      if (id === thinkId && thinking) void onPage();
+    };
+    worker.postMessage({ id, moves: chess.history(), level: lv });
+  }
+
+  /** Forget any move the computer is working on (after undo, a new game, or a change of opponent). */
+  function stopThinking() {
+    thinkId++;
+    thinking = false;
+    clearTimeout(aiTimer);
+  }
+
+  /** Bring the settings and the seats in line with who the opponent is. */
+  function applyOpponent() {
+    const lv = level();
+    const ai = aiColor();
+    if (oppSel) oppSel.value = state.opponent ?? "friend";
+    if (sideSel) sideSel.value = other(ai);
+    if (sideField) sideField.hidden = !lv;
+    if (autoFlipBox) autoFlipBox.disabled = !!lv;
+    for (const c of ["w", "b"] as const) {
+      const isAi = !!lv && c === ai;
+      nameInputs[c].readOnly = isAi;
+      nameInputs[c].title = isAi ? nameOf(c) : "";
+      nameInputs[c].value = isAi && lv ? `CPU · ${LEVEL_NAME[lv]}` : state.names[c];
+      seats[c].toggleAttribute("data-computer", isAi);
+    }
+    // Your pieces at the bottom.
+    if (lv) state.flipped = ai === "w";
   }
 
   function attempt(from: string, to: string) {
@@ -647,6 +762,7 @@ export function mount(root: HTMLElement) {
   function undo() {
     if (promoFor) closePromo(true);
     clearTimeout(flipTimer);
+    stopThinking();
     if (state.end && state.end.reason !== "time") {
       state.end = null;
       overHidden = false;
@@ -657,8 +773,15 @@ export function mount(root: HTMLElement) {
       return;
     }
     state.end = null;
-    const m = chess.undo();
-    if (m && state.clock && state.clockHist.length) state.clock = state.clockHist.pop()!;
+    // Against the computer, take back its reply too, so it's your move again.
+    const plies = level() && chess.turn() !== aiColor() && chess.history().length >= 2 ? 2 : 1;
+    let m: Move | null = null;
+    for (let i = 0; i < plies; i++) {
+      const u = chess.undo();
+      if (!u) break;
+      m = u;
+      if (state.clock && state.clockHist.length) state.clock = state.clockHist.pop()!;
+    }
     state.moves = chess.history();
     selected = null;
     selTargets = new Map();
@@ -668,20 +791,25 @@ export function mount(root: HTMLElement) {
     save();
     if (m) say(`Took back ${m.san}. ${nameOf(chess.turn())} to move.`);
     scheduleAutoFlip();
+    think();
   }
 
   function newGame() {
     clearTimeout(flipTimer);
     if (promoFor) closePromo(false);
+    stopThinking();
     const s = fresh(state.nextTc);
     s.names = state.names;
     s.autoFlip = state.autoFlip;
     s.flipped = state.autoFlip ? false : state.flipped;
+    s.opponent = state.opponent;
+    s.aiColor = state.aiColor;
     loadState(s);
     refresh();
     save();
     say(`New game. ${nameOf("w")} to move.`);
     focusSq = "e2";
+    think();
   }
 
   // ---- Two-step confirm for the destructive buttons ----
@@ -743,7 +871,7 @@ export function mount(root: HTMLElement) {
   };
 
   function onDown(e: PointerEvent) {
-    if (e.button !== 0 || ended || promoFor || drag) return;
+    if (e.button !== 0 || ended || promoFor || drag || aiTurn()) return;
     const sq = sqAt(e);
     if (!sq) return;
     focusSq = sq;
@@ -810,6 +938,10 @@ export function mount(root: HTMLElement) {
   // ---- Input: keyboard ----
   function activate(sq: string) {
     if (ended || promoFor) return;
+    if (aiTurn()) {
+      say(`Wait for ${nameOf(chess.turn())}.`);
+      return;
+    }
     focusSq = sq;
     if (selected && selTargets.has(sq)) {
       attempt(selected, sq);
@@ -904,8 +1036,9 @@ export function mount(root: HTMLElement) {
         else newGame();
         break;
       case "resign": {
-        const loser = chess.turn();
-        confirmThen(b, `Confirm: ${COLOR_NAME[loser]} resigns`, () => {
+        const loser = level() ? other(aiColor()) : chess.turn();
+        confirmThen(b, level() ? "Confirm: resign" : `Confirm: ${COLOR_NAME[loser]} resigns`, () => {
+          stopThinking();
           tick();
           state.end = { reason: "resign", loser };
           refresh();
@@ -934,11 +1067,13 @@ export function mount(root: HTMLElement) {
       case "restore": {
         const backup = read(BACKUP_KEY);
         if (backup) {
+          stopThinking();
           loadState(backup);
           write(BACKUP_KEY, null);
           save();
           refresh(true);
           say(`Your game is back. ${nameOf(chess.turn())} to move.`);
+          think();
         }
         if (note) note.hidden = true;
         break;
@@ -970,7 +1105,22 @@ export function mount(root: HTMLElement) {
     save();
     refresh(true);
   }
+  function onOpponent() {
+    if (!oppSel || !sideSel) return;
+    stopThinking();
+    const wasLevel = !!level();
+    state.opponent = oppSel.value as Opponent;
+    state.aiColor = other(sideSel.value as PieceColor);
+    const lv = level();
+    if (!lv && wasLevel) state.flipped = state.autoFlip && chess.turn() === "b";
+    applyOpponent();
+    save();
+    refresh(true);
+    say(lv ? `Playing the computer on ${LEVEL_NAME[lv]}. You have ${COLOR_NAME[other(aiColor())]}.` : "Two players on this screen.");
+    think();
+  }
   const onName = (c: PieceColor) => () => {
+    if (nameInputs[c].readOnly) return;
     state.names[c] = nameInputs[c].value;
     save();
     renderStatus();
@@ -983,6 +1133,7 @@ export function mount(root: HTMLElement) {
       save();
     } else {
       lastTick = performance.now();
+      think();
     }
   };
   const onHide = () => save();
@@ -995,6 +1146,9 @@ export function mount(root: HTMLElement) {
     const s = fresh(prev.nextTc);
     s.names = prev.names;
     s.autoFlip = prev.autoFlip;
+    s.opponent = prev.opponent;
+    // Against the computer you take the side the line is for.
+    s.aiColor = line.side === "Black" ? "w" : "b";
     s.moves = [...line.moves];
     s.flipped = line.side === "Black";
     const putAside = prev.moves.length > 0 && !(prev.moves.join(" ") === line.moves.join(" "));
@@ -1026,6 +1180,8 @@ export function mount(root: HTMLElement) {
   root.addEventListener("click", onAct);
   tcSel?.addEventListener("change", onTc);
   autoFlipBox?.addEventListener("change", onAutoFlip);
+  oppSel?.addEventListener("change", onOpponent);
+  sideSel?.addEventListener("change", onOpponent);
   nameInputs.w.addEventListener("input", nameHandlers.w);
   nameInputs.b.addEventListener("input", nameHandlers.b);
   document.addEventListener("visibilitychange", onVis);
@@ -1033,16 +1189,21 @@ export function mount(root: HTMLElement) {
 
   refresh(true);
   root.dataset.ready = "";
+  think();
 
   return {
     destroy() {
       clearInterval(interval);
       clearTimeout(flipTimer);
+      stopThinking();
+      worker?.terminate();
       for (const t of confirmTimers.values()) clearTimeout(t);
       save();
       root.removeEventListener("click", onAct);
       tcSel?.removeEventListener("change", onTc);
       autoFlipBox?.removeEventListener("change", onAutoFlip);
+      oppSel?.removeEventListener("change", onOpponent);
+      sideSel?.removeEventListener("change", onOpponent);
       nameInputs.w.removeEventListener("input", nameHandlers.w);
       nameInputs.b.removeEventListener("input", nameHandlers.b);
       document.removeEventListener("visibilitychange", onVis);

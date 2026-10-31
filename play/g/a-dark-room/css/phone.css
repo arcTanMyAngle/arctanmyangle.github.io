@@ -1,0 +1,15 @@
+/* arctanmyangle-play: below the full 940px width, the notification log moves from the left column to a strip above
+   the game, so the page needs 720px. script/fit.js scales it down to the frame from there. */
+@media (max-width: 939px) {
+	div#wrapper {
+		width: 700px;
+		padding: 150px 10px 60px;
+	}
+
+	div#notifications {
+		top: 10px;
+		left: 10px;
+		width: 700px;
+		height: 130px;
+	}
+}
