@@ -3,3 +3,5 @@
 /contact/ /about/#contact 301
 /field-notes /about/ 301
 /field-notes/* /about/ 301
+/arcade/t-rex-runner /arcade/ 301
+/arcade/t-rex-runner/ /arcade/ 301

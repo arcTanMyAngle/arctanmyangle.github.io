@@ -26,14 +26,6 @@
       "changes": "English only (lang/ removed); local jQuery instead of the Google CDN; removed Google Analytics, Dropbox save and the phone redirect; inline scripts moved to script/boot.js; phone layout (css/phone.css, script/fit.js, viewport tag); bridge script"
     },
     {
-      "slug": "t-rex-runner",
-      "title": "T-Rex Runner",
-      "license": "BSD-3-Clause",
-      "source": "https://github.com/wayou/t-rex-runner",
-      "commit": "5455bfa408ec6b707c7300ff194b7390733a766d",
-      "changes": "removed Google Fonts and the inline onclick/keydown scripts (now boot.js, which also lets a click jump or restart); iPadOS counts as iOS for touch; bridge script"
-    },
-    {
       "slug": "clumsy-bird",
       "title": "Clumsy Bird",
       "license": "GPL-3.0",

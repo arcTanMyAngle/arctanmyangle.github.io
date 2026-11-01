@@ -61,20 +61,6 @@ export const hostedGames: HostedGame[] = [
     phoneNote: "Built for a wide screen. On a phone, turn it sideways or use Open in new tab.",
   },
   {
-    slug: "t-rex-runner",
-    title: "T-Rex Runner",
-    blurb: "The dinosaur from Chrome's offline page. Jump the cacti, duck the birds, see how far you get.",
-    controls: "Space · tap",
-    howto: [
-      { key: "Space", text: "Jump. ↑ also jumps, ↓ ducks." },
-      { key: "Tap", text: "On a phone, tap anywhere to jump." },
-      { key: "Click", text: "On a computer, a click jumps too." },
-    ],
-    credit: "The Chromium Authors, packaged by wayou",
-    license: "BSD-3-Clause",
-    source: "https://github.com/wayou/t-rex-runner",
-  },
-  {
     slug: "clumsy-bird",
     title: "Clumsy Bird",
     blurb: "Flap through the gaps between the pipes. One touch and it's over. Your best score stays.",

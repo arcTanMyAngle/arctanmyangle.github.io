@@ -10,7 +10,23 @@ export const STORAGE_KEYS = {
   reactionBest: "atma:reaction-best-ms",
   chessGame: "atma:chess-game",
   chessBackup: "atma:chess-backup",
+  laneRushBest: "atma:lane-rush-best",
+  monolithBest: "atma:monolith-best-ms",
+  ironLineBest: "atma:iron-line-best",
+  ironLineMission: "atma:iron-line-mission",
+  gameSound: "atma:game-sound",
 } as const;
+
+/** A stored whole number, or null when missing, unreadable or not a number. */
+export function readNumber(key: string): number | null {
+  const raw = readLocalStorage(key);
+  const n = raw === null ? NaN : Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+export function writeNumber(key: string, n: number): void {
+  writeLocalStorage(key, String(Math.round(n)));
+}
 
 export type Theme = "dark" | "light";
 

@@ -1,0 +1,85 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import GameFrame from "../../components/GameFrame.astro";
+import CanvasGame from "../../components/CanvasGame.astro";
+---
+
+<BaseLayout title="Iron Line" section="arcade" description="An original first-person shooter in three short missions: a dawn raid, a night uplink and a last stand at dusk.">
+  <div data-iron-line>
+    <GameFrame
+      title="Iron Line"
+      lede="Three short missions in first person. Take the intel, plant the uplink, hold the crossroads. Aim down sights, use cover, and shoot the red barrels."
+      back={{ label: "Arcade", path: "arcade" }}
+    >
+      <CanvasGame
+        shape="wide"
+        orient="landscape"
+        touchOver
+        label="Iron Line: a first-person shooter. The canvas shows the 3D view, your weapon and the HUD."
+        hint="WASD move · mouse look · click fire · right-click aim · R reload"
+      >
+        <Fragment slot="touch">
+          <div class="tgrp"></div>
+          <div class="tgrp">
+            <button type="button" class="tbtn" data-key="aim">Aim</button>
+            <button type="button" class="tbtn" data-key="reload">Reload</button>
+            <button type="button" class="tbtn tbtn--big" data-key="fire">Fire</button>
+          </div>
+        </Fragment>
+      </CanvasGame>
+
+      <Fragment slot="side">
+        <section class="panel" aria-labelledby="il-score">
+          <h2 id="il-score">Campaign</h2>
+          <dl class="stats">
+            <div><dt>Last score</dt><dd data-score>–</dd></div>
+            <div><dt>Best mission</dt><dd data-best>–</dd></div>
+            <div><dt>Cleared</dt><dd data-cleared>0 / 3</dd></div>
+          </dl>
+          <div class="il__group" role="group" aria-label="Mission">
+            <button type="button" class="btn btn--small" data-mission="0" aria-pressed="true">1 Breach</button>
+            <button type="button" class="btn btn--small" data-mission="1" aria-pressed="false" disabled>2 Uplink</button>
+            <button type="button" class="btn btn--small" data-mission="2" aria-pressed="false" disabled>3 Last Stand</button>
+          </div>
+          <div class="il__group" role="group" aria-label="Difficulty">
+            <button type="button" class="btn btn--small" data-mode="regular" aria-pressed="true">Regular</button>
+            <button type="button" class="btn btn--small" data-mode="veteran" aria-pressed="false">Veteran</button>
+          </div>
+        </section>
+        <section class="panel" aria-labelledby="il-howto">
+          <h2 id="il-howto">How to play</h2>
+          <ul class="howto" role="list">
+            <li><span class="kbd">W A S D</span> Move. The mouse looks around once you click into the view; <span class="kbd">← →</span> or <span class="kbd">Q E</span> turn too.</li>
+            <li><span class="kbd">Click</span> or <span class="kbd">Space</span> Fire. Headshots do far more damage.</li>
+            <li><span class="kbd">Right-click</span> or <span class="kbd">Shift</span> Aim down sights: tighter spread, slower walk.</li>
+            <li><span class="kbd">R</span> Reload. <span class="kbd">Esc</span> or <span class="kbd">P</span> pauses.</li>
+            <li>On a phone: drag the left side to move, drag anywhere else to look, and slide your thumb on Fire to track a target.</li>
+          </ul>
+        </section>
+        <p class="muted il__fine">Health comes back after a few quiet seconds. Veteran enemies spot you sooner and hit harder; scores there are worth ×1.25. Progress stays on this device only.</p>
+      </Fragment>
+    </GameFrame>
+  </div>
+</BaseLayout>
+
+<script>
+  import { mount } from "../../components/ironLine";
+  const root = document.querySelector<HTMLElement>("[data-iron-line]");
+  if (root) mount(root);
+</script>
+
+<style>
+  .il__group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+  }
+  .il__group :global(.btn[aria-pressed="true"]) {
+    border-color: var(--hue);
+    color: var(--hue);
+  }
+  .il__fine {
+    font-size: 0.875rem;
+  }
+</style>

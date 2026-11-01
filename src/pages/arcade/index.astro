@@ -8,6 +8,7 @@ import { hostedGames, linkedGames } from "../../data/play";
 
 const stacker = games.find((g) => g.slug === "stacker")!;
 const reaction = games.find((g) => g.slug === "reaction")!;
+const canvasGames = games.filter((g) => g.slug !== "stacker" && g.slug !== "reaction");
 ---
 
 <BaseLayout title="Arcade" section="arcade" description="Small games that play right in the browser, on a keyboard or a phone.">
@@ -53,6 +54,37 @@ const reaction = games.find((g) => g.slug === "reaction")!;
         <span class="game__cta" aria-hidden="true">Play <Icon name="arrow" size={16} /></span>
       </div>
     </article>
+
+    {canvasGames.map((g) => (
+      <article class="card game card--lift" data-spotlight>
+        <div class:list={["game__art", `game__art--${g.slug}`]} aria-hidden="true">
+          {g.slug === "iron-line" && (
+            <div class="ilmini">
+              <span class="ilmini__ridge" />
+              <span class="ilmini__reticle" />
+            </div>
+          )}
+          {g.slug === "monolith" && (
+            <div class="mnmini">
+              <span class="mnmini__stone" />
+              <span class="mnmini__floor" />
+            </div>
+          )}
+          {g.slug === "lane-rush" && (
+            <div class="lrmini"><span /><span /><span /><i /></div>
+          )}
+        </div>
+        <div class="game__body">
+          <div class="game__meta">
+            <span class="badge">Playable</span>
+            <span class="kbd">{g.controls}</span>
+          </div>
+          <h2><a class="card__link" href={href(`arcade/${g.slug}`)}>{g.title}</a></h2>
+          <p>{g.blurb}</p>
+          <span class="game__cta" aria-hidden="true">Play <Icon name="arrow" size={16} /></span>
+        </div>
+      </article>
+    ))}
 
     {hostedGames.map((g) => (
       <article class="card game card--lift" data-spotlight>
@@ -236,6 +268,81 @@ const reaction = games.find((g) => g.slug === "reaction")!;
     68% {
       visibility: visible;
     }
+  }
+
+  /* Canvas game previews: plain shapes, nothing animated. */
+  .ilmini,
+  .mnmini {
+    position: relative;
+    width: min(100%, 17rem);
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border-radius: var(--radius);
+    box-shadow: 0 18px 40px -24px rgb(0 0 0 / 0.6);
+  }
+  .ilmini {
+    background: linear-gradient(#f2a65a 0 46%, #3a3f46 46% 100%);
+  }
+  .ilmini__ridge {
+    position: absolute;
+    inset: 22% 0 54%;
+    background: #6b5a4e;
+    clip-path: polygon(0 100%, 0 55%, 14% 30%, 28% 60%, 46% 20%, 63% 55%, 80% 25%, 100% 60%, 100% 100%);
+  }
+  .ilmini__reticle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 2.75rem;
+    height: 2.75rem;
+    translate: -50% -50%;
+    border: 2px solid #f4f4f6;
+    border-radius: 50%;
+    background:
+      linear-gradient(#f4f4f6, #f4f4f6) center / 2px 60% no-repeat,
+      linear-gradient(#f4f4f6, #f4f4f6) center / 60% 2px no-repeat;
+  }
+  .mnmini {
+    background: linear-gradient(#1b1430, #3a2350);
+  }
+  .mnmini__stone {
+    position: absolute;
+    left: 50%;
+    top: 12%;
+    width: 2.6rem;
+    height: 58%;
+    translate: -50% 0;
+    background: linear-gradient(90deg, #4a4658, #8a849c 55%, #5c5770);
+    clip-path: polygon(50% 0, 100% 14%, 86% 100%, 14% 100%, 0 14%);
+    box-shadow: 0 0 30px var(--hue);
+  }
+  .mnmini__floor {
+    position: absolute;
+    inset: 82% 0 0;
+    background: #120d1f;
+    border-top: 2px solid var(--hue);
+  }
+  .lrmini {
+    position: relative;
+    display: flex;
+    gap: 1rem;
+    height: 11rem;
+    transform: perspective(14rem) rotateX(38deg);
+  }
+  .lrmini span {
+    width: 2.5rem;
+    border-inline: 2px solid var(--hue);
+    background: repeating-linear-gradient(to bottom, transparent 0 1rem, var(--hue-soft) 1rem 1.25rem);
+  }
+  .lrmini i {
+    position: absolute;
+    left: 50%;
+    bottom: 0.5rem;
+    width: 1.75rem;
+    height: 0.5rem;
+    translate: -50% 0;
+    border-radius: 999px;
+    background: var(--hue);
   }
 
   /* Linked-out card: three tracks in perspective, no third-party art. */

@@ -1,4 +1,4 @@
-# STATE (updated 2026-10-30: G has 6 games and is deployed to the branch preview; chess vs computer added)
+# STATE (updated 2026-11-01: three original canvas games on A (Iron Line, Monolith, Lane Rush); T-Rex Runner removed)
 
 Milestone: M1 in progress (M1.1, M1.2, M1.3 done; Cloudflare A + G created, D-19)
 Done: M0 (b6df977). M1.1: A/B rejected, C approved (D-14, D-15). M1.2: C is the real site (D-16). M1.3: hashed CSP
@@ -7,7 +7,6 @@ Next exact task: owner adds repo secrets `CLOUDFLARE_API_TOKEN` (Account → Clo
 `CLOUDFLARE_ACCOUNT_ID`, then pushes `hub/m1-proto-c` so CI runs on GitHub for the first time and the `deploy` job
 redeploys both previews (G first, then A). Both previews are already up by hand (see carry-forward for the exact
 commands). Then curl G's per-game CSP to close T-M1-03 on G, Playwright + axe (T-M1-04) and the M1 contracts.
-Owner may also pick up the offered originals: a 3-lane runner and a run-and-gun boss fight (own art and names)
 Blocked: CI deploy on the two repo secrets; Q-01 tabs content (M5), Q-02 projects (M3), Q-03 about (M5)
 Live: GitHub Pages (old site) until M6 cut-over. Preview: `https://hub-m1-proto-c.arctanmyangle.pages.dev`
 Budgets: see PLAN §4; baseline: `evidence/baseline/` (recorded; all routes already meet A-PERF-01 and A-PERF-05)
@@ -85,7 +84,20 @@ changing anything a D-entry covers. `HANDOFF.md` at the repo root describes the 
 
 ## Last handoff
 
-Games + chess AI (2026-10-30). G gained T-Rex Runner, Clumsy Bird and Tower Building (rights docs in
+Original canvas games (2026-11-01). A gained three originals, own names and art, as toys on `CanvasGame.astro` +
+`src/lib/gameShell.ts` (start/pause/over overlays, touch buttons, swipe, seeded `rng`, `buzz`) + `src/lib/sfx.ts`:
+Iron Line (`/arcade/iron-line/`, raycast FPS, three missions, Regular/Veteran; design notes in `IRON-LINE.md`),
+Monolith (`/arcade/monolith/`, run-and-gun boss fight, three phases, S–C grades) and Lane Rush
+(`/arcade/lane-rush/`, three-lane runner whose rows always leave a way through). All three are in `games`
+(`site.ts`) and on `/arcade/`; `tests/games.test.mjs` covers row fairness, phases/grades, map validity, raycasting
+and scoring. T-Rex Runner was removed from G as unprofessional: files and rights doc deleted, manifest/`_headers`/
+`hostedGames` updated, `/arcade/t-rex-runner/` 301s to `/arcade/`. Play-tested at 375x812 and 812x375: no console
+errors, no horizontal overflow; Play now scrolls the whole view on screen on short (landscape) screens.
+Gates: check 0 errors/0 warnings, tsc, bun test (71 pass), build (20 pages), budgets. Both previews redeployed by
+hand to `hub-m1-proto-c`; curl: the three new routes 200, the T-Rex redirect 301, G's `/g/t-rex-runner/` 404. Not
+checked: real-device touch (only emulated), CI on GitHub, axe, Lighthouse.
+
+Earlier: Games + chess AI (2026-10-30). G gained T-Rex Runner (since removed, see above), Clumsy Bird and Tower Building (rights docs in
 `evidence/rights/`), A Dark Room got a phone fit, and both previews were deployed by hand to the `hub-m1-proto-c`
 alias. `/chess/play/` can seat the computer on either side (Easy/Medium/Hard, undo takes back both plies).
 Checked on the Cloudflare preview at 375x812: the AI keeps answering, undo works, the seat name fits, fullscreen

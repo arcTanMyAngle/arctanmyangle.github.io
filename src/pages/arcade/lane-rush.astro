@@ -1,0 +1,50 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import GameFrame from "../../components/GameFrame.astro";
+import CanvasGame from "../../components/CanvasGame.astro";
+---
+
+<BaseLayout title="Lane Rush" section="arcade" description="An original three-lane night runner. Swipe to dodge, jump and slide.">
+  <div data-lane-rush>
+    <GameFrame
+      title="Lane Rush"
+      lede="Ride the night line on a hoverboard. Switch lanes, jump the barriers, slide under the gates and stay off the trams. It gets faster the longer you last."
+      back={{ label: "Arcade", path: "arcade" }}
+    >
+      <CanvasGame shape="tall" label="Lane Rush: a three-lane runner seen from behind the rider" hint="Swipe, or arrow keys / WASD" />
+
+      <Fragment slot="side">
+        <section class="panel" aria-labelledby="lr-score">
+          <h2 id="lr-score">Score</h2>
+          <dl class="stats">
+            <div><dt>Score</dt><dd data-score>0</dd></div>
+            <div><dt>Best</dt><dd data-best>–</dd></div>
+            <div><dt>Coins</dt><dd data-coins>0</dd></div>
+          </dl>
+        </section>
+        <section class="panel" aria-labelledby="lr-howto">
+          <h2 id="lr-howto">How to play</h2>
+          <ul class="howto" role="list">
+            <li><span class="kbd">← →</span> Change lane. On a phone, swipe left or right.</li>
+            <li><span class="kbd">↑</span> Jump low barriers. Swipe up or tap.</li>
+            <li><span class="kbd">↓</span> Slide under gates. Swipe down; in the air it drops you fast.</li>
+            <li><span class="kbd">P</span> Pause. Clipping a side costs a stumble; two close together ends the run.</li>
+          </ul>
+        </section>
+        <p class="muted lr__fine">Magnets pull coins in, shields take one hit. Your best score stays on this device only.</p>
+      </Fragment>
+    </GameFrame>
+  </div>
+</BaseLayout>
+
+<script>
+  import { mount } from "../../components/laneRush";
+  const root = document.querySelector<HTMLElement>("[data-lane-rush]");
+  if (root) mount(root);
+</script>
+
+<style>
+  .lr__fine {
+    font-size: 0.875rem;
+  }
+</style>

@@ -48,6 +48,24 @@ export const games: Game[] = [
     blurb: "Wait for the signal, then hit it. Five rounds, and false starts don't count.",
     controls: "Space · tap",
   },
+  {
+    slug: "iron-line",
+    title: "Iron Line",
+    blurb: "A first-person shooter in three short missions. Take the intel, plant the uplink, hold the crossroads.",
+    controls: "WASD + mouse · touch",
+  },
+  {
+    slug: "monolith",
+    title: "Monolith",
+    blurb: "A run-and-gun boss fight against a floating stone obelisk. Three phases, one arena, one beam.",
+    controls: "Keys · touch",
+  },
+  {
+    slug: "lane-rush",
+    title: "Lane Rush",
+    blurb: "A three-lane night runner. Dodge, jump and slide, and stay off the trams as it speeds up.",
+    controls: "Arrows · swipe",
+  },
 ];
 
 export interface Experiment {

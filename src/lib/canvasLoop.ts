@@ -1,9 +1,8 @@
-// Shared canvas animation-loop discipline, used by every toy (RadarToy,
-// SpectrogramToy, SignalMapToy) and the home-page background canvas, so DPR
-// capping / visibility pausing / reduced-motion gating / mobile throttling
-// is implemented exactly once.
+// Shared canvas animation-loop discipline, used by every canvas toy and game, so DPR capping / visibility
+// pausing / reduced-motion gating / mobile throttling is implemented exactly once.
 
 export interface CanvasFrameInfo {
+  /** Milliseconds since the previous onFrame call (not since the previous rAF tick). */
   dt: number;
   time: number;
   width: number;
@@ -14,8 +13,12 @@ export interface CanvasLoopOptions {
   maxDPR?: number;
   targetFPS?: number;
   mobileFPS?: number;
+  /** Games are the point of their page: keep running under reduced motion instead of drawing one still frame. */
+  essential?: boolean;
   onFrame: (ctx: CanvasRenderingContext2D, info: CanvasFrameInfo) => void;
   onResize?: (width: number, height: number) => void;
+  /** Called when the loop stops for a hidden tab or an offscreen canvas, and when it starts again. */
+  onPauseChange?: (paused: boolean) => void;
 }
 
 export interface CanvasLoopHandle {
@@ -27,8 +30,8 @@ function isReducedMotion(): boolean {
 }
 
 export function startCanvasLoop(canvas: HTMLCanvasElement, options: CanvasLoopOptions): CanvasLoopHandle {
-  const { maxDPR = 2, targetFPS = 60, mobileFPS = 30, onFrame, onResize } = options;
-  const ctx = canvas.getContext("2d");
+  const { maxDPR = 2, targetFPS = 60, mobileFPS = 30, essential = false, onFrame, onResize, onPauseChange } = options;
+  const ctx = canvas.getContext("2d", { alpha: false });
   if (!ctx) return { stop() {} };
 
   const isMobile = window.matchMedia("(max-width: 640px), (pointer: coarse)").matches;
@@ -51,30 +54,29 @@ export function startCanvasLoop(canvas: HTMLCanvasElement, options: CanvasLoopOp
   resize();
 
   // Reduced motion: render exactly one static frame and never start rAF.
-  if (isReducedMotion()) {
+  if (isReducedMotion() && !essential) {
     onFrame(ctx, { dt: 0, time: 0, width, height });
     return { stop() {} };
   }
 
   let rafId: number | null = null;
-  let lastTime = performance.now();
-  let accumulator = 0;
-  const startTime = lastTime;
+  let lastFrame = 0;
+  const startTime = performance.now();
 
   function frame(now: number) {
     rafId = requestAnimationFrame(frame);
-    const dt = now - lastTime;
-    lastTime = now;
-    accumulator += dt;
-    if (accumulator < frameInterval) return;
-    accumulator %= frameInterval;
+    // A 2 ms slack keeps a 60 fps target at 60 fps on a 60 Hz screen, where ticks jitter around 16.7 ms.
+    if (lastFrame && now - lastFrame < frameInterval - 2) return;
+    const dt = lastFrame ? now - lastFrame : frameInterval;
+    lastFrame = now;
     onFrame(ctx!, { dt, time: now - startTime, width, height });
   }
 
   function start() {
     if (rafId === null) {
-      lastTime = performance.now();
+      lastFrame = 0;
       rafId = requestAnimationFrame(frame);
+      onPauseChange?.(false);
     }
   }
 
@@ -82,10 +84,11 @@ export function startCanvasLoop(canvas: HTMLCanvasElement, options: CanvasLoopOp
     if (rafId !== null) {
       cancelAnimationFrame(rafId);
       rafId = null;
+      onPauseChange?.(true);
     }
   }
 
-  start();
+  if (!document.hidden) start();
 
   function onVisibilityChange() {
     if (document.hidden) pause();
@@ -108,7 +111,7 @@ export function startCanvasLoop(canvas: HTMLCanvasElement, options: CanvasLoopOp
   let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
   const ro = new ResizeObserver(() => {
     if (resizeTimeout) clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(resize, 120);
+    resizeTimeout = setTimeout(resize, 60);
   });
   ro.observe(canvas);
 

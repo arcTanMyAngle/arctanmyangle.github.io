@@ -1,0 +1,81 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import GameFrame from "../../components/GameFrame.astro";
+import CanvasGame from "../../components/CanvasGame.astro";
+---
+
+<BaseLayout title="Monolith" section="arcade" description="An original run-and-gun boss fight against a floating stone obelisk. Three phases, one arena.">
+  <div data-monolith>
+    <GameFrame
+      title="Monolith"
+      lede="A floating obelisk, three phases and one ruined arena. Run, jump, dash through danger and fill the meter for a beam that cuts through everything."
+      back={{ label: "Arcade", path: "arcade" }}
+    >
+      <CanvasGame
+        shape="wide"
+        orient="landscape"
+        label="Monolith: a side-on boss fight against a floating stone obelisk"
+        hint="Arrows/WASD move · Space jump · J shoot · Shift dash · E beam"
+      >
+        <Fragment slot="touch">
+          <div class="tgrp">
+            <button type="button" class="tbtn" data-key="left" aria-label="Move left">◀</button>
+            <button type="button" class="tbtn" data-key="right" aria-label="Move right">▶</button>
+          </div>
+          <div class="tgrp">
+            <button type="button" class="tbtn" data-key="dash">Dash</button>
+            <button type="button" class="tbtn" data-key="beam">Beam</button>
+            <button type="button" class="tbtn tbtn--big" data-key="jump">Jump</button>
+          </div>
+        </Fragment>
+      </CanvasGame>
+
+      <Fragment slot="side">
+        <section class="panel" aria-labelledby="mo-score">
+          <h2 id="mo-score">Fight</h2>
+          <dl class="stats">
+            <div><dt>Last win</dt><dd data-time>–</dd></div>
+            <div><dt>Grade</dt><dd data-grade>–</dd></div>
+            <div><dt>Best time</dt><dd data-best>–</dd></div>
+          </dl>
+          <div class="mo__modes" role="group" aria-label="Difficulty">
+            <button type="button" class="btn btn--small" data-mode="normal" aria-pressed="true">Normal</button>
+            <button type="button" class="btn btn--small" data-mode="hard" aria-pressed="false">Hard</button>
+          </div>
+        </section>
+        <section class="panel" aria-labelledby="mo-howto">
+          <h2 id="mo-howto">How to play</h2>
+          <ul class="howto" role="list">
+            <li><span class="kbd">← →</span> Move. <span class="kbd">↑</span> aims up, <span class="kbd">↓</span> in the air aims down, or hold the mouse to aim.</li>
+            <li><span class="kbd">Space</span> Jump. <span class="kbd">↓</span> + <span class="kbd">Space</span> drops through a ledge.</li>
+            <li><span class="kbd">J</span> Shoot. On a phone it fires and aims for you.</li>
+            <li><span class="kbd">Shift</span> Dash: you can't be hit while dashing.</li>
+            <li><span class="kbd">E</span> Beam once the meter is full. <span class="kbd">P</span> pauses.</li>
+          </ul>
+        </section>
+        <p class="muted mo__fine">Grades reward fewer hits and faster clears; Hard gives you three hits and a bonus. Best time stays on this device only.</p>
+      </Fragment>
+    </GameFrame>
+  </div>
+</BaseLayout>
+
+<script>
+  import { mount } from "../../components/monolith";
+  const root = document.querySelector<HTMLElement>("[data-monolith]");
+  if (root) mount(root);
+</script>
+
+<style>
+  .mo__modes {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+  }
+  .mo__modes :global(.btn[aria-pressed="true"]) {
+    border-color: var(--hue);
+    color: var(--hue);
+  }
+  .mo__fine {
+    font-size: 0.875rem;
+  }
+</style>

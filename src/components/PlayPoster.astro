@@ -21,13 +21,6 @@ const tiles = ["2", "4", "8", "16", "32", "64", "128", "2048", "", "2", "", "4",
       <span class="adrmini__btn">light fire</span>
     </p>
   )}
-  {slug === "t-rex-runner" && (
-    <div class="rexmini">
-      <span class="rexmini__dino" />
-      <span class="rexmini__cactus" />
-      <span class="rexmini__ground" />
-    </div>
-  )}
   {slug === "clumsy-bird" && (
     <div class="birdmini">
       <span class="birdmini__pipe birdmini__pipe--top" />
@@ -118,47 +111,6 @@ const tiles = ["2", "4", "8", "16", "32", "64", "128", "2048", "", "2", "", "4",
   .adrmini__btn {
     padding: 0.25rem 1.25rem;
     border: 1px solid currentColor;
-  }
-  .rexmini {
-    position: relative;
-    width: 11rem;
-    height: 5rem;
-    color: var(--text);
-  }
-  .rexmini__dino {
-    position: absolute;
-    bottom: 0.5rem;
-    left: 1rem;
-    width: 2.25rem;
-    height: 2.5rem;
-    background: currentColor;
-    clip-path: polygon(40% 0, 100% 0, 100% 30%, 70% 30%, 70% 45%, 85% 45%, 85% 55%, 60% 55%, 60% 100%, 45% 100%, 45% 75%, 30% 75%, 30% 100%, 15% 100%, 15% 70%, 0 50%, 0 30%, 15% 45%, 40% 45%);
-  }
-  .rexmini__cactus {
-    position: absolute;
-    right: 2rem;
-    bottom: 0.5rem;
-    width: 1.25rem;
-    height: 2.25rem;
-    background: currentColor;
-    clip-path: polygon(35% 0, 65% 0, 65% 40%, 85% 40%, 85% 15%, 100% 15%, 100% 55%, 65% 55%, 65% 100%, 35% 100%, 35% 65%, 0 65%, 0 25%, 15% 25%, 15% 50%, 35% 50%);
-  }
-  .rexmini__ground {
-    position: absolute;
-    inset: auto 0 0.4rem;
-    height: 2px;
-    background: currentColor;
-  }
-  :global(:root[data-motion="full"]) .rexmini__dino {
-    animation: rex-jump 1.6s ease-in-out infinite;
-  }
-  @keyframes rex-jump {
-    0%, 55%, 100% {
-      transform: none;
-    }
-    75% {
-      transform: translateY(-2rem);
-    }
   }
   .birdmini {
     position: relative;

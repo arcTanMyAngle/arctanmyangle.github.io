@@ -1,0 +1,297 @@
+---
+// Shared frame for the canvas games (Lane Rush, Monolith, Iron Line): the canvas, the start/pause overlay, the
+// on-screen touch controls (slot "touch"), and the Pause / Sound / Fullscreen bar. src/lib/gameShell.ts wires it.
+// Touch buttons in the slot use class="tbtn" and data-key="name" (read by holdButtons); they sit under the view on a
+// portrait phone and float over it in landscape, fullscreen, or when `touchOver` is set.
+interface Props {
+  label: string;
+  shape: "wide" | "tall";
+  orient?: "landscape";
+  touchOver?: boolean;
+  hint?: string;
+}
+const { label, shape, orient, touchOver = false, hint } = Astro.props;
+---
+
+<div
+  class:list={["card", "cg", `cg--${shape}`, { "cg--over": touchOver }]}
+  data-cg
+  data-state="menu"
+  data-orient={orient}
+>
+  <div class="cg__stage">
+    <div class="cg__view">
+      <canvas data-canvas role="img" aria-label={label}></canvas>
+      <div class="cg__ov" data-overlay>
+        <div class="cg__card">
+          <p class="cg__kicker" data-ov-kicker>Ready</p>
+          <h2 class="cg__title" data-ov-title>Loading…</h2>
+          <p class="cg__msg" data-ov-msg hidden></p>
+          <div class="cg__acts">
+            <button type="button" class="btn btn--primary" data-act="main" disabled>Play</button>
+            <button type="button" class="btn" data-share hidden>Share score</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {Astro.slots.has("touch") && <div class="cg__touch"><slot name="touch" /></div>}
+  </div>
+  <div class="cg__bar">
+    {hint && <p class="cg__hint">{hint}</p>}
+    <div class="cg__btns">
+      <button type="button" class="btn btn--small btn--quiet" data-pause hidden>Pause</button>
+      <button type="button" class="btn btn--small btn--quiet" data-sound aria-pressed="true">Sound on</button>
+      <button type="button" class="btn btn--small btn--quiet" data-fullscreen aria-pressed="false" hidden>Fullscreen</button>
+    </div>
+  </div>
+  <p class="sr-only" aria-live="polite" data-live></p>
+  <noscript><p class="cg__noscript">This game needs JavaScript.</p></noscript>
+</div>
+
+<style>
+  .cg {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    background: var(--surface-2);
+  }
+  .cg:focus {
+    outline: none;
+  }
+  .cg__stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  .cg__view {
+    position: relative;
+    width: 100%;
+    background: #05060a;
+  }
+  .cg--wide .cg__view {
+    aspect-ratio: 16 / 9;
+    max-height: 78svh;
+  }
+  .cg--tall .cg__view {
+    height: clamp(26rem, 72svh, 44rem);
+  }
+  @media (max-width: 40rem) {
+    .cg--wide .cg__view {
+      aspect-ratio: 4 / 3;
+    }
+  }
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* Overlay */
+  .cg__ov {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: color-mix(in srgb, #05060a 62%, transparent);
+  }
+  .cg__ov[hidden] {
+    display: none;
+  }
+  .cg__card {
+    max-width: 26rem;
+    text-align: center;
+    color: #f4f4f6;
+  }
+  .cg__kicker {
+    margin: 0 0 0.25rem;
+    font: 600 0.75rem/1.2 var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--hue, #ff8a65);
+  }
+  .cg__kicker[hidden],
+  .cg__msg[hidden] {
+    display: none;
+  }
+  .cg__title {
+    margin: 0;
+    font-size: clamp(1.4rem, 4.5vw, 2.1rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  .cg__msg {
+    margin: 0.5rem 0 0;
+    color: #c9cbd3;
+    font-size: 0.95rem;
+    white-space: pre-line;
+  }
+  .cg__acts {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+
+  /* Bar */
+  .cg__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding: 0.5rem 0.75rem;
+    border-top: 1px solid var(--line);
+  }
+  .cg__hint {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-3);
+  }
+  .cg__btns {
+    display: flex;
+    gap: 0.35rem;
+    margin-left: auto;
+  }
+  .cg__noscript {
+    padding: 1rem;
+  }
+
+  /* Touch controls: only on touch screens. Under the view in portrait; floating over it otherwise. */
+  .cg__touch {
+    display: none;
+  }
+  @media (pointer: coarse) {
+    .cg__touch {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 0.5rem;
+      padding: 0.6rem;
+      background: #05060a;
+    }
+    .cg--over .cg__touch,
+    .cg[data-pinned] .cg__touch,
+    .cg:fullscreen .cg__touch {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: transparent;
+      pointer-events: none;
+    }
+    .cg--over .cg__touch > :global(*),
+    .cg[data-pinned] .cg__touch > :global(*),
+    .cg:fullscreen .cg__touch > :global(*) {
+      pointer-events: auto;
+    }
+  }
+  @media (pointer: coarse) and (orientation: landscape) and (max-height: 500px) {
+    .cg__touch {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: transparent;
+      pointer-events: none;
+    }
+    .cg__touch > :global(*) {
+      pointer-events: auto;
+    }
+  }
+  .cg[data-state="menu"] .cg__touch {
+    visibility: hidden;
+  }
+  .cg :global(.tgrp) {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+  }
+  .cg :global(.tbtn) {
+    display: grid;
+    place-items: center;
+    min-width: 3.6rem;
+    height: 3.6rem;
+    padding: 0 0.6rem;
+    border: 1px solid rgb(255 255 255 / 0.22);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.1);
+    color: #f4f4f6;
+    font: 600 0.8rem/1 var(--mono);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cg :global(.tbtn--big) {
+    min-width: 4.4rem;
+    height: 4.4rem;
+    background: color-mix(in srgb, var(--hue, #ff8a65) 32%, transparent);
+    border-color: color-mix(in srgb, var(--hue, #ff8a65) 70%, transparent);
+  }
+  @media (max-width: 26rem) {
+    .cg :global(.tgrp) {
+      gap: 0.35rem;
+    }
+    .cg :global(.tbtn) {
+      min-width: 3.1rem;
+      height: 3.1rem;
+      padding: 0 0.4rem;
+      font-size: 0.72rem;
+    }
+    .cg :global(.tbtn--big) {
+      min-width: 3.8rem;
+      height: 3.8rem;
+    }
+  }
+  .cg :global(.tbtn.is-held) {
+    background: rgb(255 255 255 / 0.32);
+  }
+
+  /* Fullscreen and the pinned fallback */
+  .cg[data-pinned] {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    background: var(--bg, #000);
+  }
+  .cg[data-pinned] .cg__view,
+  .cg:fullscreen .cg__view {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+    aspect-ratio: auto;
+  }
+  .cg:fullscreen {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+    background: #05060a;
+  }
+  :global(html.pf-locked),
+  :global(html.pf-locked body) {
+    overflow: hidden;
+  }
+  :global(html.pf-locked main) {
+    z-index: 150;
+  }
+</style>
