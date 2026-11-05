@@ -2,7 +2,7 @@
 // with a dash and a charged beam. Logical arena is 800x450, scaled to fit; everything is drawn with canvas paths (no
 // image assets). Mounted by src/pages/arcade/monolith.astro.
 import { startCanvasLoop } from "../lib/canvasLoop";
-import { STORAGE_KEYS, readNumber, writeNumber } from "../lib/clientState";
+import { STORAGE_KEYS, readJSON, readNumber, writeJSON } from "../lib/clientState";
 import { buzz, createShell, holdButtons, rng } from "../lib/gameShell";
 import { noise, tone, unlockAudio } from "../lib/sfx";
 
@@ -36,6 +36,58 @@ export function formatTime(ms: number): string {
   const m = Math.floor(t / 60);
   const s = t - m * 60;
   return `${m}:${s < 10 ? "0" : ""}${s.toFixed(1)}`;
+}
+
+export type MonolithMode = "normal" | "hard";
+export type Grade = "S" | "A" | "B" | "C";
+/** Per difficulty: fastest win (0 = none), best grade ("" = none) and furthest phase reached (0 = never fought). */
+export interface MonolithBest {
+  ms: number;
+  grade: Grade | "";
+  phase: 0 | 1 | 2 | 3;
+}
+export type MonolithBests = Record<MonolithMode, MonolithBest>;
+const GRADES: readonly Grade[] = ["S", "A", "B", "C"];
+// Nobody breaks 560 HP in under ten seconds; anything faster (or over an hour) is junk, not a record.
+const MIN_WIN_MS = 10_000;
+const MAX_WIN_MS = 3_600_000;
+const validWin = (ms: unknown): ms is number =>
+  typeof ms === "number" && Number.isFinite(ms) && ms >= MIN_WIN_MS && ms <= MAX_WIN_MS;
+
+/**
+ * Cleans stored per-difficulty bests. The old single best time (from before difficulties were tracked apart) seeds
+ * Normal and is never lost: if both exist, the faster one wins. A recorded win means phase 3 was reached.
+ */
+export function readMonolithBests(stored: unknown, legacyMs: number | null): MonolithBests {
+  const clean = (v: unknown): MonolithBest => {
+    const o = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
+    const ms = validWin(o.ms) ? Math.round(o.ms) : 0;
+    const grade = GRADES.includes(o.grade as Grade) ? (o.grade as Grade) : "";
+    const phase = o.phase === 1 || o.phase === 2 || o.phase === 3 ? o.phase : 0;
+    return { ms, grade: ms ? grade : "", phase: ms ? 3 : phase };
+  };
+  const s = (stored && typeof stored === "object" ? stored : {}) as Record<string, unknown>;
+  const out: MonolithBests = { normal: clean(s.normal), hard: clean(s.hard) };
+  if (validWin(legacyMs) && (out.normal.ms === 0 || legacyMs < out.normal.ms)) {
+    out.normal.ms = Math.round(legacyMs);
+    out.normal.phase = 3;
+  }
+  return out;
+}
+
+/** Folds one finished full run into a difficulty's bests. Grades and times improve separately. */
+export function recordMonolith(prev: MonolithBest, run: { won: boolean; ms: number; grade: Grade | ""; phase: 1 | 2 | 3 }): MonolithBest {
+  const next: MonolithBest = { ...prev, phase: Math.max(prev.phase, run.won ? 3 : run.phase) as MonolithBest["phase"] };
+  if (run.won && validWin(run.ms)) {
+    if (prev.ms === 0 || run.ms < prev.ms) next.ms = Math.round(run.ms);
+    if (run.grade && (!prev.grade || GRADES.indexOf(run.grade) < GRADES.indexOf(prev.grade))) next.grade = run.grade;
+  }
+  return next;
+}
+
+/** Boss HP when a practice run starts at a phase: the top of that phase's band. */
+export function practiceHp(phase: 1 | 2 | 3): number {
+  return phase === 1 ? BOSS_HP : Math.floor((BOSS_HP * (phase === 2 ? 2 : 1)) / 3);
 }
 
 type Act = "intro" | "idle" | "bolts" | "spikes" | "slam" | "ring" | "laser" | "debris" | "spiral" | "roar" | "dead";
@@ -92,12 +144,21 @@ export function mount(root: HTMLElement): { destroy(): void } {
   const elTime = root.querySelector<HTMLElement>("[data-time]");
   const elBest = root.querySelector<HTMLElement>("[data-best]");
   const elGrade = root.querySelector<HTMLElement>("[data-grade]");
+  const elBestGrade = root.querySelector<HTMLElement>("[data-best-grade]");
+  const elReached = root.querySelector<HTMLElement>("[data-reached]");
   const modeBtns = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-mode]"));
+  const phaseBtns = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-start-phase]"));
+  const autoBtn = root.querySelector<HTMLButtonElement>("[data-autofire]");
   const reduced = () => document.documentElement.dataset.motion === "reduced";
   const coarse = window.matchMedia("(pointer: coarse)");
 
-  let best = readNumber(STORAGE_KEYS.monolithBest) ?? 0;
+  const bests = readMonolithBests(readJSON(STORAGE_KEYS.monolithBests), readNumber(STORAGE_KEYS.monolithBest));
   let hard = false;
+  const mode = (): MonolithMode => (hard ? "hard" : "normal");
+  /** Phase the next run starts at; above 1 it is practice and records nothing. */
+  let startPhase: 1 | 2 | 3 = 1;
+  let practice = false;
+  let autoFire = readJSON<boolean>(STORAGE_KEYS.monolithAutoFire) !== false;
   type State = "menu" | "run" | "paused" | "won" | "over";
   let state: State = "menu";
   let rand = rng(1);
@@ -181,6 +242,12 @@ export function mount(root: HTMLElement): { destroy(): void } {
   let runMs = 0;
   let droneT = 0;
   let hitTick = 0;
+  // Run stats for the end card.
+  let shotsFired = 0;
+  let shotsHit = 0;
+  const hitsByPhase = [0, 0, 0];
+  let dashes = 0;
+  let beams = 0;
 
   const eb: Shot[] = [];
   const pb: PShot[] = [];
@@ -238,8 +305,9 @@ export function mount(root: HTMLElement): { destroy(): void } {
     b.y = 560;
     b.hx = 680;
     b.hy = HOME_Y;
-    b.hp = BOSS_HP;
-    b.phase = 1;
+    practice = startPhase > 1;
+    b.hp = practiceHp(startPhase);
+    b.phase = startPhase;
     b.act = "intro";
     b.last = "";
     b.t = b.step = b.flash = b.eye = b.rest = 0;
@@ -247,7 +315,10 @@ export function mount(root: HTMLElement): { destroy(): void } {
     b.dropping = false;
     hits = 0;
     runMs = 0;
-    droneT = 0;
+    // A phase-2 practice run gets its drones a couple of seconds after the intro, as the roar would have spawned them.
+    droneT = startPhase === 2 ? 12 : 0;
+    shotsFired = shotsHit = dashes = beams = 0;
+    hitsByPhase.fill(0);
     eb.length = pb.length = sparks.length = drones.length = frags.length = 0;
     spikes.length = waves.length = lasers.length = marks.length = ghosts.length = 0;
     slow = 1;
@@ -359,10 +430,8 @@ export function mount(root: HTMLElement): { destroy(): void } {
       case "spikes": {
         glide(2.4);
         if (b.step === 0) {
-          const dir = p.x < b.x ? -1 : 1;
           const start = b.x < W / 2 ? 30 : W - 30;
           const towards = start < W / 2 ? 1 : -1;
-          void dir;
           for (let i = 0; i < 9; i++) {
             const x = start + towards * (40 + i * 88);
             if (x < 10 || x > W - 10) continue;
@@ -590,6 +659,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
     if (p.inv > 0 || p.dashT > 0 || p.beamT > 0 || state !== "run") return;
     p.hp--;
     hits++;
+    hitsByPhase[b.phase - 1]!++;
     p.inv = 1.2;
     hitStop = 0.09;
     shake = Math.max(shake, 9);
@@ -672,6 +742,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
     if (dashPress && p.dashCd <= 0 && p.beamT <= 0 && (p.ground || p.dashAir)) {
       p.dashT = 0.16;
       p.dashCd = 0.45;
+      dashes++;
       p.dashDir = move || p.face;
       p.face = p.dashDir;
       if (!p.ground) p.dashAir = false;
@@ -690,8 +761,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
       if (Math.random() < 0.6) ghosts.push({ x: p.x, y: p.y, face: p.face, life: 0.18 });
     } else {
       p.vx = move * 230;
-      if (move && !touchAim && !mouseHeld) p.face = move;
-      if (move && (touchAim || mouseHeld) && !(touchAim && !mouseHeld)) p.face = move;
+      if (move && (mouseHeld || !touchAim)) p.face = move;
       const rising = p.vy < 0;
       p.vy += 1500 * dt * (rising && !keys.jump ? 2.4 : 1);
       if (p.vy > 900) p.vy = 900;
@@ -715,6 +785,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
     if (beamPress && p.meter >= 1 && p.beamT <= 0) {
       p.meter = 0;
       p.beamT = 1.1;
+      beams++;
       aim();
       // The beam locks to the aim direction when fired.
       p.beamDx = p.ax;
@@ -756,7 +827,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
 
     // Shooting
     p.fireCd -= dt;
-    const shooting = touchAim || keys.shoot || mouseHeld;
+    const shooting = (touchAim && autoFire) || keys.shoot || mouseHeld;
     if (shooting && p.fireCd <= 0 && p.beamT <= 0 && p.dashT <= 0) {
       aim();
       p.fireCd = 0.115;
@@ -767,7 +838,10 @@ export function mount(root: HTMLElement): { destroy(): void } {
       const dy = p.ax * s + p.ay * c;
       const gx = p.x + p.ax * 14;
       const gy = p.y - 14 + p.ay * 12;
-      if (pb.length < 48) pb.push({ x: gx, y: gy, vx: dx * 700, vy: dy * 700, life: 1.3 });
+      if (pb.length < 48) {
+        pb.push({ x: gx, y: gy, vx: dx * 700, vy: dy * 700, life: 1.3 });
+        shotsFired++;
+      }
       if (Math.random() < 0.5) noise(0.03, 0.05, 3200, 1);
     } else if (!shooting || p.dashT > 0) aim();
 
@@ -848,6 +922,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
         if (s.y > b.y - 90 && s.y < b.y + 90 && Math.abs(s.x - b.x) < halfW) {
           damageBoss(1, s.x, s.y);
           spark(s.x, s.y, 2, "#ffd0b8", 140, 2, 0);
+          shotsHit++;
           dead = true;
         }
       }
@@ -856,6 +931,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
           if ((s.x - d.x) ** 2 + (s.y - d.y) ** 2 < 16 * 16) {
             d.hp--;
             d.flash = 0.05;
+            shotsHit++;
             p.meter = Math.min(1, p.meter + 0.008);
             spark(s.x, s.y, 2, "#ffd0b8", 140, 2, 0);
             dead = true;
@@ -1025,7 +1101,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
     drawFx(ctx);
     ctx.restore();
 
-    if (flashT > 0) {
+    if (flashT > 0 && !reduced()) {
       ctx.fillStyle = `rgba(255,255,255,${(flashT / 0.25) * 0.7})`;
       ctx.fillRect(0, 0, w, h);
     }
@@ -1614,15 +1690,52 @@ export function mount(root: HTMLElement): { destroy(): void } {
   // ---------- flow ----------
 
   function paintStats(last?: { ms: number; grade: string } | null) {
-    if (elBest) elBest.textContent = best > 0 ? formatTime(best) : "–";
+    const mine = bests[mode()];
+    if (elBest) elBest.textContent = mine.ms > 0 ? formatTime(mine.ms) : "–";
+    if (elBestGrade) elBestGrade.textContent = mine.grade || "–";
+    if (elReached) elReached.textContent = mine.phase === 0 ? "–" : mine.ms > 0 ? "Cleared" : `Phase ${mine.phase}`;
     if (last !== undefined) {
       if (elTime) elTime.textContent = last ? formatTime(last.ms) : "–";
       if (elGrade) elGrade.textContent = last ? last.grade : "–";
     }
+    paintPhases();
+  }
+
+  /** Practice is unlocked one phase at a time: you can start at any phase you have reached on this difficulty. */
+  function paintPhases(locked = state === "run" || state === "paused" || state === "won") {
+    const reached = Math.max(1, bests[mode()].phase);
+    if (startPhase > reached) startPhase = 1;
+    for (const btn of phaseBtns) {
+      const n = Number(btn.dataset.startPhase);
+      btn.disabled = locked || n > reached;
+      btn.setAttribute("aria-pressed", String(n === startPhase));
+      btn.title = n > reached ? `Reach phase ${n} on ${hard ? "Hard" : "Normal"} to practise it` : "";
+    }
+  }
+
+  function paintAutoFire() {
+    if (!autoBtn) return;
+    autoBtn.setAttribute("aria-pressed", String(autoFire));
+    autoBtn.textContent = `Auto-fire: ${autoFire ? "on" : "off"}`;
   }
 
   function setModeLock(locked: boolean) {
     for (const btn of modeBtns) btn.disabled = locked;
+    paintPhases(locked);
+  }
+
+  function save(run: { won: boolean; ms: number; grade: Grade | ""; phase: 1 | 2 | 3 }): boolean {
+    if (practice) return false;
+    const before = bests[mode()];
+    bests[mode()] = recordMonolith(before, run);
+    writeJSON(STORAGE_KEYS.monolithBests, bests);
+    return run.won && bests[mode()].ms !== before.ms;
+  }
+
+  function statLine(): string {
+    const acc = shotsFired > 0 ? Math.round((shotsHit / shotsFired) * 100) : 0;
+    const by = hitsByPhase.slice(0, b.phase).join(" / ");
+    return `Accuracy ${acc}% (${shotsHit}/${shotsFired}) · hits by phase ${by} · ${dashes} dash${dashes === 1 ? "" : "es"} · ${beams} beam${beams === 1 ? "" : "s"}`;
   }
 
   function start() {
@@ -1632,7 +1745,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
     shell.hide();
     shell.setRunning(true);
     setModeLock(true);
-    shell.say("Fight started. The Monolith rises.");
+    shell.say(practice ? `Practice from phase ${startPhase}. Nothing is recorded.` : "Fight started. The Monolith rises.");
     tone(110, 0.6, "sawtooth", 0.1, 220);
   }
 
@@ -1657,15 +1770,19 @@ export function mount(root: HTMLElement): { destroy(): void } {
     setModeLock(false);
     spark(p.x, p.y - 14, 30, "#ff8a65", 260, 3, 300);
     const pct = Math.max(1, Math.ceil((b.hp / BOSS_HP) * 100));
+    const before = bests[mode()].phase;
+    save({ won: false, ms: runMs, grade: "", phase: b.phase as 1 | 2 | 3 });
+    const unlocked = !practice && b.phase > Math.max(1, before);
+    const stats = statLine();
     paintStats(null);
     window.setTimeout(() => {
       if (state !== "over") return;
       shell.show({
-        kicker: "Knocked out",
+        kicker: practice ? "Practice over" : "Knocked out",
         title: `${pct}% left`,
-        msg: `You reached phase ${b.phase} in ${formatTime(runMs)}.${b.phase === 1 ? "\nDash through bolts: it makes you untouchable." : b.phase === 2 ? "\nWhen it rises and shadows you, move. It rests after landing." : "\nWatch the red lines: low means jump, high means stay down."}`,
+        msg: `You reached phase ${b.phase} in ${formatTime(runMs)}.${unlocked ? ` Phase ${b.phase} practice unlocked.` : ""}\n${stats}${b.phase === 1 ? "\nDash through bolts: it makes you untouchable." : b.phase === 2 ? "\nWhen it rises and shadows you, move. It rests after landing." : "\nWatch the red lines: low means jump, high means stay down."}`,
         label: "Try again",
-        share: `The Monolith beat me at ${pct}% in phase ${b.phase}. Think you can break it?`,
+        share: practice ? undefined : `The Monolith beat me at ${pct}% in phase ${b.phase}. Think you can break it?`,
       });
     }, 700);
   }
@@ -1674,19 +1791,16 @@ export function mount(root: HTMLElement): { destroy(): void } {
     state = "over";
     setModeLock(false);
     const grade = gradeFor(runMs, hits, hard);
-    const firstWin = best === 0;
-    const isBest = firstWin || runMs < best;
-    if (isBest) {
-      best = runMs;
-      writeNumber(STORAGE_KEYS.monolithBest, best);
-    }
-    paintStats({ ms: runMs, grade });
+    const firstWin = bests[mode()].ms === 0;
+    const isBest = save({ won: true, ms: runMs, grade, phase: 3 });
+    paintStats(practice ? undefined : { ms: runMs, grade });
+    const hitsMsg = hits === 0 ? "No hits taken." : `${hits} hit${hits === 1 ? "" : "s"} taken.`;
     shell.show({
-      kicker: isBest && !firstWin ? "New best!" : "Shattered",
-      title: `${formatTime(runMs)} · grade ${grade}`,
-      msg: `${hits === 0 ? "No hits taken." : `${hits} hit${hits === 1 ? "" : "s"} taken.`}${hard ? " Hard mode." : " Try Hard for a bonus."}`,
+      kicker: practice ? "Practice cleared" : isBest && !firstWin ? "New best!" : "Shattered",
+      title: practice ? formatTime(runMs) : `${formatTime(runMs)} · grade ${grade}`,
+      msg: `${hitsMsg}${practice ? ` Practice from phase ${startPhase}: no grade or best.` : hard ? " Hard mode." : " Try Hard for a bonus."}\n${statLine()}`,
       label: "Fight again",
-      share: `I shattered the Monolith in ${formatTime(runMs)} (grade ${grade}${hard ? ", Hard" : ""}). Beat that.`,
+      share: practice ? undefined : `I shattered the Monolith in ${formatTime(runMs)} (grade ${grade}${hard ? ", Hard" : ""}). Beat that.`,
     });
   }
 
@@ -1793,9 +1907,28 @@ export function mount(root: HTMLElement): { destroy(): void } {
     if (state === "run" || state === "paused" || state === "won") return;
     hard = btn.dataset.mode === "hard";
     for (const b2 of modeBtns) b2.setAttribute("aria-pressed", String(b2 === btn));
+    paintStats();
     shell.say(hard ? "Hard mode: three hits, faster attacks." : "Normal mode.");
   };
   for (const btn of modeBtns) btn.addEventListener("click", onMode);
+
+  const onPhase = (e: Event) => {
+    const btn = e.currentTarget as HTMLButtonElement;
+    if (btn.disabled) return;
+    startPhase = Number(btn.dataset.startPhase) as 1 | 2 | 3;
+    paintPhases();
+    shell.say(startPhase === 1 ? "Full fight from phase 1." : `Practice from phase ${startPhase}. Practice runs record nothing.`);
+  };
+  for (const btn of phaseBtns) btn.addEventListener("click", onPhase);
+
+  const onAuto = () => {
+    autoFire = !autoFire;
+    writeJSON(STORAGE_KEYS.monolithAutoFire, autoFire);
+    paintAutoFire();
+    shell.say(autoFire ? "Auto-fire on: touch controls shoot for you." : "Auto-fire off: hold Fire to shoot.");
+  };
+  autoBtn?.addEventListener("click", onAuto);
+  paintAutoFire();
 
   shell.show({
     kicker: "Monolith",
@@ -1819,6 +1952,8 @@ export function mount(root: HTMLElement): { destroy(): void } {
       canvas.removeEventListener("pointermove", onPtrMove);
       window.removeEventListener("pointerup", onPtrUp);
       for (const btn of modeBtns) btn.removeEventListener("click", onMode);
+      for (const btn of phaseBtns) btn.removeEventListener("click", onPhase);
+      autoBtn?.removeEventListener("click", onAuto);
     },
   };
 }

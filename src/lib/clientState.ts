@@ -6,15 +6,28 @@
 export const STORAGE_KEYS = {
   theme: "atma:theme",
   reducedEffects: "atma:reduced-effects",
+  /** Legacy single best height; read once to seed the Normal entry of stackerBests. */
   stackerBest: "atma:stacker-best",
+  stackerBests: "atma:stacker-bests",
+  stackerSpeed: "atma:stacker-speed",
+  /** Legacy single best average; read once to seed the Classic entry of reactionBests. */
   reactionBest: "atma:reaction-best-ms",
+  reactionBests: "atma:reaction-bests",
+  reactionHistory: "atma:reaction-history",
+  reactionMode: "atma:reaction-mode",
   chessGame: "atma:chess-game",
   chessBackup: "atma:chess-backup",
   laneRushBest: "atma:lane-rush-best",
+  laneRushDaily: "atma:lane-rush-daily",
+  /** Legacy single best time; read on every load to seed the Normal entry of monolithBests. */
   monolithBest: "atma:monolith-best-ms",
+  monolithBests: "atma:monolith-bests",
+  monolithAutoFire: "atma:monolith-autofire",
   ironLineBest: "atma:iron-line-best",
   ironLineMission: "atma:iron-line-mission",
+  ironLineBests: "atma:iron-line-bests",
   gameSound: "atma:game-sound",
+  skateLab: "atma:skate-lab",
 } as const;
 
 /** A stored whole number, or null when missing, unreadable or not a number. */
@@ -26,6 +39,21 @@ export function readNumber(key: string): number | null {
 
 export function writeNumber(key: string, n: number): void {
   writeLocalStorage(key, String(Math.round(n)));
+}
+
+/** A stored JSON value, or null when missing or unparseable. The shape is the caller's to check. */
+export function readJSON<T>(key: string): T | null {
+  const raw = readLocalStorage(key);
+  if (raw === null) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+export function writeJSON(key: string, value: unknown): void {
+  writeLocalStorage(key, JSON.stringify(value));
 }
 
 export type Theme = "dark" | "light";

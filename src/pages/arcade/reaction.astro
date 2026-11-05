@@ -5,14 +5,26 @@ import GameFrame from "../../components/GameFrame.astro";
 const rounds = [1, 2, 3, 4, 5];
 ---
 
-<BaseLayout title="Reaction" section="arcade" description="Wait for the signal, then hit it. Five rounds, averaged.">
+<BaseLayout title="Reaction" section="arcade" description="Wait for the signal, then hit it. Five rounds, averaged, in four modes.">
   <div data-reaction>
     <GameFrame
       title="Reaction"
-      lede="The pad turns green after a random wait. Hit it as fast as you can. Five rounds make one score, and false starts don't count."
+      lede="The pad changes after a random wait. Hit it as fast as you can. Five rounds make one score, and false starts don't count. Four modes test different things: plain speed, holding back, picking a side and reacting to sound."
       back={{ label: "Arcade", path: "arcade" }}
     >
       <div class="card rx">
+        <div class="rx__bar">
+          <label class="rx__mode">
+            <span>Mode</span>
+            <select data-mode>
+              <option value="classic" selected>Classic</option>
+              <option value="gonogo">Go/No-Go</option>
+              <option value="choice">Choice</option>
+              <option value="sound">Sound cue</option>
+            </select>
+          </label>
+          <button type="button" class="btn btn--small btn--quiet" data-sound aria-pressed="true" hidden>Sound on</button>
+        </div>
         <button type="button" class="rx__pad" data-pad data-phase="idle">
           <span class="rx__title" data-pad-title>Hit to start</span>
           <span class="rx__sub" data-pad-sub>Needs JavaScript. Space, Enter or tap. Five rounds.</span>
@@ -32,23 +44,35 @@ const rounds = [1, 2, 3, 4, 5];
 
       <Fragment slot="side">
         <section class="panel" aria-labelledby="rx-score">
-          <h2 id="rx-score">Score</h2>
+          <h2 id="rx-score">This set</h2>
           <dl class="stats">
             <div><dt>Average</dt><dd data-avg>–</dd></div>
-            <div><dt>Best average</dt><dd data-best>–</dd></div>
+            <div><dt>Median</dt><dd data-median>–</dd></div>
+            <div><dt>Spread</dt><dd data-sd>–</dd></div>
+            <div><dt>Fastest</dt><dd data-fastest>–</dd></div>
+            <div><dt>Mistakes</dt><dd data-misses>0</dd></div>
+            <div><dt>Best on this mode</dt><dd data-best>–</dd></div>
           </dl>
+        </section>
+        <section class="panel" aria-labelledby="rx-history">
+          <h2 id="rx-history">Recent sets</h2>
+          <p class="muted rx__fine" data-history-empty>No finished sets on this mode yet.</p>
+          <ol class="rx__history" data-history hidden></ol>
         </section>
         <section class="panel" aria-labelledby="rx-howto">
           <h2 id="rx-howto">How to play</h2>
           <ul class="howto" role="list">
-            <li><span class="kbd">Space</span> Start, then hit when the pad turns green.</li>
-            <li><span class="kbd">Tap</span> On a phone, tap the pad.</li>
-            <li><span class="kbd">5</span> Rounds per score. Too early and the round is replayed.</li>
+            <li><span class="kbd">Space</span> Start, then hit when the pad turns green. Tap the pad on a phone.</li>
+            <li><span class="kbd">Go/No-Go</span> Blue is a decoy: hold still and it passes. Hitting it is a mistake.</li>
+            <li><span class="kbd">← →</span> Choice: press the arrow the pad shows, or tap that half.</li>
+            <li><span class="kbd">Sound</span> Sound cue: the pad stays still, so hit on the beep. Needs sound on.</li>
+            <li><span class="kbd">5</span> Rounds per score. A mistake replays the round and adds to the count.</li>
           </ul>
         </section>
         <p class="muted rx__fine">
-          Times include your screen and input lag, so compare scores on the same device. Your best stays on this
-          device only.
+          Times include your screen, input and audio lag, so compare scores on the same device. The sound cue
+          subtracts the output delay your browser reports, which is not always exact. Each mode keeps its own best and
+          last ten sets, on this device only.
         </p>
       </Fragment>
     </GameFrame>
@@ -64,6 +88,30 @@ const rounds = [1, 2, 3, 4, 5];
 <style>
   .rx {
     padding: 1rem;
+  }
+  .rx__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .rx__mode {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-2);
+    font-size: 0.875rem;
+  }
+  .rx__mode select {
+    min-height: 2.25rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
   }
   .rx__pad {
     --pad: var(--surface-2);
@@ -98,7 +146,8 @@ const rounds = [1, 2, 3, 4, 5];
     font-size: 1rem;
     opacity: 0.85;
   }
-  /* Phase colours. "Waiting" is a warm red and "go" a strong green: told apart by the words too, never by colour alone. */
+  /* Phase colours: a warm red wait, a strong green go and a blue decoy, told apart by the words too, never by
+     colour alone. White text passes AA on each. */
   .rx__pad[data-phase="waiting"] {
     --pad: #b42318;
     --pad-text: #fff;
@@ -109,10 +158,28 @@ const rounds = [1, 2, 3, 4, 5];
     --pad-text: #fff;
     border-color: transparent;
   }
+  .rx__pad[data-phase="nogo"] {
+    --pad: #1d4ed8;
+    --pad-text: #fff;
+    border-color: transparent;
+  }
+  /* Choice: the half to hit stays bright green, the other half darkens. */
+  .rx__pad[data-cue="left"] {
+    background: linear-gradient(to right, #15803d 50%, #0b3d1d 50%);
+  }
+  .rx__pad[data-cue="right"] {
+    background: linear-gradient(to right, #0b3d1d 50%, #15803d 50%);
+  }
+  /* Sound cue: the pad looks the same through the wait and the beep, so only your ears can tell. */
+  .rx__pad[data-phase="listen"] {
+    --pad: color-mix(in oklab, var(--hue) 14%, var(--surface-2));
+    border-color: var(--hue-line);
+  }
   .rx__pad[data-phase="early"] {
     --pad: color-mix(in oklab, var(--arcade) 18%, var(--surface-2));
   }
   .rx__pad[data-phase="result"],
+  .rx__pad[data-phase="hold"],
   .rx__pad[data-phase="done"] {
     --pad: color-mix(in oklab, var(--hue) 10%, var(--surface-2));
     border-color: var(--hue-line);
@@ -147,6 +214,24 @@ const rounds = [1, 2, 3, 4, 5];
   }
   .rx__rounds li:has(.rx__t.is-current) {
     border-color: var(--hue);
+  }
+  .rx__history {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.875rem;
+  }
+  .rx__history :global(li) {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-block: 0.25rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .rx__history[hidden] {
+    display: none;
   }
   .rx__fine {
     font-size: 0.875rem;

@@ -27,7 +27,7 @@ const repos = repoData.repos.filter((r) => !r.fork && !r.archived).slice(0, 4);
     <h1>Things I play, build and keep coming back&nbsp;to.</h1>
     <p class="hero__lede">
       Small games you can play right here, the chess openings I actually use, a board for two, and experiments with
-      flight and event data. A skateboarding sim is in the works.
+      flight and event data, and a skate sim that learns its tricks the way a language model learns to answer.
     </p>
     <div class="actions">
       <a class="btn btn--primary" href={href("arcade/stacker")}>
@@ -108,8 +108,8 @@ const repos = repoData.repos.filter((r) => !r.fork && !r.archived).slice(0, 4);
       </div>
       <div class="tile__body">
         <span class="eyebrow">Skate</span>
-        <h2><a class="card__link" href={href("skate")}>A skate sim, in the works</a></h2>
-        <p>Flatground first: ollies, kickflips, honest physics.</p>
+        <h2><a class="card__link" href={href("skate")}>A skate sim that learns</a></h2>
+        <p>Six flatground tricks, learned with SFT, GRPO and DPO. Retrain it or try them yourself.</p>
       </div>
     </article>
 

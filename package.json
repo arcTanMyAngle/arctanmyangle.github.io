@@ -13,6 +13,7 @@
     "budgets": "bun scripts/check-budgets.mjs",
     "preview": "astro preview",
     "sync:github": "bun scripts/sync-github.mjs",
+    "train:skate": "bun scripts/train-skate.mjs",
     "check": "astro check"
   },
   "dependencies": {

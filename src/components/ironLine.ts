@@ -4,7 +4,7 @@
 // Design notes: docs/hub/IRON-LINE.md.
 
 import { startCanvasLoop } from "../lib/canvasLoop";
-import { STORAGE_KEYS, readNumber, writeNumber } from "../lib/clientState";
+import { STORAGE_KEYS, readJSON, readNumber, writeJSON, writeNumber } from "../lib/clientState";
 import { buzz, createShell, holdButtons, rng } from "../lib/gameShell";
 import { noise, tone, unlockAudio } from "../lib/sfx";
 
@@ -290,6 +290,82 @@ export function castRay(g: Grid, ox: number, oy: number, dx: number, dy: number,
 
 export function missionScore(kills: number, heads: number, time: number, par: number): number {
   return kills * 100 + heads * 50 + Math.max(0, Math.round((par - time) * 10));
+}
+
+export type Medal = "gold" | "silver" | "bronze";
+const MEDALS: readonly Medal[] = ["gold", "silver", "bronze"];
+/** What each medal asks for: finish within par × time, at least this accuracy (%), at most this much damage taken. */
+export const MEDAL_RULES: Record<Exclude<Medal, "bronze">, { time: number; acc: number; dmg: number }> = {
+  gold: { time: 1, acc: 45, dmg: 60 },
+  silver: { time: 1.25, acc: 30, dmg: 150 },
+};
+
+/** Any clear earns bronze; silver and gold need a quick, accurate and fairly clean run. */
+export function medalFor(time: number, par: number, acc: number, dmg: number): Medal {
+  for (const m of ["gold", "silver"] as const) {
+    const r = MEDAL_RULES[m];
+    if (time <= par * r.time && acc >= r.acc && dmg <= r.dmg) return m;
+  }
+  return "bronze";
+}
+
+/** The next medal's missing conditions, in words ("" when gold is already earned). */
+export function medalGap(time: number, par: number, acc: number, dmg: number): string {
+  const m = medalFor(time, par, acc, dmg);
+  if (m === "gold") return "";
+  const next = m === "bronze" ? "silver" : "gold";
+  const r = MEDAL_RULES[next];
+  const need: string[] = [];
+  if (time > par * r.time) need.push(`finish under ${fmtClock(par * r.time)}`);
+  if (acc < r.acc) need.push(`${r.acc}% accuracy`);
+  if (dmg > r.dmg) need.push(`take ${r.dmg} damage or less`);
+  return `${next[0].toUpperCase()}${next.slice(1)} needs: ${need.join(", ")}.`;
+}
+
+const fmtClock = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+
+export interface MissionBest {
+  score: number;
+  medal: Medal | "";
+}
+
+/** Cleans stored per-mission bests (one entry per mission; junk becomes an empty entry). */
+export function readMissionBests(stored: unknown): MissionBest[] {
+  const list = Array.isArray(stored) ? stored : [];
+  return MISSIONS.map((_, i) => {
+    const e = list[i] as Partial<MissionBest> | undefined;
+    const score = typeof e?.score === "number" && Number.isFinite(e.score) && e.score > 0 ? Math.round(e.score) : 0;
+    const medal = score > 0 && MEDALS.includes(e?.medal as Medal) ? (e!.medal as Medal) : "";
+    return { score, medal };
+  });
+}
+
+/** A clear keeps the higher score and the better medal, each on its own. */
+export function recordMission(prev: MissionBest, score: number, medal: Medal): MissionBest {
+  const better = prev.medal === "" || MEDALS.indexOf(medal) < MEDALS.indexOf(prev.medal) ? medal : prev.medal;
+  return { score: Math.max(prev.score, Math.round(score)), medal: better };
+}
+
+export const medalName = (m: Medal) => `${m[0]!.toUpperCase()}${m.slice(1)}`;
+
+/** Bodies left on the floor at once; older ones are cleared when a reinforcement spawns. */
+const MAX_BODIES = 12;
+
+/** Keeps every live foe and only the most recent `maxDead` bodies, so long fights don't grow the list forever. */
+export function compactFoes<T extends { alive: boolean; diedAt: number }>(list: T[], maxDead: number): T[] {
+  const dead = list.filter((f) => !f.alive);
+  if (dead.length <= maxDead) return list;
+  const keep = new Set(dead.sort((a, b) => b.diedAt - a.diedAt).slice(0, maxDead));
+  return list.filter((f) => f.alive || keep.has(f));
+}
+
+/** Spawn points far enough from the player; when none are, the single farthest one. */
+export function pickSpawns(spawns: Array<[number, number]>, px: number, py: number, minDist: number): Array<[number, number]> {
+  const far = spawns.filter(([x, y]) => Math.hypot(x - px, y - py) > minDist);
+  if (far.length || !spawns.length) return far;
+  let best = spawns[0]!;
+  for (const s of spawns) if (Math.hypot(s[0] - px, s[1] - py) > Math.hypot(best[0] - px, best[1] - py)) best = s;
+  return [best];
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -607,6 +683,8 @@ interface Foe {
   fireT: number;
   walk: number;
   moving: boolean;
+  /** Mission time of death, or -1 while alive; used to drop the oldest bodies. */
+  diedAt: number;
 }
 
 type PropKind = "barrel" | "ammo" | "intel" | "relay" | "lz" | "flare";
@@ -754,9 +832,12 @@ export function mount(root: HTMLElement): { destroy(): void } {
   let heads = 0;
   let shots = 0;
   let hits = 0;
+  let taken = 0;
   let veteran = false;
   let cleared = clamp(Math.round(readNumber(STORAGE_KEYS.ironLineMission) ?? 0), 0, 3);
-  let best = Math.max(0, readNumber(STORAGE_KEYS.ironLineBest) ?? 0);
+  /** Legacy single best from before per-mission bests; kept so the "Best mission" stat never drops. */
+  const legacyBest = Math.max(0, readNumber(STORAGE_KEYS.ironLineBest) ?? 0);
+  let bests = readMissionBests(readJSON<unknown>(STORAGE_KEYS.ironLineBests));
   let lastScore: number | null = null;
 
   // fx
@@ -898,6 +979,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
       fireT: 0,
       walk: rand(),
       moving: false,
+      diedAt: -1,
     };
   }
   const newProp = (kind: PropKind, x: number, y: number, amount = 0): Prop => ({
@@ -1035,6 +1117,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
     heads = 0;
     shots = 0;
     hits = 0;
+    taken = 0;
     flash = 0;
     shake = 0;
     muzzleT = 0;
@@ -1054,6 +1137,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
   // ---------- combat ----------
   function damagePlayer(dmg: number, sx: number, sy: number) {
     if (state !== "run") return;
+    taken += Math.min(dmg, Math.max(0, hp));
     hp -= dmg;
     lastHurt = t;
     hurtT = Math.min(1, hurtT + 0.45);
@@ -1072,6 +1156,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
 
   function killFoe(f: Foe, head: boolean) {
     f.alive = false;
+    f.diedAt = t;
     f.hp = 0;
     kills++;
     if (head) heads++;
@@ -1434,7 +1519,9 @@ export function mount(root: HTMLElement): { destroy(): void } {
   }
 
   function spawnFoe(heavy: boolean) {
-    const far = spawns.filter(([x, y]) => Math.hypot(x - px, y - py) > 5);
+    // Drop the oldest bodies first so a long hold doesn't grow the list (and the draw loop) forever.
+    foes = compactFoes(foes, MAX_BODIES);
+    const far = pickSpawns(spawns, px, py, 5);
     if (!far.length) return;
     const [x, y] = far[Math.floor(rand() * far.length)];
     foes.push(newFoe(x + (rand() - 0.5) * 0.3, y + (rand() - 0.5) * 0.3, heavy, true));
@@ -2345,12 +2432,16 @@ export function mount(root: HTMLElement): { destroy(): void } {
   // ---------- flow ----------
   function paintStats() {
     if (elScore) elScore.textContent = lastScore === null ? "–" : String(lastScore);
-    if (elBest) elBest.textContent = best > 0 ? String(best) : "–";
+    const top = Math.max(legacyBest, ...bests.map((b) => b.score));
+    if (elBest) elBest.textContent = top > 0 ? String(top) : "–";
     if (elCleared) elCleared.textContent = `${cleared} / 3`;
     const busy = state === "run" || state === "paused";
     const unlocked = Math.min(cleared, 2);
     for (const b of missionBtns) {
       const i = Number(b.dataset.mission);
+      const mb = bests[i];
+      const name = MISSIONS[i]?.name ?? "";
+      b.textContent = mb && mb.score > 0 ? `${i + 1} ${name} · ${mb.score}${mb.medal ? ` ${medalName(mb.medal)}` : ""}` : `${i + 1} ${name}`;
       b.disabled = busy || i > unlocked;
       b.setAttribute("aria-pressed", String(i === mi));
     }
@@ -2422,9 +2513,11 @@ export function mount(root: HTMLElement): { destroy(): void } {
         : mission.kind === "hold"
           ? "Keep moving between cover; crates in the square refill your ammo."
           : "Aim down sights for a tighter spread, and step out of fire: health comes back after a few quiet seconds.";
+    const acc = shots ? Math.round((hits / shots) * 100) : 0;
+    const line = `${kills} kills · ${heads} headshots · ${acc}% accuracy · ${fmt(t)} · ${Math.round(taken)} damage taken`;
     window.setTimeout(() => {
       if (state !== "over") return;
-      shell.show({ kicker: why === "traced" ? "Uplink traced" : "Killed in action", title: "Mission failed", msg: tip, label: "Retry" });
+      shell.show({ kicker: why === "traced" ? "Uplink traced" : "Killed in action", title: "Mission failed", msg: `${tip}\n${line}`, label: "Retry" });
     }, 700);
   }
 
@@ -2434,11 +2527,13 @@ export function mount(root: HTMLElement): { destroy(): void } {
     exitLock();
     shell.setRunning(false);
     const score = Math.round(missionScore(kills, heads, t, mission.par) * (veteran ? 1.25 : 1));
-    const isBest = score > best;
-    if (isBest) {
-      best = score;
-      writeNumber(STORAGE_KEYS.ironLineBest, best);
-    }
+    const acc = shots ? Math.round((hits / shots) * 100) : 0;
+    const medal = medalFor(t, mission.par, acc, taken);
+    const prev = bests[mi] ?? { score: 0, medal: "" as const };
+    const isBest = score > prev.score;
+    const newMedal = medal !== prev.medal && recordMission(prev, score, medal).medal === medal;
+    bests = bests.map((b, i) => (i === mi ? recordMission(b, score, medal) : b));
+    writeJSON(STORAGE_KEYS.ironLineBests, bests);
     lastScore = score;
     if (mi + 1 > cleared) {
       cleared = mi + 1;
@@ -2447,13 +2542,16 @@ export function mount(root: HTMLElement): { destroy(): void } {
     paintStats();
     sChime();
     const last = mi === MISSIONS.length - 1;
-    const acc = shots ? Math.round((hits / shots) * 100) : 0;
+    const gap = medalGap(t, mission.par, acc, taken);
     shell.show({
       kicker: last ? "Campaign complete" : "Mission complete",
       title: mission.name,
-      msg: `Score ${score}${isBest ? " · New best!" : ""}\n${kills} kills · ${heads} headshots · ${acc}% accuracy · ${fmt(t)}${veteran ? " · Veteran ×1.25" : ""}`,
+      msg:
+        `Score ${score}${isBest ? " · New best!" : ""} · ${medalName(medal)} medal${newMedal ? " (new)" : ""}\n` +
+        `${kills} kills · ${heads} headshots · ${acc}% accuracy · ${fmt(t)} · ${Math.round(taken)} damage taken${veteran ? " · Veteran ×1.25" : ""}` +
+        (gap ? `\n${gap}` : ""),
       label: last ? "Play again" : "Next mission",
-      share: `I cleared ${mission.name} in Iron Line with ${score} points.`,
+      share: `I cleared ${mission.name} in Iron Line with ${score} points and a ${medalName(medal).toLowerCase()} medal.`,
     });
   }
 

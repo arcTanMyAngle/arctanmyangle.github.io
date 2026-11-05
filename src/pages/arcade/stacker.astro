@@ -1,7 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import GameFrame from "../../components/GameFrame.astro";
-import { COLS, ROWS } from "../../components/stacker";
+import { COLS, ROWS } from "../../lib/stackerLogic";
 ---
 
 <BaseLayout title="Stacker" section="arcade" description="Stop the sliding row in time and build to the top.">
@@ -14,7 +14,11 @@ import { COLS, ROWS } from "../../components/stacker";
       <div class="card stk">
         <div class="stk__bar">
           <span class="badge" data-state aria-hidden="true">Press Space or tap to start</span>
-          <button type="button" class="btn btn--primary btn--small" data-act="main">Start</button>
+          <div class="stk__acts">
+            <button type="button" class="btn btn--small btn--quiet" data-sound aria-pressed="true" hidden>Sound on</button>
+            <button type="button" class="btn btn--small" data-act="pause" hidden>Pause</button>
+            <button type="button" class="btn btn--primary btn--small" data-act="main">Start</button>
+          </div>
         </div>
         <div
           class="stk__pad"
@@ -34,8 +38,10 @@ import { COLS, ROWS } from "../../components/stacker";
         <section class="panel" aria-labelledby="stk-score">
           <h2 id="stk-score">Score</h2>
           <dl class="stats">
+            <div><dt>Score</dt><dd data-score>0</dd></div>
             <div><dt>Height</dt><dd data-height>0</dd></div>
-            <div><dt>Best</dt><dd data-best>–</dd></div>
+            <div><dt>Perfect streak</dt><dd data-streak>–</dd></div>
+            <div><dt>Best on this speed</dt><dd data-best>–</dd></div>
           </dl>
         </section>
         <section class="panel" aria-labelledby="stk-settings">
@@ -46,18 +52,22 @@ import { COLS, ROWS } from "../../components/stacker";
               <option value="easy">Easy</option>
               <option value="normal" selected>Normal</option>
               <option value="hard">Hard</option>
+              <option value="impossible">Impossible</option>
             </select>
           </label>
+          <p class="muted stk__fine">Impossible starts two wide, drops to one after four rows and keeps speeding up. It is hard, not rigged.</p>
         </section>
         <section class="panel" aria-labelledby="stk-howto">
           <h2 id="stk-howto">How to play</h2>
           <ul class="howto" role="list">
             <li><span class="kbd">Space</span> Start, then place the moving row.</li>
             <li><span class="kbd">Tap</span> Same thing on a phone: tap the board.</li>
+            <li><span class="kbd">P</span> Pause or resume. Leaving the tab pauses too.</li>
             <li><span class="kbd">{ROWS}</span> Rows to the top. It speeds up as you climb.</li>
+            <li><span class="kbd">+1</span> Each row scores one, and a perfect drop (nothing cut) scores one more.</li>
           </ul>
         </section>
-        <p class="muted stk__fine">Your best height stays on this device only.</p>
+        <p class="muted stk__fine">Each speed keeps its own best score, on this device only.</p>
       </Fragment>
     </GameFrame>
   </div>
@@ -115,18 +125,42 @@ import { COLS, ROWS } from "../../components/stacker";
     background: var(--hue);
     box-shadow: 0 0 18px -4px var(--hue);
   }
+  .stk__acts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
   :global(:root[data-motion="full"]) .stk__cell:global(.is-cut) {
-    animation: cut 520ms var(--ease);
+    animation: cut 640ms var(--ease);
+  }
+  :global(:root[data-motion="full"]) .stk__cell:global(.is-perfect) {
+    animation: perfect 420ms var(--ease);
   }
   @keyframes cut {
     0% {
       background: var(--hue);
-      transform: translateY(0);
+      transform: translateY(0) rotate(0);
+      opacity: 1;
     }
     100% {
-      background: transparent;
-      transform: translateY(18px);
+      background: var(--hue);
+      transform: translateY(calc(var(--cell) * 2.5)) rotate(14deg);
+      opacity: 0;
     }
+  }
+  @keyframes perfect {
+    0% {
+      box-shadow: 0 0 0 0 var(--hue);
+      filter: brightness(1.6);
+    }
+    100% {
+      box-shadow: 0 0 0 8px transparent;
+      filter: brightness(1);
+    }
+  }
+  :global([data-game="paused"]) .stk__grid {
+    opacity: 0.55;
   }
   :global([data-game="won"]) .stk__cell:global(.is-on) {
     background: var(--hue);

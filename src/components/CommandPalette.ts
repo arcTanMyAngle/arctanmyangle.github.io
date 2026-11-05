@@ -20,7 +20,7 @@ function navCommands(): Command[] {
     { id: "arcade", label: "Go to Arcade", hint: "/arcade", run: go("/arcade/") },
     { id: "lab", label: "Go to Lab", hint: "/lab", run: go("/lab/") },
     { id: "tabs", label: "Go to Tabs", hint: "/tabs", run: go("/tabs/") },
-    { id: "skate", label: "Go to Skate", hint: "/skate", run: go("/skate/") },
+    { id: "skate", label: "Go to Skate Lab", hint: "/skate", run: go("/skate/") },
     { id: "projects", label: "Go to Projects", hint: "/projects", run: go("/projects/") },
     { id: "about", label: "Go to About", hint: "/about", run: go("/about/") },
   ];

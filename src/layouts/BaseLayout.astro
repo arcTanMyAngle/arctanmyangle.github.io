@@ -18,7 +18,7 @@ interface Props {
 
 const {
   title,
-  description = "Games, chess, guitar tabs, data experiments and a skate sim in progress.",
+  description = "Games, chess, guitar tabs, data experiments and a skate sim that learns its tricks.",
   section,
   ogImage = "/og-default.png",
   ogType = "website",
@@ -38,7 +38,7 @@ const jsonLd = {
       "@id": `${Astro.site}#website`,
       url: Astro.site,
       name: siteName,
-      description: "Games, chess, guitar tabs, data experiments and a skate sim in progress.",
+      description: "Games, chess, guitar tabs, data experiments and a skate sim that learns its tricks.",
     },
     {
       "@type": "Person",
@@ -182,7 +182,7 @@ const jsonLd = {
               <li><a href={href("chess")}>Chess lines</a></li>
               <li><a href={href("lab")}>Lab</a></li>
               <li><a href={href("tabs")}>Tabs</a></li>
-              <li><a href={href("skate")}>Skate sim</a></li>
+              <li><a href={href("skate")}>Skate Lab</a></li>
             </ul>
           </div>
           <div>

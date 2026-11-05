@@ -70,3 +70,18 @@ export function noise(dur = 0.15, vol = 0.3, freq = 1200, q = 0.8) {
   s.start(t, Math.random() * 0.3);
   s.stop(t + dur + 0.02);
 }
+
+/** True once sound is on and the AudioContext is actually running (a sound played now will be heard). */
+export function audioRunning(): boolean {
+  return !muted && !!ctx && ctx.state === "running";
+}
+
+/**
+ * How long after a call a sound reaches the speakers, in ms, as far as the browser knows: baseLatency plus
+ * outputLatency where they are reported (0 where not). Bluetooth and some drivers add more than browsers report.
+ */
+export function audioLatencyMs(): number {
+  if (!ctx) return 0;
+  const c = ctx as AudioContext & { outputLatency?: number };
+  return ((c.baseLatency || 0) + (c.outputLatency || 0)) * 1000;
+}

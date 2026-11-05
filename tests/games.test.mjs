@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { makeRow, PASSABLE } from "../src/components/laneRush.ts";
-import { BOSS_HP, formatTime, gradeFor, phaseFor } from "../src/components/monolith.ts";
-import { MISSIONS, castRay, mapProblems, missionScore, parseGrid, validMap } from "../src/components/ironLine.ts";
+import { dayKey, makeRow, multFor, PASSABLE, seedFrom } from "../src/components/laneRush.ts";
+import { BOSS_HP, formatTime, gradeFor, phaseFor, practiceHp, readMonolithBests, recordMonolith } from "../src/components/monolith.ts";
+import { MISSIONS, castRay, compactFoes, mapProblems, medalFor, medalGap, missionScore, parseGrid, pickSpawns, readMissionBests, recordMission, validMap } from "../src/components/ironLine.ts";
 import { rng } from "../src/lib/gameShell.ts";
 
 describe("Lane Rush rows", () => {
@@ -36,6 +36,41 @@ describe("Lane Rush rows", () => {
       expect(cells.includes("cart")).toBe(false);
     }
   });
+
+  test("a tight follow-up row never blocks a lane the row before left open", () => {
+    const sets = [[0], [1], [2], [0, 1], [1, 2], [0, 2], [0, 1, 2]];
+    for (let seed = 1; seed <= 30; seed++) {
+      const r = rng(seed);
+      for (const prev of sets) {
+        for (const d of [0.4, 0.7, 1]) {
+          const row = makeRow(r, d, prev, -1, { tight: true });
+          for (const l of prev) {
+            expect(row.cells[l]).toBe("none");
+            expect(row.open).toContain(l);
+          }
+          expect(row.cells.includes("cart")).toBe(false);
+        }
+      }
+    }
+  });
+});
+
+describe("Lane Rush scoring and daily run", () => {
+  test("the coin multiplier steps up every eight in a chain and stops at x4", () => {
+    expect([0, 7, 8, 15, 16, 24, 80].map(multFor)).toEqual([1, 1, 2, 2, 3, 4, 4]);
+  });
+
+  test("the daily seed is the same all day and changes the next day", () => {
+    const a = dayKey(new Date(2026, 10, 2, 0, 5));
+    const b = dayKey(new Date(2026, 10, 2, 23, 55));
+    const c = dayKey(new Date(2026, 10, 3, 0, 5));
+    expect(a).toBe("2026-11-02");
+    expect(b).toBe(a);
+    expect(seedFrom(a)).toBe(seedFrom(b));
+    expect(seedFrom(a)).not.toBe(seedFrom(c));
+    expect(seedFrom(a)).toBe(seedFrom("2026-11-02"));
+    expect(Number.isInteger(seedFrom(a)) && seedFrom(a) >= 0).toBe(true);
+  });
 });
 
 describe("Monolith", () => {
@@ -62,6 +97,47 @@ describe("Monolith", () => {
     expect(formatTime(5_250)).toBe("0:05.3");
     expect(formatTime(83_400)).toBe("1:23.4");
     expect(formatTime(-10)).toBe("0:00.0");
+  });
+
+  test("bests start empty for both difficulties", () => {
+    const empty = { ms: 0, grade: "", phase: 0 };
+    expect(readMonolithBests(null, null)).toEqual({ normal: empty, hard: empty });
+  });
+
+  test("the old single best time seeds Normal and is never lost", () => {
+    expect(readMonolithBests(null, 95_000).normal).toEqual({ ms: 95_000, grade: "", phase: 3 });
+    const stored = { normal: { ms: 120_000, grade: "B", phase: 3 }, hard: { ms: 0, grade: "", phase: 2 } };
+    expect(readMonolithBests(stored, 95_000).normal.ms).toBe(95_000);
+    expect(readMonolithBests(stored, 130_000).normal.ms).toBe(120_000);
+    expect(readMonolithBests(stored, 130_000).hard).toEqual({ ms: 0, grade: "", phase: 2 });
+  });
+
+  test("junk in storage is ignored", () => {
+    const b = readMonolithBests({ normal: { ms: "fast", grade: "Z", phase: 9 }, hard: 4 }, Number.NaN);
+    expect(b.normal).toEqual({ ms: 0, grade: "", phase: 0 });
+    expect(b.hard).toEqual({ ms: 0, grade: "", phase: 0 });
+    expect(readMonolithBests(null, 3).normal.ms).toBe(0);
+  });
+
+  test("a loss records the furthest phase but no time", () => {
+    const fresh = { ms: 0, grade: "", phase: 0 };
+    expect(recordMonolith(fresh, { won: false, ms: 40_000, grade: "", phase: 2 })).toEqual({ ms: 0, grade: "", phase: 2 });
+    const far = { ms: 0, grade: "", phase: 3 };
+    expect(recordMonolith(far, { won: false, ms: 40_000, grade: "", phase: 1 }).phase).toBe(3);
+  });
+
+  test("a win improves the best time and best grade separately", () => {
+    const prev = { ms: 90_000, grade: "B", phase: 3 };
+    expect(recordMonolith(prev, { won: true, ms: 100_000, grade: "A", phase: 3 })).toEqual({ ms: 90_000, grade: "A", phase: 3 });
+    expect(recordMonolith(prev, { won: true, ms: 80_000, grade: "C", phase: 3 })).toEqual({ ms: 80_000, grade: "B", phase: 3 });
+    expect(recordMonolith({ ms: 0, grade: "", phase: 1 }, { won: true, ms: 70_000, grade: "S", phase: 3 })).toEqual({ ms: 70_000, grade: "S", phase: 3 });
+  });
+
+  test("practice starts at the top of each phase", () => {
+    expect(practiceHp(1)).toBe(BOSS_HP);
+    expect(phaseFor(practiceHp(2), BOSS_HP)).toBe(2);
+    expect(phaseFor(practiceHp(3), BOSS_HP)).toBe(3);
+    expect(phaseFor(practiceHp(2) + 1, BOSS_HP)).toBe(1);
   });
 });
 
@@ -157,5 +233,66 @@ describe("Iron Line scoring", () => {
     expect(missionScore(10, 4, 80, 100)).toBe(1000 + 200 + 200);
     expect(missionScore(3, 0, 200, 100)).toBe(300);
     expect(missionScore(0, 0, 99.94, 100)).toBe(1);
+  });
+});
+
+describe("Iron Line medals and bests", () => {
+  test("gold needs par time, 45% accuracy and 60 damage or less", () => {
+    expect(medalFor(100, 100, 45, 60)).toBe("gold");
+    expect(medalFor(101, 100, 90, 0)).toBe("silver");
+    expect(medalFor(100, 100, 44, 0)).toBe("silver");
+    expect(medalFor(100, 100, 90, 61)).toBe("silver");
+  });
+
+  test("anything slower, sloppier or more hurt than silver is bronze", () => {
+    expect(medalFor(125, 100, 30, 150)).toBe("silver");
+    expect(medalFor(126, 100, 90, 0)).toBe("bronze");
+    expect(medalFor(100, 100, 29, 0)).toBe("bronze");
+    expect(medalFor(100, 100, 90, 151)).toBe("bronze");
+  });
+
+  test("the medal gap names only the missing conditions", () => {
+    expect(medalGap(100, 100, 90, 0)).toBe("");
+    expect(medalGap(110, 100, 90, 0)).toBe("Gold needs: finish under 1:40.");
+    expect(medalGap(200, 100, 10, 0)).toBe("Silver needs: finish under 2:05, 30% accuracy.");
+  });
+
+  test("stored bests are cleaned to one entry per mission", () => {
+    expect(readMissionBests(null)).toEqual(MISSIONS.map(() => ({ score: 0, medal: "" })));
+    const got = readMissionBests([{ score: 812.4, medal: "gold" }, { score: "x", medal: "gold" }, { score: 50, medal: "platinum" }, { score: 9 }]);
+    expect(got).toEqual([{ score: 812, medal: "gold" }, { score: 0, medal: "" }, { score: 50, medal: "" }]);
+  });
+
+  test("score and medal improve independently", () => {
+    const a = recordMission({ score: 0, medal: "" }, 500, "bronze");
+    expect(a).toEqual({ score: 500, medal: "bronze" });
+    const b = recordMission(a, 300, "gold");
+    expect(b).toEqual({ score: 500, medal: "gold" });
+    expect(recordMission(b, 900, "silver")).toEqual({ score: 900, medal: "gold" });
+  });
+});
+
+describe("Iron Line foe housekeeping", () => {
+  const foe = (alive, diedAt) => ({ alive, diedAt });
+
+  test("keeps every live foe and only the newest bodies", () => {
+    const list = [foe(false, 1), foe(true, -1), foe(false, 5), foe(false, 3), foe(true, -1)];
+    const out = compactFoes(list, 2);
+    expect(out.filter((f) => f.alive).length).toBe(2);
+    expect(out.filter((f) => !f.alive).map((f) => f.diedAt).sort()).toEqual([3, 5]);
+    expect(out.indexOf(list[1])).toBeLessThan(out.indexOf(list[4]));
+  });
+
+  test("leaves a short list alone", () => {
+    const list = [foe(false, 1), foe(true, -1)];
+    expect(compactFoes(list, 12)).toBe(list);
+  });
+
+  test("falls back to the farthest spawn when every spawn is close", () => {
+    const spawns = [[1, 1], [3, 1], [2, 4]];
+    expect(pickSpawns(spawns, 1, 1, 5)).toEqual([[2, 4]]);
+    expect(pickSpawns(spawns, 1, 1, 2.5)).toEqual([[2, 4]]);
+    expect(pickSpawns(spawns, 1, 1, 1)).toEqual([[3, 1], [2, 4]]);
+    expect(pickSpawns([], 1, 1, 5)).toEqual([]);
   });
 });

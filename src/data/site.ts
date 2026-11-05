@@ -157,7 +157,7 @@ export const interests = [
   { section: "arcade", title: "Games", text: "Small arcade games that are fair, quick and work on a phone." },
   { section: "chess", title: "Chess", text: "Italian, Vienna and London with White; Berlin and Dragon with Black." },
   { section: "tabs", title: "Guitar", text: "Tabs you can follow along with, one bar at a time." },
-  { section: "skate", title: "Skateboarding", text: "Which is where the skate sim comes from." },
+  { section: "skate", title: "Skateboarding", text: "Which is where the skate sim, and the net that learns its tricks, comes from." },
   { section: "lab", title: "Data & maps", text: "Flight radar, event maps, things you can poke at." },
   { section: "projects", title: "Code", text: "Rust, TypeScript and whatever the project needs." },
 ] as const;

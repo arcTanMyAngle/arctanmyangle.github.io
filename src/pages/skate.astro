@@ -1,42 +1,115 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import Icon from "../components/Icon.astro";
-import { href } from "../data/site";
+import policy from "../data/skate-policy.generated.json";
+import { N_ACTIONS, OBS_SIZE } from "../lib/skateSim";
 
+// Curriculum order; the hue each trick wears in the charts
 const tricks = [
-  { id: "ollie", name: "Ollie", text: "Pop the tail, slide the front foot up, and the board rises with you." },
-  { id: "kickflip", name: "Kickflip", text: "An ollie, but the front foot flicks off the edge and the board spins under you." },
-  { id: "shuvit", name: "Shove-it", text: "The back foot scoops the tail and the board turns half a circle flat." },
-];
-const aims = [
-  { title: "Flatground first", text: "Ollies, flips and shove-its on flat ground before any ramps." },
-  { title: "Timing you can feel", text: "Pop and catch depend on when you press, not on a button per trick." },
-  { title: "Keyboard or touch", text: "Plays on a laptop or a phone, like the rest of the arcade." },
-  { title: "Small and quick", text: "Loads in the browser straight away. No account, no download." },
-];
+  { id: "ollie", name: "Ollie", hue: "--arcade" },
+  { id: "shuvit", name: "Shove-it", hue: "--chess" },
+  { id: "kickflip", name: "Kickflip", hue: "--lab" },
+  { id: "varial", name: "Varial kickflip", hue: "--tabs" },
+  { id: "heelflip", name: "Heelflip", hue: "--skate" },
+  { id: "tre", name: "360 flip", hue: "--projects" },
+] as const;
+type TrickId = (typeof tricks)[number]["id"];
+
+const tabs = [
+  { id: "watch", label: "Watch" },
+  { id: "train", label: "Train" },
+  { id: "rate", label: "Rate" },
+  { id: "try", label: "Try" },
+] as const;
+
+const charts = [
+  { key: "pass", label: "Clean rate per trick (pass@1)" },
+  { key: "reward", label: "Mean reward" },
+  { key: "kl", label: "KL to the reference" },
+  { key: "entropy", label: "Policy entropy" },
+  { key: "zerovar", label: "Groups with no signal" },
+  { key: "sftloss", label: "SFT loss" },
+  { key: "dpomargin", label: "DPO margin" },
+  { key: "dpoacc", label: "DPO pair accuracy" },
+] as const;
+
+const keys = [
+  { key: "crouch", label: "Crouch" },
+  { key: "pop", label: "Pop" },
+  { key: "slide", label: "Slide" },
+  { key: "flickToe", label: "Toe" },
+  { key: "scoop", label: "Scoop" },
+  { key: "flickHeel", label: "Heel" },
+] as const;
+
+// Every number below comes from the generated run, never typed in by hand
+const cfg = policy.config;
+const final = policy.final;
+const abl = policy.ablations;
+const pct = (x: number) => `${Math.round(x * 100)}%`;
+const fmt = (x: number) => x.toLocaleString("en-GB");
+const last = <T,>(a: T[]) => a[a.length - 1];
+const lastSft = last(policy.sft);
+const lastReward = last(policy.grpo.reward);
+const lastKl = last(policy.grpo.kl);
+const lastDpoAcc = last(policy.dpo.acc);
+const lastDpoMargin = last(policy.dpo.margin);
+const scratchReward = abl.scratch.reward;
+const scratchZeroVar = abl.scratch.zeroVar;
+const zeroVarTypical = [...scratchZeroVar].sort((a, b) => a - b)[Math.floor(scratchZeroVar.length / 2)];
+const unlockedAt = policy.unlockedAt as Record<TrickId, number>;
+const noColdUnlock = abl.noColdStart.unlockedAt as Record<TrickId, number | null | object>;
+const unlockStep = (v: unknown) => (typeof v === "number" ? `step ${v}` : "never");
+const mixList = (mix: Record<string, number>) =>
+  tricks.map((t) => `${t.name} ${mix[t.id] ?? 0}`).join(", ");
+const stages = [
+  { key: "sft", label: "After SFT" },
+  { key: "grpo", label: "After GRPO" },
+  { key: "dpo", label: "After DPO (shipped)" },
+] as const;
+const cell = (stage: "sft" | "grpo" | "dpo", id: TrickId) => {
+  const f = final[stage][id];
+  return `${pct(f.greedy)} / ${pct(f.sampled)}`;
+};
+const drops = tricks
+  .flatMap((t) => [
+    { name: t.name, kind: "top choice", from: final.grpo[t.id].greedy, to: final.dpo[t.id].greedy },
+    { name: t.name, kind: "sampled", from: final.grpo[t.id].sampled, to: final.dpo[t.id].sampled },
+  ])
+  .filter((d) => d.to < d.from - 0.04);
+const styleUp = tricks.filter((t) => final.dpo[t.id].style > final.grpo[t.id].style + 0.005);
+const [nIn, hidA, hidB, nOut] = [OBS_SIZE, cfg.hidden[0], cfg.hidden[1], N_ACTIONS];
 ---
 
-<BaseLayout title="Skate" section="skate" description="A flatground skateboarding sim for the browser, in the works.">
+<BaseLayout
+  title="Skate"
+  section="skate"
+  description="A flatground skate sim whose tricks are learned by a tiny policy net, trained like a language model: SFT, then GRPO, then DPO, all in your browser."
+>
   <header class="wrap page-head">
     <span class="eyebrow">Skate</span>
-    <h1>A skate sim, in the works.</h1>
+    <h1>A skate sim that learns its tricks.</h1>
     <p class="lede">
-      I skate, and I want a browser game that gets the feel right: the timing of the pop, the flick, the catch. It
-      starts on flat ground. Here's the idea, one trick at a time.
+      A {fmt(policy.params)}-parameter net learns flatground tricks the way a language model learns to answer: copy some
+      demonstrations, practise against a checker that says landed or bailed, then get tuned to taste. Watch it, retrain
+      it from scratch, vote on its style, or try the tricks yourself.
     </p>
-    <div class="actions">
-      <span class="badge badge--muted">Not playable yet</span>
-    </div>
   </header>
 
-  <section class="wrap" aria-labelledby="tricks-h">
-    <div class="card sk" data-skate data-trick="ollie">
+  <section class="wrap" aria-labelledby="lab-h">
+    <div class="card sk" data-skate-lab>
       <div class="sk__head">
-        <h2 id="tricks-h">Tricks it will start with</h2>
+        <h2 id="lab-h">Skate Lab</h2>
         <div class="sk__picks" role="radiogroup" aria-label="Trick">
           {
-            tricks.map((t, i) => (
-              <button type="button" class="sk__pick" role="radio" aria-checked={i === 0 ? "true" : "false"} data-pick={t.id}>
+            tricks.map((t) => (
+              <button
+                type="button"
+                class="sk__pick"
+                role="radio"
+                aria-checked={t.id === "kickflip" ? "true" : "false"}
+                tabindex={t.id === "kickflip" ? 0 : -1}
+                data-sk-trick={t.id}
+              >
                 {t.name}
               </button>
             ))
@@ -44,89 +117,438 @@ const aims = [
         </div>
       </div>
 
-      <div class="sk__stage" aria-hidden="true">
-        <svg viewBox="0 0 320 150" class="sk__svg">
-          <line class="sk__ground" x1="0" y1="132" x2="320" y2="132"></line>
-          <ellipse class="sk__shadow" cx="160" cy="132" rx="70" ry="4"></ellipse>
-          <g class="sk__lift">
-            <g class="sk__spin">
-              <g class="sk__board">
-                <path class="sk__deck" d="M80 100q5 11 21 11h118q16 0 21-11"></path>
-                <rect class="sk__truck" x="112" y="112" width="18" height="5" rx="2"></rect>
-                <rect class="sk__truck" x="190" y="112" width="18" height="5" rx="2"></rect>
-                <circle class="sk__wheel" cx="117" cy="123" r="7"></circle>
-                <circle class="sk__wheel" cx="203" cy="123" r="7"></circle>
-              </g>
-            </g>
-          </g>
-        </svg>
+      <p class="note sk__note" data-sk-mode hidden>
+        Your browser couldn't start a background worker, so training runs on the page between frames. It works, just a
+        little slower.
+      </p>
+      <p class="note sk__note sk__note--error" data-sk-error role="alert" hidden></p>
+
+      <div class="sk__status">
+        <span class="mono" data-sk-policy>Policy: shipped</span>
+        <span class="muted" data-sk-trick-stats></span>
       </div>
 
-      {
-        tricks.map((t, i) => (
-          <p class="sk__text" data-text={t.id} hidden={i !== 0}>
-            <strong>{t.name}.</strong> {t.text}
-          </p>
-        ))
-      }
+      <div class="sk__stagewrap" data-sk-stagewrap>
+        <div class="sk__stage">
+          <canvas class="sk__canvas" data-sk-canvas aria-label="The rider and board, side view"></canvas>
+        </div>
+        <p class="sk__source muted" data-sk-source></p>
+        <p class="sk__verdict" data-sk-verdict aria-live="polite"></p>
+        <div class="sk__strip" data-sk-strip role="toolbar" aria-label="Decisions" hidden></div>
+        <div class="sk__dist" data-sk-dist hidden></div>
+      </div>
+
+      <div class="sk__tabs" role="tablist" aria-label="Lab">
+        {
+          tabs.map((t, i) => (
+            <button
+              type="button"
+              role="tab"
+              id={`sk-tab-${t.id}`}
+              class="sk__tab"
+              aria-selected={i === 0 ? "true" : "false"}
+              aria-controls={`sk-panel-${t.id}`}
+              tabindex={i === 0 ? 0 : -1}
+              data-sk-tab={t.id}
+            >
+              {t.label}
+            </button>
+          ))
+        }
+      </div>
+
+      <div class="sk__panel" role="tabpanel" id="sk-panel-watch" aria-labelledby="sk-tab-watch" data-sk-panel="watch">
+        <p class="muted">
+          Each chip under the stage is one decision, 30 a second. Hover or arrow through them to see what the net was
+          choosing between; greyed rows were masked out because they weren't legal at that moment.
+        </p>
+        <div class="actions">
+          <button type="button" class="btn btn--primary btn--small" data-sk-act="replay">Replay top choice</button>
+          <button type="button" class="btn btn--quiet btn--small" data-sk-act="sample">Sample a new attempt</button>
+        </div>
+      </div>
+
+      <div class="sk__panel" role="tabpanel" id="sk-panel-train" aria-labelledby="sk-tab-train" data-sk-panel="train" hidden>
+        <div class="sk__controls">
+          <div class="actions">
+            <button type="button" class="btn btn--primary btn--small" data-sk-act="train">Train from scratch</button>
+            <button type="button" class="btn btn--quiet btn--small" data-sk-act="reset">Back to shipped</button>
+          </div>
+          <label class="sk__field sk__field--check">
+            <input type="checkbox" data-sk-skipsft />
+            <span>Skip SFT (start RL cold)</span>
+          </label>
+          <label class="sk__field">
+            <span>Group size G <output class="mono" data-sk-group-out>16</output></span>
+            <input type="range" min="2" max="64" step="1" value="16" data-sk-group />
+          </label>
+          <label class="sk__field">
+            <span>KL weight β</span>
+            <select data-sk-beta>
+              <option value="0">0 (off)</option>
+              <option value="0.02" selected>0.02</option>
+              <option value="0.1">0.1</option>
+              <option value="0.5">0.5</option>
+            </select>
+          </label>
+        </div>
+        <p class="sk__progress">
+          <span class="mono" data-sk-stage-label>Showing the shipped run</span>
+          <span class="muted" data-sk-wall></span>
+        </p>
+        <p class="muted sk__chartsrc" data-sk-chart-src></p>
+        <div class="sk__charts" data-sk-charts>
+          {
+            charts.map((c) => (
+              <figure class={`sk__chart${c.key === "pass" ? " sk__chart--wide" : ""}`}>
+                <figcaption>
+                  <span>{c.label}</span>
+                  {c.key !== "pass" && <span class="mono" data-sk-last={c.key} />}
+                </figcaption>
+                <canvas data-sk-chart={c.key} aria-label={c.label} />
+                {c.key === "pass" && (
+                  <ul class="sk__legend">
+                    {tricks.map((t) => (
+                      <li>
+                        <span class="sk__swatch" style={`--sw: var(${t.hue})`} aria-hidden="true" />
+                        {t.name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </figure>
+            ))
+          }
+        </div>
+        <div class="sk__eval" data-sk-eval aria-live="polite"></div>
+      </div>
+
+      <div class="sk__panel" role="tabpanel" id="sk-panel-rate" aria-labelledby="sk-tab-rate" data-sk-panel="rate" hidden>
+        <p class="muted">
+          Two landed attempts at the same trick. Pick the one with more style; each vote is one DPO step on the live
+          policy. Click an attempt to replay it.
+        </p>
+        <div class="sk__pair">
+          {
+            [0, 1].map((i) => (
+              <figure class="sk__side">
+                <div class="sk__stage sk__stage--small">
+                  <canvas class="sk__canvas" data-sk-pair={i} aria-label={`Attempt ${i === 0 ? "A" : "B"}, click to replay`} />
+                </div>
+                <figcaption class="muted" data-sk-pair-info={i} />
+                <button type="button" class="btn btn--small" data-sk-vote={i} disabled>
+                  {i === 0 ? "A has more style" : "B has more style"}
+                </button>
+              </figure>
+            ))
+          }
+        </div>
+        <div class="actions">
+          <button type="button" class="btn btn--quiet btn--small" data-sk-act="pair">Skip, new pair</button>
+        </div>
+        <p class="sk__msg" data-sk-rate-msg aria-live="polite"></p>
+        <p class="muted" data-sk-agree></p>
+      </div>
+
+      <div class="sk__panel" role="tabpanel" id="sk-panel-try" aria-labelledby="sk-tab-try" data-sk-panel="try" hidden>
+        <p class="sk__msg" data-sk-try-msg aria-live="polite"></p>
+        <p class="muted" data-sk-vs></p>
+        <div class="sk__controls">
+          <label class="sk__field">
+            <span>Speed</span>
+            <select data-sk-speed>
+              <option value="0.25">¼ speed</option>
+              <option value="0.5" selected>½ speed</option>
+              <option value="1">Full speed</option>
+            </select>
+          </label>
+          <span class="muted" data-sk-tries></span>
+          <div class="actions">
+            <button type="button" class="btn btn--primary btn--small" data-sk-act="try">Try again</button>
+            <button type="button" class="btn btn--quiet btn--small" data-sk-act="showme" disabled>Show me the model</button>
+          </div>
+        </div>
+        <div class="sk__pad" aria-label="Touch controls">
+          {
+            keys.map((k) => (
+              <button type="button" class="sk__key" data-key={k.key}>
+                {k.label}
+              </button>
+            ))
+          }
+        </div>
+        <p class="muted sk__keys">
+          <span class="kbd">S</span>/<span class="kbd">↓</span> crouch · <span class="kbd">Space</span>/<span class="kbd">W</span>/<span
+            class="kbd">↑</span
+          > pop, then catch · <span class="kbd">D</span>/<span class="kbd">→</span> slide · <span class="kbd">J</span> flick toe ·
+          <span class="kbd">K</span> scoop · <span class="kbd">L</span> flick heel · <span class="kbd">R</span> retry
+        </p>
+      </div>
     </div>
   </section>
 
-  <section class="wrap section" aria-labelledby="aims-h">
+  <article class="wrap section sk-doc" aria-labelledby="how-h">
     <div class="section__head">
       <div>
-        <h2 id="aims-h">What it's aiming for</h2>
-        <p>Goals, not features that exist yet.</p>
+        <h2 id="how-h">How it learns</h2>
+        <p>
+          The same three-stage recipe that turns a pretrained language model into an assistant, shrunk until it fits in
+          a {fmt(policy.params)}-parameter net and a few seconds of CPU.
+        </p>
       </div>
     </div>
-    <ul class="aims" role="list">
-      {
-        aims.map((a, i) => (
-          <li class="card">
-            <span class="aims__n mono">0{i + 1}</span>
-            <strong>{a.title}</strong>
-            <span>{a.text}</span>
-          </li>
-        ))
-      }
-    </ul>
-  </section>
 
-  <section class="wrap section">
-    <p class="note">
-      <Icon name="play" size={18} />
-      <span>While you wait, the <a href={href("arcade")}>arcade</a> has games you can play right now.</span>
-    </p>
-  </section>
+    <div class="sk-doc__body">
+      <section aria-labelledby="map-h">
+        <h3 id="map-h">The LLM analogy</h3>
+        <div class="sk-doc__scroll">
+          <table class="sk__table">
+            <caption>Each part of the lab and the language-model idea it stands in for.</caption>
+            <thead>
+              <tr><th scope="col">In the lab</th><th scope="col">In an LLM</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">One action (pop, flick, catch…)</th><td>One token</td></tr>
+              <tr><th scope="row">One attempt at a trick</th><td>One completion</td></tr>
+              <tr><th scope="row">The trick asked for, in the input</th><td>The prompt</td></tr>
+              <tr><th scope="row">Masking actions that can't happen</th><td>Constrained (grammar) decoding</td></tr>
+              <tr><th scope="row">SFT on scripted demos</th><td>Instruction tuning</td></tr>
+              <tr><th scope="row">GRPO against the landing checker</th><td>RL with verifiable rewards</td></tr>
+              <tr><th scope="row">DPO on style votes</th><td>Preference tuning</td></tr>
+              <tr><th scope="row">The scripted style judge</th><td>A reward model or LLM judge</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="sim-h">
+        <h3 id="sim-h">The sim and the policy</h3>
+        <p>
+          The board and rider step at 120 Hz. The net picks one of {nOut} actions every 4 steps, so a decision lasts
+          1/30 s, and an attempt ends after at most 1.8 s. It sees {nIn} numbers: board height, pitch, flip and spin
+          angles and their rates, how far the rider is crouched, where the feet are, time since the pop, and which
+          trick it was asked for. It's a plain MLP, {nIn} → {hidA} → {hidB} → {nOut}, tanh between layers.
+        </p>
+        <p>
+          The checker is deterministic. Land with a foot off, more than 45° of flip or spin left over, or more than 25°
+          of pitch, and it's a bail. Otherwise it's clean unless something is sketchy: over 25° off, over 15° of pitch,
+          stiff legs at landing, or less pop height than the trick needs. Clean scores 1, sketchy 0.5, anything else 0,
+          and landing the wrong trick scores 0 too.
+        </p>
+      </section>
+
+      <section aria-labelledby="mask-h">
+        <h3 id="mask-h">Masking is constrained decoding</h3>
+        <p>
+          Before sampling, illegal actions get their logits set to −∞, exactly as a JSON-mode decoder bans tokens that
+          would break the grammar. You can't pop without crouching first, you can flick only in the first 0.3 s after
+          the pop and only once, and you can catch only once a foot has come off. The net never wastes probability on
+          moves the sim would ignore, and every gradient below is taken over the legal set only.
+        </p>
+        <pre class="sk-math"><code>π(a | s) = softmax(z + log m)(a),   m(a) ∈ {"{0, 1}"}</code></pre>
+      </section>
+
+      <section aria-labelledby="sft-h">
+        <h3 id="sft-h">Stage 1: SFT</h3>
+        <p>
+          A script that knows the timing of each trick produces demonstrations, with a little noise so the states
+          vary. The mix is lopsided on purpose: {mixList(cfg.sft.mix)}. That's {fmt(policy.sftTokens)} labelled
+          decisions. The net is trained with cross-entropy against the scripted action, label-smoothed by
+          {cfg.sft.smoothing} over the legal actions only, for {cfg.sft.epochs} epochs (batch {cfg.sft.batch}, Adam,
+          lr {cfg.sft.lr}).
+        </p>
+        <pre class="sk-math"><code>L_SFT = − Σₜ Σₐ q(a) log π(a | sₜ),   q = (1 − ε)·onehot + ε·uniform(legal)</code></pre>
+        <p>
+          It ends at loss {lastSft.loss.toFixed(3)} and {pct(lastSft.acc)} token accuracy. Copying is enough for the
+          three tricks it saw a lot of; it barely helps with the two it saw eight times, and it has never seen a
+          varial.
+        </p>
+      </section>
+
+      <section aria-labelledby="grpo-h">
+        <h3 id="grpo-h">Stage 2: GRPO</h3>
+        <p>
+          For each unlocked trick, sample a group of G = {cfg.grpo.group} attempts from the current policy at
+          temperature {cfg.grpo.temperature} and score each one with the checker. No value network: each attempt's
+          advantage is its reward against the rest of its group.
+        </p>
+        <pre class="sk-math"><code>Âᵢ = (rᵢ − mean(r)) / (std(r) + 10⁻⁴)
+ρₜ = π_θ(aₜ | sₜ) / π_old(aₜ | sₜ)
+L = −(1 / (N·T)) Σᵢ Σₜ [ min(ρₜ Âᵢ, clip(ρₜ, 1 − ε, 1 + ε) Âᵢ) − β · KLₜ ]
+KLₜ = π_ref / π_θ − log(π_ref / π_θ) − 1</code></pre>
+        <p>
+          ε = {cfg.grpo.clip}, β = {cfg.grpo.beta}, {cfg.grpo.epochs} epochs of {cfg.grpo.minibatches} minibatches per
+          step, Adam at lr {cfg.grpo.lr}, {cfg.grpo.steps} steps. The KL term is Schulman's k3 estimator against the
+          frozen SFT net, which is always non-negative and unbiased. The loss is divided by a fixed T = 40 decisions
+          rather than each attempt's own length, the Dr. GRPO fix, so short bails aren't weighted more than full
+          attempts. A group where every attempt scored the same has zero advantage everywhere and teaches nothing; the
+          lab counts those as "groups with no signal".
+        </p>
+        <p>
+          The last step averages reward {lastReward.toFixed(3)} with KL {lastKl.toFixed(3)} to the SFT net.
+        </p>
+      </section>
+
+      <section aria-labelledby="cur-h">
+        <h3 id="cur-h">The curriculum and pass@k</h3>
+        <p>
+          Tricks unlock in order. The next one joins the batch once the newest has a clean rate (pass@1) of
+          {pct(cfg.grpo.unlockAt)} averaged over {cfg.grpo.window} steps. In the shipped run the first four were
+          available from step 0, the heelflip unlocked at {unlockStep(unlockedAt.heelflip)} and the 360 flip at
+          {unlockStep(unlockedAt.tre)}.
+        </p>
+        <p>
+          pass@1 is estimated from each group with the unbiased estimator from the Codex paper, where n is the group
+          size and c the number of clean attempts:
+        </p>
+        <pre class="sk-math"><code>pass@k = 1 − C(n − c, k) / C(n, k)</code></pre>
+      </section>
+
+      <section aria-labelledby="dpo-h">
+        <h3 id="dpo-h">Stage 3: DPO</h3>
+        <p>
+          Landing a trick isn't the same as landing it well. A scripted judge scores style: height, minus pitch at
+          landing, minus how far off the rotation was. Each round draws {cfg.dpo.samples} landed attempts per trick,
+          and the judge picks {cfg.dpo.pairs} chosen/rejected pairs. DPO then pushes the policy towards the chosen one,
+          relative to the GRPO net, with no reward model and no RL loop:
+        </p>
+        <pre class="sk-math"><code>style = 2·height − |pitch°| / 30 − 4·(|flip error| + |spin error|)
+m = β · [ (log π_θ(y⁺) − log π_ref(y⁺)) − (log π_θ(y⁻) − log π_ref(y⁻)) ]
+L_DPO = − log σ(m)</code></pre>
+        <p>
+          β = {cfg.dpo.beta}, lr {cfg.dpo.lr}, {cfg.dpo.rounds} rounds. The last round ranks
+          {pct(lastDpoAcc)} of pairs the judge's way, with a mean margin of {lastDpoMargin.toFixed(3)}. In the Rate tab
+          you are the judge: each vote is one DPO step on that single pair.
+        </p>
+      </section>
+
+      <section aria-labelledby="res-h">
+        <h3 id="res-h">Results</h3>
+        <div class="sk-doc__scroll">
+          <table class="sk__table">
+            <caption>
+              Clean landings over {policy.evalN} fixed seeds after each stage, picking the top choice / sampling.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Trick</th>
+                {stages.map((s) => <th scope="col">{s.label}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {
+                tricks.map((t) => (
+                  <tr>
+                    <th scope="row">{t.name}</th>
+                    {stages.map((s) => (
+                      <td class="mono">{cell(s.key, t.id)}</td>
+                    ))}
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+        <p>
+          SFT alone makes the net good at its top choice and shaky when sampled. RL is what makes sampling reliable,
+          and it's the only stage that teaches the varial, which no demo ever showed.
+        </p>
+      </section>
+
+      <section aria-labelledby="tax-h">
+        <h3 id="tax-h">The alignment tax</h3>
+        <p>
+          Tuning for style cost some reliability.
+          {
+            drops.length > 0 && (
+              <>
+                {drops.map((d, i) => (
+                  <>
+                    {i > 0 && (i === drops.length - 1 ? " and " : ", ")}
+                    {d.name} {d.kind} fell from {pct(d.from)} to {pct(d.to)}
+                  </>
+                ))}
+                .
+              </>
+            )
+          }
+          {
+            styleUp.length > 0 && (
+              <>
+                {" "}
+                In exchange the style score rose for{" "}
+                {styleUp.map((t, i) => (
+                  <>
+                    {i > 0 && (i === styleUp.length - 1 ? " and " : ", ")}
+                    {t.name.toLowerCase()} ({final.grpo[t.id].style.toFixed(2)} → {final.dpo[t.id].style.toFixed(2)})
+                  </>
+                ))}
+                .
+              </>
+            )
+          }{" "}
+          It's the same trade an assistant makes when it's tuned to sound better: the preference data says nothing
+          about correctness, and the KL anchor only slows the drift.
+        </p>
+      </section>
+
+      <section aria-labelledby="abl-h">
+        <h3 id="abl-h">Ablations</h3>
+        <p>
+          <strong>No SFT.</strong> Starting RL from a random net, almost every group scores all zeros. Over
+          {abl.scratch.steps} steps about {pct(zeroVarTypical)} of groups carried no signal, mean reward crept from
+          {scratchReward[0].toFixed(3)} to {last(scratchReward).toFixed(3)}, and no trick lands as a top choice
+          (sampled ollies land {pct(abl.scratch.final.ollie.sampled)} of the time). RL sharpens what the policy can
+          already sometimes do; it can't find a trick from nothing.
+        </p>
+        <p>
+          <strong>No cold start.</strong> Drop the eight heelflip and eight 360 flip demos (mix: {
+            mixList(abl.noColdStart.mix)
+          }). The heelflip still unlocks, at {unlockStep(noColdUnlock.heelflip)}, but ends at
+          {pct(abl.noColdStart.final.heelflip.greedy)} clean, and the 360 flip unlocks {unlockStep(noColdUnlock.tre)}
+          ({pct(abl.noColdStart.final.tre.greedy)} clean). A handful of examples is the difference between a reward the
+          policy can find and one it never sees.
+        </p>
+      </section>
+
+      <section aria-labelledby="lim-h">
+        <h3 id="lim-h">Limitations</h3>
+        <ul>
+          <li>
+            The physics is a hand-tuned toy, not a rigid-body sim. Pop height, flick torque and catch damping were set
+            until the tricks felt right, not measured.
+          </li>
+          <li>
+            The net is tiny and sees a clean state. There's no vision, no noise in what it observes, and one flat
+            surface.
+          </li>
+          <li>
+            The style judge is a formula I wrote, so DPO learns my taste through a proxy. Your votes in the Rate tab
+            are the only real human preference in the loop, and they're one pair at a time.
+          </li>
+          <li>Everything is seeded, so the shipped run is reproducible byte for byte, and so are its quirks.</li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="ref-h">
+        <h3 id="ref-h">References</h3>
+        <ul class="sk-doc__refs">
+          <li>Shao et al., 2024. DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models (GRPO).</li>
+          <li>Liu et al., 2025. Understanding R1-Zero-Like Training: A Critical Perspective (Dr. GRPO).</li>
+          <li>Schulman et al., 2017. Proximal Policy Optimization Algorithms.</li>
+          <li>Rafailov et al., 2023. Direct Preference Optimization: Your Language Model is Secretly a Reward Model.</li>
+          <li>Chen et al., 2021. Evaluating Large Language Models Trained on Code (the unbiased pass@k estimator).</li>
+          <li>Schulman, 2020. Approximating KL Divergence (the k3 estimator).</li>
+        </ul>
+      </section>
+    </div>
+  </article>
 </BaseLayout>
 
 <script>
-  const root = document.querySelector<HTMLElement>("[data-skate]");
-  if (root) {
-    const picks = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-pick]"));
-    const texts = Array.from(root.querySelectorAll<HTMLElement>("[data-text]"));
-    const select = (btn: HTMLButtonElement, focus = false) => {
-      const id = btn.dataset.pick!;
-      root.dataset.trick = id;
-      for (const p of picks) {
-        const on = p === btn;
-        p.setAttribute("aria-checked", String(on));
-        p.tabIndex = on ? 0 : -1;
-      }
-      for (const t of texts) t.hidden = t.dataset.text !== id;
-      if (focus) btn.focus();
-    };
-    picks.forEach((p, i) => {
-      p.tabIndex = i === 0 ? 0 : -1;
-      p.addEventListener("click", () => select(p));
-      p.addEventListener("keydown", (e) => {
-        const step = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
-        if (!step) return;
-        e.preventDefault();
-        select(picks[(i + step + picks.length) % picks.length], true);
-      });
-    });
-  }
+  import { mount } from "../components/skate";
+  const root = document.querySelector<HTMLElement>("[data-skate-lab]");
+  if (root) mount(root);
 </script>
 
 <style>
@@ -134,6 +556,7 @@ const aims = [
     display: grid;
     gap: 1.25rem;
     padding: clamp(1.25rem, 3vw, 2rem);
+    min-width: 0;
   }
   .sk__head {
     display: flex;
@@ -154,6 +577,7 @@ const aims = [
     border: 1px solid var(--line);
     border-radius: 999px;
     background: var(--surface-2);
+    max-width: 100%;
   }
   .sk__pick {
     min-height: 2.25rem;
@@ -173,6 +597,28 @@ const aims = [
     color: var(--text);
     box-shadow: 0 0 0 1px var(--hue-line);
   }
+  .sk__note {
+    margin: 0;
+  }
+  .sk__note--error {
+    color: var(--text);
+    border-color: var(--arcade);
+  }
+  .sk__status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .sk__stagewrap {
+    display: grid;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+  .sk__stagewrap[hidden] {
+    display: none;
+  }
   .sk__stage {
     display: grid;
     place-items: center;
@@ -183,185 +629,347 @@ const aims = [
       var(--surface-2);
     box-shadow: inset 0 0 0 1px var(--line);
   }
-  .sk__svg {
-    width: min(100%, 34rem);
-    height: auto;
-    overflow: visible;
+  .sk__stage--small {
+    padding: 0.5rem;
   }
-  .sk__ground {
-    stroke: var(--line-2);
-    stroke-width: 2;
+  .sk__canvas {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 7;
+    touch-action: manipulation;
   }
-  .sk__deck {
-    fill: none;
-    stroke: var(--hue);
-    stroke-width: 8;
-    stroke-linecap: round;
+  .sk__stage--small .sk__canvas {
+    aspect-ratio: 4 / 3;
+    cursor: pointer;
   }
-  .sk__truck {
-    fill: var(--text-3);
+  .sk__source,
+  .sk__verdict {
+    margin: 0;
+    font-size: 0.875rem;
   }
-  .sk__wheel {
-    fill: var(--surface-3);
-    stroke: var(--text-2);
-    stroke-width: 2;
-  }
-  .sk__shadow {
-    fill: color-mix(in oklab, var(--text) 12%, transparent);
-  }
-  .sk__shadow,
-  .sk__lift,
-  .sk__spin,
-  .sk__board {
-    transform-box: fill-box;
-    transform-origin: center;
-  }
-  .sk__text {
-    max-width: 60ch;
-    color: var(--text-2);
-  }
-  .sk__text strong {
-    color: var(--text);
-  }
-  .sk__text[hidden] {
+  .sk__verdict:empty {
     display: none;
   }
 
-  /* One 2.6s loop per trick. The lift (up and down) is shared; the spin layer does the trick itself.
-     Under reduced motion nothing moves and the board just sits on the ground. */
-  :global(:root[data-motion="full"]) .sk__lift {
-    animation: sk-lift 2.6s cubic-bezier(0.35, 0, 0.25, 1) infinite;
+  .sk__strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
   }
-  :global(:root[data-motion="full"]) .sk__shadow {
-    animation: sk-shadow 2.6s cubic-bezier(0.35, 0, 0.25, 1) infinite;
+  .sk__strip[hidden],
+  .sk__dist[hidden] {
+    display: none;
   }
-  :global(:root[data-motion="full"]) .sk[data-trick="ollie"] .sk__board {
-    transform-origin: 18% 80%;
-    animation: sk-ollie 2.6s cubic-bezier(0.35, 0, 0.25, 1) infinite;
+  .sk__strip :global(.sk__tok) {
+    min-width: 2.1rem;
+    min-height: 1.75rem;
+    padding: 0 0.3rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--hue) calc(var(--p, 0) * 40%), var(--surface-2));
+    color: var(--text);
+    font: 600 0.75rem var(--mono);
+    cursor: pointer;
   }
-  :global(:root[data-motion="full"]) .sk[data-trick="kickflip"] .sk__spin {
-    animation: sk-flip 2.6s cubic-bezier(0.35, 0, 0.25, 1) infinite;
+  .sk__strip :global(.sk__tok.is-pop) {
+    border-color: var(--hue-line);
   }
-  :global(:root[data-motion="full"]) .sk[data-trick="shuvit"] .sk__spin {
-    animation: sk-shuv 2.6s cubic-bezier(0.35, 0, 0.25, 1) infinite;
+  .sk__strip :global(.sk__tok[aria-current="step"]) {
+    outline: 2px solid var(--hue);
+    outline-offset: 1px;
   }
-  @keyframes sk-lift {
-    0%,
-    30% {
-      transform: none;
-    }
-    55% {
-      transform: translateY(-44px);
-    }
-    76% {
-      transform: none;
-    }
-    80% {
-      transform: translateY(1px);
-    }
-    84%,
-    100% {
-      transform: none;
-    }
+  .sk__dist {
+    display: grid;
+    gap: 0.3rem;
+    padding: 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    background: var(--surface-2);
+    font-size: 0.8125rem;
   }
-  @keyframes sk-shadow {
-    0%,
-    30%,
-    76%,
-    100% {
-      transform: none;
-      opacity: 1;
-    }
-    55% {
-      transform: scaleX(0.55);
-      opacity: 0.5;
-    }
+  .sk__dist :global(.sk__dist-head) {
+    margin: 0 0 0.25rem;
+    color: var(--text-2);
+    font-family: var(--mono);
   }
-  @keyframes sk-ollie {
-    0%,
-    30% {
-      transform: none;
-    }
-    38% {
-      transform: rotate(-15deg);
-    }
-    55% {
-      transform: rotate(-3deg);
-    }
-    66% {
-      transform: rotate(2deg);
-    }
-    76%,
-    100% {
-      transform: none;
-    }
+  .sk__dist :global(.sk__dist-row) {
+    display: grid;
+    grid-template-columns: minmax(5.5rem, 8rem) 1fr 4.5rem;
+    align-items: center;
+    gap: 0.5rem;
   }
-  /* Seen from the side, a kickflip rolls the board along its length: the deck shows its edge, then its grip. */
-  @keyframes sk-flip {
-    0%,
-    34% {
-      transform: none;
-    }
-    46% {
-      transform: scaleY(-1);
-    }
-    58% {
-      transform: scaleY(1);
-    }
-    76%,
-    100% {
-      transform: none;
-    }
+  .sk__dist :global(.sk__dist-row.is-masked) {
+    color: var(--text-3);
   }
-  /* A shove-it turns flat, so from the side the board looks like it shrinks to its width and swaps ends. */
-  @keyframes sk-shuv {
-    0%,
-    34% {
-      transform: none;
-    }
-    50% {
-      transform: scaleX(0.12);
-    }
-    66% {
-      transform: scaleX(-1);
-    }
-    76%,
-    100% {
-      transform: scaleX(-1);
-    }
+  .sk__dist :global(.sk__dist-row.is-chosen) {
+    font-weight: 700;
+  }
+  .sk__dist :global(.sk__dist-bar) {
+    height: 0.5rem;
+    border-radius: 999px;
+    background: linear-gradient(
+      to right,
+      var(--hue) calc(var(--p, 0) * 100%),
+      var(--surface-3) calc(var(--p, 0) * 100%)
+    );
+  }
+  .sk__dist :global(.sk__dist-val) {
+    text-align: right;
+    font-family: var(--mono);
+  }
+  :root[data-motion="full"] .sk__strip :global(.sk__tok) {
+    transition: outline-color 120ms var(--ease);
   }
 
-  .aims {
+  .sk__tabs {
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 1px solid var(--line);
+    overflow-x: auto;
+  }
+  .sk__tab {
+    min-height: 2.5rem;
+    padding: 0 1rem;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    background: transparent;
+    color: var(--text-2);
+    font: 600 0.9375rem var(--sans);
+    cursor: pointer;
+  }
+  .sk__tab:hover {
+    color: var(--text);
+  }
+  .sk__tab[aria-selected="true"] {
+    color: var(--text);
+    border-bottom-color: var(--hue);
+  }
+  .sk__panel {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
+    min-width: 0;
+  }
+  .sk__panel[hidden] {
+    display: none;
+  }
+  .sk__panel p {
+    margin: 0;
+  }
+
+  .sk__controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.5rem;
+  }
+  .sk__field {
+    display: grid;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--text-2);
+  }
+  .sk__field--check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .sk__field input[type="range"] {
+    width: min(12rem, 100%);
+    accent-color: var(--hue);
+  }
+  .sk__field select {
+    min-height: 2.25rem;
+    padding: 0 0.5rem;
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius-s);
+    background: var(--surface-2);
+    color: var(--text);
+    font: inherit;
+  }
+  .sk__progress {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    font-size: 0.875rem;
+  }
+  .sk__chartsrc {
+    font-size: 0.8125rem;
+  }
+  .sk__charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+    gap: 0.75rem;
+  }
+  .sk__chart {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    background: var(--surface-2);
+    min-width: 0;
+  }
+  .sk__chart--wide {
+    grid-column: 1 / -1;
+  }
+  .sk__chart figcaption {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--text-2);
+  }
+  .sk__chart canvas {
+    display: block;
+    width: 100%;
+    height: 72px;
+  }
+  .sk__chart--wide canvas {
+    height: 120px;
+  }
+  .sk__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.875rem;
     margin: 0;
     padding: 0;
     list-style: none;
-  }
-  .aims li {
-    display: grid;
-    gap: 0.375rem;
-    align-content: start;
-    padding: 1.25rem;
-  }
-  .aims__n {
-    color: var(--hue);
     font-size: 0.8125rem;
+    color: var(--text-2);
+  }
+  .sk__legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+  .sk__swatch {
+    width: 0.75rem;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--sw);
+  }
+  .sk__eval:empty {
+    display: none;
+  }
+
+  .sk__pair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+    gap: 1rem;
+  }
+  .sk__side {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    min-width: 0;
+  }
+  .sk__side figcaption {
+    font-size: 0.8125rem;
+    min-height: 1.25em;
+  }
+  .sk__msg:empty {
+    display: none;
+  }
+
+  .sk__pad {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    max-width: 26rem;
+  }
+  .sk__key {
+    min-height: 3.25rem;
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius-s);
+    background: var(--surface-2);
+    color: var(--text);
+    font: 600 0.9375rem var(--sans);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+  }
+  .sk__key[data-key="pop"] {
+    border-color: var(--hue-line);
+  }
+  .sk__pad :global(.sk__key.is-held) {
+    background: var(--hue-soft);
+    border-color: var(--hue);
+  }
+  .sk__keys {
+    font-size: 0.8125rem;
+    line-height: 1.9;
+  }
+
+  /* Tables are shared by the write-up and the Train tab's end-of-run score */
+  :global(.sk__table) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+  :global(.sk__table caption) {
+    padding-bottom: 0.5rem;
+    text-align: left;
+    color: var(--text-2);
+    font-size: 0.8125rem;
+  }
+  :global(.sk__table th),
+  :global(.sk__table td) {
+    padding: 0.5rem 0.75rem 0.5rem 0;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+  }
+  :global(.sk__table thead th) {
+    color: var(--text-2);
     font-weight: 600;
   }
-  .aims span:last-child {
+  :global(.sk__table tbody th[scope="row"]) {
+    font-weight: 600;
+  }
+
+  .sk-doc__body {
+    display: grid;
+    gap: 2rem;
+    max-width: 46rem;
+  }
+  .sk-doc__body > section {
+    min-width: 0;
+  }
+  .sk-doc__body h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.125rem;
+    letter-spacing: -0.02em;
+  }
+  .sk-doc__body p,
+  .sk-doc__body ul {
+    margin: 0 0 0.75rem;
     color: var(--text-2);
-    font-size: 0.9375rem;
+    line-height: 1.65;
   }
-  @media (max-width: 60rem) {
-    .aims {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+  .sk-doc__body strong {
+    color: var(--text);
   }
-  @media (max-width: 30rem) {
-    .aims {
-      grid-template-columns: minmax(0, 1fr);
-    }
+  .sk-doc__body ul {
+    padding-left: 1.25rem;
+  }
+  .sk-doc__scroll {
+    overflow-x: auto;
+  }
+  .sk-math {
+    margin: 0 0 0.75rem;
+    padding: 0.75rem 1rem;
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    background: var(--surface-2);
+    color: var(--text);
+    font: 0.8125rem/1.7 var(--mono);
+  }
+  .sk-doc__refs {
+    font-size: 0.875rem;
   }
 </style>

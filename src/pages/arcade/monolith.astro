@@ -24,6 +24,7 @@ import CanvasGame from "../../components/CanvasGame.astro";
           </div>
           <div class="tgrp">
             <button type="button" class="tbtn" data-key="dash">Dash</button>
+            <button type="button" class="tbtn" data-key="shoot">Fire</button>
             <button type="button" class="tbtn" data-key="beam">Beam</button>
             <button type="button" class="tbtn tbtn--big" data-key="jump">Jump</button>
           </div>
@@ -37,10 +38,20 @@ import CanvasGame from "../../components/CanvasGame.astro";
             <div><dt>Last win</dt><dd data-time>–</dd></div>
             <div><dt>Grade</dt><dd data-grade>–</dd></div>
             <div><dt>Best time</dt><dd data-best>–</dd></div>
+            <div><dt>Best grade</dt><dd data-best-grade>–</dd></div>
+            <div><dt>Furthest</dt><dd data-reached>–</dd></div>
           </dl>
           <div class="mo__modes" role="group" aria-label="Difficulty">
             <button type="button" class="btn btn--small" data-mode="normal" aria-pressed="true">Normal</button>
             <button type="button" class="btn btn--small" data-mode="hard" aria-pressed="false">Hard</button>
+          </div>
+          <div class="mo__modes" role="group" aria-label="Start at">
+            <button type="button" class="btn btn--small" data-start-phase="1" aria-pressed="true">Phase 1</button>
+            <button type="button" class="btn btn--small" data-start-phase="2" aria-pressed="false" disabled>Phase 2</button>
+            <button type="button" class="btn btn--small" data-start-phase="3" aria-pressed="false" disabled>Phase 3</button>
+          </div>
+          <div class="mo__modes">
+            <button type="button" class="btn btn--small" data-autofire aria-pressed="true">Auto-fire: on</button>
           </div>
         </section>
         <section class="panel" aria-labelledby="mo-howto">
@@ -48,12 +59,12 @@ import CanvasGame from "../../components/CanvasGame.astro";
           <ul class="howto" role="list">
             <li><span class="kbd">← →</span> Move. <span class="kbd">↑</span> aims up, <span class="kbd">↓</span> in the air aims down, or hold the mouse to aim.</li>
             <li><span class="kbd">Space</span> Jump. <span class="kbd">↓</span> + <span class="kbd">Space</span> drops through a ledge.</li>
-            <li><span class="kbd">J</span> Shoot. On a phone it fires and aims for you.</li>
+            <li><span class="kbd">J</span> Shoot. On a phone it aims for you and, with auto-fire on, fires too; turn auto-fire off to shoot with the Fire button.</li>
             <li><span class="kbd">Shift</span> Dash: you can't be hit while dashing.</li>
             <li><span class="kbd">E</span> Beam once the meter is full. <span class="kbd">P</span> pauses.</li>
           </ul>
         </section>
-        <p class="muted mo__fine">Grades reward fewer hits and faster clears; Hard gives you three hits and a bonus. Best time stays on this device only.</p>
+        <p class="muted mo__fine">Grades reward fewer hits and faster clears; Hard gives you three hits and a bonus. Normal and Hard keep separate bests. Reach a phase to practise from it; practice runs record nothing. Bests stay on this device only.</p>
       </Fragment>
     </GameFrame>
   </div>

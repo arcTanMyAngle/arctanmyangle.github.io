@@ -11,6 +11,9 @@ import CanvasGame from "../../components/CanvasGame.astro";
       lede="Ride the night line on a hoverboard. Switch lanes, jump the barriers, slide under the gates and stay off the trams. It gets faster the longer you last."
       back={{ label: "Arcade", path: "arcade" }}
     >
+      <div class="lr__bar">
+        <button type="button" class="btn btn--small btn--quiet" data-daily aria-pressed="false">Daily run: off</button>
+      </div>
       <CanvasGame shape="tall" label="Lane Rush: a three-lane runner seen from behind the rider" hint="Swipe, or arrow keys / WASD" />
 
       <Fragment slot="side">
@@ -20,6 +23,7 @@ import CanvasGame from "../../components/CanvasGame.astro";
             <div><dt>Score</dt><dd data-score>0</dd></div>
             <div><dt>Best</dt><dd data-best>–</dd></div>
             <div><dt>Coins</dt><dd data-coins>0</dd></div>
+            <div><dt>Today's daily best</dt><dd data-daily-best>–</dd></div>
           </dl>
         </section>
         <section class="panel" aria-labelledby="lr-howto">
@@ -28,10 +32,15 @@ import CanvasGame from "../../components/CanvasGame.astro";
             <li><span class="kbd">← →</span> Change lane. On a phone, swipe left or right.</li>
             <li><span class="kbd">↑</span> Jump low barriers. Swipe up or tap.</li>
             <li><span class="kbd">↓</span> Slide under gates. Swipe down; in the air it drops you fast.</li>
+            <li><span class="kbd">x2</span> Coins grabbed in quick succession build a multiplier, up to x4. A long gap or a stumble resets it.</li>
+            <li><span class="kbd">+50</span> Clear something at the last moment for a close call. Running into a barrier or gate leaves a split second to still jump or slide.</li>
             <li><span class="kbd">P</span> Pause. Clipping a side costs a stumble; two close together ends the run.</li>
           </ul>
         </section>
-        <p class="muted lr__fine">Magnets pull coins in, shields take one hit. Your best score stays on this device only.</p>
+        <p class="muted lr__fine">
+          Every 1000 m starts a new sector with its own colours. The daily run gives everyone the same line for the
+          day. Magnets pull coins in, shields take one hit. Your bests stay on this device only.
+        </p>
       </Fragment>
     </GameFrame>
   </div>
@@ -44,6 +53,12 @@ import CanvasGame from "../../components/CanvasGame.astro";
 </script>
 
 <style>
+  .lr__bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
   .lr__fine {
     font-size: 0.875rem;
   }

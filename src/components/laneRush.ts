@@ -2,7 +2,7 @@
 // sky, road, rider and props are drawn here; sounds come from src/lib/sfx.ts. Only makeRow() is pure (and tested).
 
 import { startCanvasLoop } from "../lib/canvasLoop";
-import { STORAGE_KEYS, readNumber, writeNumber } from "../lib/clientState";
+import { STORAGE_KEYS, readJSON, readNumber, writeJSON, writeNumber } from "../lib/clientState";
 import { buzz, createShell, onSwipe, rng } from "../lib/gameShell";
 import { noise, tone, unlockAudio } from "../lib/sfx";
 
@@ -14,15 +14,26 @@ export const PASSABLE: Record<Cell, boolean> = { none: true, low: true, high: tr
  * One row of obstacles across the three lanes. `prevOpen` are the lanes a runner can be in after the previous row and
  * `cartLane` is the lane a tram from the previous row still fills (-1 for none); nobody can cross a tram. Every group
  * of lanes a runner can reach keeps at least one lane they can get through on foot, by jumping or by sliding.
+ * A `tight` row is a follow-up placed close behind another: every lane the runner may be in stays clear (there is no
+ * time to dodge again), so it only walls off the lanes they could not have reached anyway.
  */
 export function makeRow(
   r: () => number,
   difficulty: number,
   prevOpen: number[],
-  cartLane = -1
+  cartLane = -1,
+  opts: { tight?: boolean } = {}
 ): { cells: Cell[]; open: number[] } {
   const diff = Math.max(0, Math.min(1, difficulty));
   const cells: Cell[] = ["none", "none", "none"];
+  if (opts.tight) {
+    for (let l = 0; l < 3; l++) {
+      if (prevOpen.includes(l) || l === cartLane) continue;
+      const k = r();
+      cells[l] = k < 0.5 ? "block" : k < 0.75 ? "low" : "high";
+    }
+    return { cells, open: [0, 1, 2].filter((l) => PASSABLE[cells[l]]) };
+  }
   const groups = cartLane === 1 ? [[0], [2]] : cartLane === 0 ? [[1, 2]] : cartLane === 2 ? [[0, 1]] : [[0, 1, 2]];
   const keep = new Set<number>();
   for (const g of groups) if (g.some((l) => prevOpen.includes(l))) keep.add(g[Math.floor(r() * g.length)]);
@@ -47,7 +58,20 @@ export function makeRow(
 }
 
 type Kind = Exclude<Cell, "none">;
-interface Obs { kind: Kind; lane: number; d: number; len: number; w: number; y0: number; y1: number; dead: boolean }
+interface Obs {
+  kind: Kind;
+  lane: number;
+  d: number;
+  len: number;
+  w: number;
+  y0: number;
+  y1: number;
+  dead: boolean;
+  /** Cleared by a save inside the grace window: no longer solid. */
+  safe?: boolean;
+  /** Already checked for a close call. */
+  near?: boolean;
+}
 interface Coin { x: number; y: number; d: number; pull: boolean; dead: boolean }
 interface Pow { kind: "magnet" | "shield"; x: number; d: number; dead: boolean }
 interface Part { x: number; y: number; d: number; vx: number; vy: number; vd: number; life: number; max: number; c: string; s: number }
@@ -69,7 +93,114 @@ const JUMP_H = 1.55;
 const MAGNET_S = 8;
 const MAGNET_R = 12;
 const DIFF_DIST = 3200;
+/** Metres per sector; each sector repaints the city in the next palette. */
+const SECTOR = 1000;
+/** How long a frontal hit on a gate or barrier waits for a late jump or slide before it counts. */
+const GRACE = 0.075;
+const CLOSE_PTS = 50;
+/** Coins picked up less than this many seconds apart build a chain; a longer gap or a stumble breaks it. */
+const CHAIN_S = 1.5;
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+interface Palette {
+  name: string;
+  sky: [string, string, string];
+  sun: [string, string, string];
+  /** "r,g,b" for the sun's glow and the horizon haze. */
+  glow: string;
+  city: string;
+  lit: string;
+  road: [string, string, string];
+  ground: string;
+  grid: string;
+  rail: string;
+  railFill: string;
+  dash: string;
+  dashGlow: string;
+  lamp: string;
+}
+const PALETTES: Palette[] = [
+  {
+    name: "Neon Strip",
+    sky: ["#05031a", "#1d0b3d", "#4a1055"],
+    sun: ["#ffe27a", "#ff7a59", "#ff2e93"],
+    glow: "255,70,170",
+    city: "#0d0722",
+    lit: "rgba(255,210,120,0.55)",
+    road: ["#2a1440", "#170c2c", "#0d0819"],
+    ground: "#07030f",
+    grid: "rgba(255,60,170,0.26)",
+    rail: "#ff3da8",
+    railFill: "rgba(255,61,168,0.16)",
+    dash: "#5ce1ff",
+    dashGlow: "rgba(60,230,255,0.16)",
+    lamp: "#2c2546",
+  },
+  {
+    name: "Harbor",
+    sky: ["#020a1a", "#062a45", "#0d4f66"],
+    sun: ["#e8fbff", "#7fe3ff", "#2aa9d6"],
+    glow: "60,200,255",
+    city: "#04121f",
+    lit: "rgba(150,230,255,0.5)",
+    road: ["#0d2a3a", "#081a27", "#050f18"],
+    ground: "#020910",
+    grid: "rgba(60,200,255,0.24)",
+    rail: "#3ad7ff",
+    railFill: "rgba(58,215,255,0.15)",
+    dash: "#ffd36e",
+    dashGlow: "rgba(255,211,110,0.16)",
+    lamp: "#1b3344",
+  },
+  {
+    name: "Ember",
+    sky: ["#120302", "#3d0e05", "#7a2408"],
+    sun: ["#fff0a8", "#ffb03a", "#ff4e1a"],
+    glow: "255,120,40",
+    city: "#1a0603",
+    lit: "rgba(255,190,90,0.6)",
+    road: ["#3a160b", "#240c06", "#140603"],
+    ground: "#0c0302",
+    grid: "rgba(255,120,40,0.24)",
+    rail: "#ff7a2d",
+    railFill: "rgba(255,122,45,0.16)",
+    dash: "#ffe08a",
+    dashGlow: "rgba(255,224,138,0.15)",
+    lamp: "#3a1d14",
+  },
+  {
+    name: "Aurora",
+    sky: ["#010d0b", "#04352c", "#0e5e4a"],
+    sun: ["#f2fff4", "#9dffc8", "#3fd69a"],
+    glow: "80,255,170",
+    city: "#03140f",
+    lit: "rgba(190,255,220,0.5)",
+    road: ["#0c2c25", "#071c17", "#04110d"],
+    ground: "#020a08",
+    grid: "rgba(80,255,170,0.22)",
+    rail: "#4dffb0",
+    railFill: "rgba(77,255,176,0.15)",
+    dash: "#c7a6ff",
+    dashGlow: "rgba(199,166,255,0.16)",
+    lamp: "#173a30",
+  },
+];
+
+/** The local calendar day as YYYY-MM-DD: the daily run's key and seed. */
+export function dayKey(now = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
+}
+
+/** A 32-bit seed from a string (FNV-1a), so everyone gets the same road on the same day. */
+export function seedFrom(s: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193);
+  return h >>> 0;
+}
+
+/** Coin multiplier for a chain of coins, each within 1.5 s of the last: x2 at 8, x3 at 16, x4 at 24. */
+export const multFor = (chain: number) => Math.min(4, 1 + Math.floor(chain / 8));
 
 function glowSprite(rgb: string): HTMLCanvasElement {
   const c = document.createElement("canvas");
@@ -91,9 +222,17 @@ export function mount(root: HTMLElement): { destroy(): void } {
   const elScore = root.querySelector<HTMLElement>("[data-score]");
   const elBest = root.querySelector<HTMLElement>("[data-best]");
   const elCoins = root.querySelector<HTMLElement>("[data-coins]");
+  const elDaily = root.querySelector<HTMLButtonElement>("[data-daily]");
+  const elDailyBest = root.querySelector<HTMLElement>("[data-daily-best]");
   const reduced = () => document.documentElement.dataset.motion === "reduced";
 
   let best = readNumber(STORAGE_KEYS.laneRushBest) ?? 0;
+  /** Today's best on the daily run, which everyone plays on the same seeded line. A stored day that isn't today counts as none. */
+  const readDaily = () => {
+    const d = readJSON<{ date?: unknown; best?: unknown }>(STORAGE_KEYS.laneRushDaily);
+    const n = Number(d?.best);
+    return d?.date === dayKey() && Number.isFinite(n) && n > 0 ? Math.round(n) : 0;
+  };
   type State = "menu" | "run" | "paused" | "dying" | "over";
   let state: State = "menu";
   let dist = 0;
@@ -132,6 +271,21 @@ export function mount(root: HTMLElement): { destroy(): void } {
   let lastCoin = -9;
   let lastStat = 0;
   let camX = 0;
+  let pal = PALETTES[0];
+  let sector = 0;
+  // A frontal hit on a barrier or gate opens a short window in which a late jump or slide still saves the run.
+  let grace = 0;
+  let graceObs: Obs | null = null;
+  let coinPts = 0;
+  let bonus = 0;
+  let mult = 1;
+  let maxMult = 1;
+  let nearCount = 0;
+  let lastJumpT = -9;
+  let lastSlideT = -9;
+  let laneLeftT = -9;
+  let daily = false;
+  const coarseMq = window.matchMedia("(pointer: coarse)");
   const obs: Obs[] = [];
   const coinArr: Coin[] = [];
   const pows: Pow[] = [];
@@ -166,9 +320,9 @@ export function mount(root: HTMLElement): { destroy(): void } {
     c.height = Math.ceil(hor) + 2;
     const g = c.getContext("2d")!;
     const gr = g.createLinearGradient(0, 0, 0, hor);
-    gr.addColorStop(0, "#05031a");
-    gr.addColorStop(0.55, "#1d0b3d");
-    gr.addColorStop(1, "#4a1055");
+    gr.addColorStop(0, pal.sky[0]);
+    gr.addColorStop(0.55, pal.sky[1]);
+    gr.addColorStop(1, pal.sky[2]);
     g.fillStyle = gr;
     g.fillRect(0, 0, sw, c.height);
     const sr = rng(7);
@@ -183,9 +337,9 @@ export function mount(root: HTMLElement): { destroy(): void } {
     sun.width = sun.height = Math.ceil(R * 2);
     const sg = sun.getContext("2d")!;
     const sgr = sg.createLinearGradient(0, 0, 0, R * 2);
-    sgr.addColorStop(0, "#ffe27a");
-    sgr.addColorStop(0.55, "#ff7a59");
-    sgr.addColorStop(1, "#ff2e93");
+    sgr.addColorStop(0, pal.sun[0]);
+    sgr.addColorStop(0.55, pal.sun[1]);
+    sgr.addColorStop(1, pal.sun[2]);
     sg.fillStyle = sgr;
     sg.beginPath();
     sg.arc(R, R, R, 0, Math.PI * 2);
@@ -197,7 +351,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
     }
     g.save();
     g.globalAlpha = 0.9;
-    g.drawImage(glowPink, sw / 2 - R * 2.2, hor * 0.92 - R * 2.2 - R * 0.3, R * 4.4, R * 4.4);
+    g.drawImage(glowSprite(pal.glow), sw / 2 - R * 2.2, hor * 0.92 - R * 2.2 - R * 0.3, R * 4.4, R * 4.4);
     g.restore();
     g.drawImage(sun, sw / 2 - R, hor * 0.92 - R * 1.3);
     // Skyline.
@@ -205,22 +359,22 @@ export function mount(root: HTMLElement): { destroy(): void } {
     while (x < sw) {
       const bw = 14 + sr() * 38;
       const bh = hor * (0.05 + sr() * (Math.abs(x - sw / 2) < R * 1.2 ? 0.07 : 0.17));
-      g.fillStyle = "#0d0722";
+      g.fillStyle = pal.city;
       g.fillRect(x, hor - bh, bw, bh + 2);
-      g.fillStyle = "rgba(255,210,120,0.55)";
+      g.fillStyle = pal.lit;
       for (let wy = hor - bh + 4; wy < hor - 3; wy += 6)
         for (let wx = x + 3; wx < x + bw - 3; wx += 5) if (sr() < 0.18) g.fillRect(wx, wy, 2, 2);
       x += bw + 1;
     }
     sky = c;
     roadGrad = ctx.createLinearGradient(0, hor, 0, h);
-    roadGrad.addColorStop(0, "#2a1440");
-    roadGrad.addColorStop(0.25, "#170c2c");
-    roadGrad.addColorStop(1, "#0d0819");
+    roadGrad.addColorStop(0, pal.road[0]);
+    roadGrad.addColorStop(0.25, pal.road[1]);
+    roadGrad.addColorStop(1, pal.road[2]);
     hazeGrad = ctx.createLinearGradient(0, hor - h * 0.05, 0, hor + h * 0.16);
-    hazeGrad.addColorStop(0, "rgba(255,60,160,0)");
-    hazeGrad.addColorStop(0.3, "rgba(255,60,160,0.28)");
-    hazeGrad.addColorStop(1, "rgba(255,60,160,0)");
+    hazeGrad.addColorStop(0, `rgba(${pal.glow},0)`);
+    hazeGrad.addColorStop(0.3, `rgba(${pal.glow},0.28)`);
+    hazeGrad.addColorStop(1, `rgba(${pal.glow},0)`);
   }
 
   let ctxRef: CanvasRenderingContext2D | null = null;
@@ -254,11 +408,22 @@ export function mount(root: HTMLElement): { destroy(): void } {
     prevOpen = [0, 1, 2];
     cartLane = -1;
     nextRow = 34;
-    r = rng((Math.random() * 2 ** 32) >>> 0);
+    r = rng(daily ? seedFrom(dayKey()) : (Math.random() * 2 ** 32) >>> 0);
     bestFlashed = best === 0;
     milestone = 500;
     banner = "";
     chain = 0;
+    lastCoin = -9;
+    coinPts = bonus = nearCount = 0;
+    mult = maxMult = 1;
+    grace = 0;
+    graceObs = null;
+    lastJumpT = lastSlideT = laneLeftT = -9;
+    sector = 0;
+    if (pal !== PALETTES[0]) {
+      pal = PALETTES[0];
+      if (ctxRef) paintSky(ctxRef);
+    }
   }
 
   function spawnRow(d: number) {
@@ -273,6 +438,18 @@ export function mount(root: HTMLElement): { destroy(): void } {
       if (c === "cart") cartLane = l;
     }
     const gap = rowGap(d);
+    // Past the halfway mark, some long gaps get a second, cart-free row in the middle that keeps every lane open
+    // that the first row left open, so a pair always has a way through.
+    const td = d + Math.max(8, gap * 0.5);
+    const tight = d > DIFF_DIST * 0.5 && gap > 10 && cartLane === -1 && r() < 0.25;
+    if (tight) {
+      const t = makeRow(r, diff, prevOpen, -1, { tight: true });
+      prevOpen = t.open;
+      for (let l = 0; l < 3; l++) {
+        const c = t.cells[l];
+        if (c !== "none") obs.push({ kind: c, lane: l, d: td, ...DIMS[c], dead: false });
+      }
+    }
     const free = [0, 1, 2].filter((l) => cells[l] === "none");
     const lows = [0, 1, 2].filter((l) => cells[l] === "low");
     if (free.length && r() < 0.06) {
@@ -323,6 +500,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
     }
     laneFrom = lane;
     lane = to;
+    laneLeftT = time;
     tone(520 + dir * 40, 0.05, "triangle", 0.06);
   }
   function jump() {
@@ -336,9 +514,28 @@ export function mount(root: HTMLElement): { destroy(): void } {
       slideBuf = true;
     } else {
       slideT = lerp(0.72, 0.52, diffAt(dist));
+      lastSlideT = time;
       noise(0.18, 0.14, 900);
+      if (graceObs?.kind === "high") save(graceObs);
     }
     jumpBuf = 0;
+  }
+
+  // A late jump or slide inside the grace window clears the obstacle it was about to hit.
+  function save(o: Obs) {
+    o.safe = true;
+    grace = 0;
+    graceObs = null;
+    closeCall(o);
+  }
+
+  function closeCall(o: Obs) {
+    if (o.near) return;
+    o.near = true;
+    bonus += CLOSE_PTS;
+    nearCount++;
+    say(`Close call +${CLOSE_PTS}`, 0.6);
+    tone(1320, 0.08, "triangle", 0.06, 1760);
   }
 
   // --- Simulation ---
@@ -380,14 +577,21 @@ export function mount(root: HTMLElement): { destroy(): void } {
     tone(150, 0.16, "sawtooth", 0.14, 70);
     buzz(35);
     say("Careful!", 0.8);
+    chain = 0;
+    mult = 1;
   }
 
   function collect(c: Coin) {
     c.dead = true;
     coins++;
-    chain = time - lastCoin < 0.45 ? Math.min(chain + 1, 10) : 0;
+    chain = time - lastCoin < CHAIN_S ? chain + 1 : 0;
     lastCoin = time;
-    const base = 880 * 2 ** (chain / 12);
+    const m = multFor(chain);
+    if (m > mult) say(`x${m}`, 0.6);
+    mult = m;
+    maxMult = Math.max(maxMult, mult);
+    coinPts += 10 * mult;
+    const base = 880 * 2 ** (Math.min(chain, 12) / 12);
     tone(base, 0.07, "square", 0.05, base * 1.5);
     burst(c.x, c.y, c.d, 3, ["#ffe680", "#ffffff"], 2.5);
   }
@@ -418,15 +622,38 @@ export function mount(root: HTMLElement): { destroy(): void } {
       py = 0.0001;
       jumpBuf = 0;
       slideT = 0;
+      lastJumpT = time;
       tone(330, 0.15, "square", 0.07, 700);
+      if (graceObs?.kind === "low") save(graceObs);
+    }
+    if (graceObs) {
+      grace -= dt;
+      if (grace <= 0) {
+        const o = graceObs;
+        graceObs = null;
+        if (Math.abs(px - LANE_X[o.lane]) < o.w / 2 + 0.26) crash(o);
+        if (state !== "run") return;
+      }
     }
     const ph = slideT > 0 ? CROUCH : STAND;
 
     for (const o of obs) {
-      if (o.dead || o.d > dist + 0.3 || o.d + o.len < dist - 0.3) continue;
-      if (Math.abs(px - LANE_X[o.lane]) >= o.w / 2 + 0.26) continue;
+      if (o.dead || o.safe || o === graceObs || o.d > dist + 0.3 || o.d + o.len < dist - 0.3) continue;
+      const inLane = Math.abs(px - LANE_X[o.lane]) < o.w / 2 + 0.26;
+      if (!o.near) {
+        if (o.kind === "low" || o.kind === "high") {
+          const late = o.kind === "low" ? py > 0 && time - lastJumpT < 0.22 : slideT > 0 && time - lastSlideT < 0.22;
+          if (inLane && late) closeCall(o);
+        } else if (laneFrom === o.lane && lane !== o.lane && time - laneLeftT < 0.4) closeCall(o);
+      }
+      if (!inLane) continue;
       if (py >= o.y1 || py + ph <= o.y0 || invuln > 0) continue;
       const frontal = lane === o.lane && dist + 0.3 - o.d < v * dt + 0.3;
+      if (frontal && grace <= 0 && py === 0 && (o.kind === "low" || (o.kind === "high" && slideT <= 0))) {
+        graceObs = o;
+        grace = GRACE;
+        continue;
+      }
       if (frontal) crash(o);
       else stumble(o);
       if (state !== "run") return;
@@ -485,10 +712,24 @@ export function mount(root: HTMLElement): { destroy(): void } {
         spawnRow(nextRow);
         nextRow += rowGap(nextRow);
       }
-      score = Math.floor(dist * 0.5) + coins * 10;
+      if (mult > 1 && time - lastCoin > CHAIN_S) {
+        chain = 0;
+        mult = 1;
+      }
+      score = Math.floor(dist * 0.5) + coinPts + bonus;
+      const s = Math.floor(dist / SECTOR);
+      if (s !== sector) {
+        sector = s;
+        pal = PALETTES[s % PALETTES.length];
+        if (ctxRef) paintSky(ctxRef);
+        say(`Sector ${s + 1} · ${pal.name}`, 1.6);
+        tone(660, 0.18, "triangle", 0.1, 1320);
+      }
       if (dist >= milestone) {
-        say(`${milestone} m`);
-        tone(880, 0.12, "triangle", 0.1, 1760);
+        if (milestone % SECTOR) {
+          say(`${milestone} m`);
+          tone(880, 0.12, "triangle", 0.1, 1760);
+        }
         milestone += 500;
       }
       if (!bestFlashed && score > best) {
@@ -509,7 +750,12 @@ export function mount(root: HTMLElement): { destroy(): void } {
       tumble += dt * 9 * Math.max(0, 1 - dyingT);
       if (dyingT > 1) gameOver();
     } else if (state === "menu" && !reduced()) {
+      // Attract mode: the empty line rolls on behind the menu with obstacles coming up, but nothing collides.
       dist += 7 * dt;
+      while (nextRow < dist + 72) {
+        spawnRow(nextRow);
+        nextRow += rowGap(nextRow);
+      }
     }
     const behind = dist - CAM_BACK + NEAR - 0.5;
     compact(obs, behind, (o) => o.len);
@@ -804,14 +1050,14 @@ export function mount(root: HTMLElement): { destroy(): void } {
   function drawWorld(ctx: CanvasRenderingContext2D) {
     if (!sky) paintSky(ctx);
     ctx.drawImage(sky!, -60 - camX * f * 0.03, 0);
-    ctx.fillStyle = "#07030f";
+    ctx.fillStyle = pal.ground;
     ctx.fillRect(0, hor, w, h - hor);
 
     const sF = f / FAR;
     const zN = 0.8;
     const sN = f / zN;
     // Ground grid.
-    ctx.strokeStyle = "rgba(255,60,170,0.26)";
+    ctx.strokeStyle = pal.grid;
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let gx = -36; gx <= 36; gx += 2.6) {
@@ -849,20 +1095,20 @@ export function mount(root: HTMLElement): { destroy(): void } {
         }
       ctx.fill();
     };
-    ctx.fillStyle = "rgba(60,230,255,0.16)";
+    ctx.fillStyle = pal.dashGlow;
     dash(0.14);
-    ctx.fillStyle = "#5ce1ff";
+    ctx.fillStyle = pal.dash;
     dash(0.035);
     for (const side of [-1, 1]) {
       const rx = side * ROAD;
-      ctx.fillStyle = "rgba(255,61,168,0.16)";
+      ctx.fillStyle = pal.railFill;
       ctx.beginPath();
       ctx.moveTo(X(rx, sN), Y(0, sN));
       ctx.lineTo(X(rx, sN), Y(0.32, sN));
       ctx.lineTo(X(rx, sF), Y(0.32, sF));
       ctx.lineTo(X(rx, sF), Y(0, sF));
       ctx.fill();
-      ctx.strokeStyle = "#ff3da8";
+      ctx.strokeStyle = pal.rail;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(X(rx, sN), Y(0.32, sN));
@@ -873,7 +1119,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
     ctx.fillRect(0, hor - h * 0.05, w, h * 0.21);
 
     // Street lamps, far to near.
-    ctx.strokeStyle = "#2c2546";
+    ctx.strokeStyle = pal.lamp;
     for (let d = Math.ceil((dist + FAR - CAM_BACK - 2) / 15) * 15 - 15; d > dist - CAM_BACK + 1; d -= 15) {
       const z = d - dist + CAM_BACK;
       const s = f / z;
@@ -974,7 +1220,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
     ctx.beginPath();
     ctx.arc(pad + fs * 0.3, cy + fs * 0.32, fs * 0.28, 0, Math.PI * 2);
     ctx.fill();
-    text(String(coins), pad + fs * 0.75, cy, Math.round(fs * 0.62), "#ffe680");
+    text(mult > 1 ? `${coins}  x${mult}` : String(coins), pad + fs * 0.75, cy, Math.round(fs * 0.62), "#ffe680");
     text(`${Math.floor(dist)} m`, w - pad, pad, Math.round(fs * 0.62), "#d9d4ff", "right");
     let iy = pad + fs * 0.95;
     if (magnetT > 0) {
@@ -993,8 +1239,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
     if (state === "run" && runT < 3 && dist < 60) {
       ctx.globalAlpha = Math.max(0, Math.min(1, 3 - runT));
       ctx.textBaseline = "middle";
-      const coarse = window.matchMedia("(pointer: coarse)").matches;
-      text(coarse ? "Swipe to switch lanes · up jump · down slide" : "← → lanes · ↑ jump · ↓ slide", cx, h * 0.93, Math.round(fs * 0.5), "#e9e6ff", "center");
+      text(coarseMq.matches ? "Swipe to switch lanes · up jump · down slide" : "← → lanes · ↑ jump · ↓ slide", cx, h * 0.93, Math.round(fs * 0.5), "#e9e6ff", "center");
       ctx.globalAlpha = 1;
     }
     ctx.textAlign = "left";
@@ -1010,7 +1255,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
     drawWorld(ctx);
     ctx.restore();
     drawStreaks(ctx, state === "run" ? dt : 0);
-    if (flash > 0) {
+    if (flash > 0 && !reduced()) {
       ctx.fillStyle = `rgba(255,255,255,${flash * 0.6})`;
       ctx.fillRect(0, 0, w, h);
     }
@@ -1022,7 +1267,28 @@ export function mount(root: HTMLElement): { destroy(): void } {
     if (elScore) elScore.textContent = String(score);
     if (elCoins) elCoins.textContent = String(coins);
     if (elBest) elBest.textContent = best > 0 ? String(best) : "–";
+    if (elDailyBest) {
+      const d = readDaily();
+      elDailyBest.textContent = d > 0 ? String(d) : "–";
+    }
   }
+
+  function setDaily(on: boolean) {
+    daily = on;
+    if (elDaily) {
+      elDaily.setAttribute("aria-pressed", String(on));
+      elDaily.textContent = `Daily run: ${on ? "on" : "off"}`;
+    }
+  }
+  const onDaily = () => {
+    if (state === "run") return;
+    setDaily(!daily);
+    shell.say(daily ? "Daily run on: today's line is the same for everyone." : "Daily run off.");
+  };
+  elDaily?.addEventListener("click", onDaily);
+
+  const summary = () =>
+    `${Math.floor(dist)} m · ${coins} coins · Sector ${sector + 1}\nBest multiplier x${maxMult} · ${nearCount} close call${nearCount === 1 ? "" : "s"}`;
 
   function start() {
     unlockAudio();
@@ -1038,7 +1304,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
     if (state !== "run") return;
     state = "paused";
     shell.setRunning(false);
-    shell.show({ kicker: "Paused", title: `${score} points`, msg: `${Math.floor(dist)} m · ${coins} coins`, label: "Resume" });
+    shell.show({ kicker: "Paused", title: `${score} points`, msg: summary(), label: "Resume" });
   }
 
   function resume() {
@@ -1055,13 +1321,19 @@ export function mount(root: HTMLElement): { destroy(): void } {
       best = score;
       writeNumber(STORAGE_KEYS.laneRushBest, best);
     }
+    let dailyLine = "";
+    if (daily) {
+      const prev = readDaily();
+      if (score > prev) writeJSON(STORAGE_KEYS.laneRushDaily, { date: dayKey(), best: score });
+      dailyLine = `\nToday's daily best ${Math.max(prev, score)}`;
+    }
     paintStats();
     shell.show({
-      kicker: isBest && !firstRun ? "New best!" : "Wiped out",
+      kicker: isBest && !firstRun ? "New best!" : daily ? "Daily run" : "Wiped out",
       title: `${score} points`,
-      msg: `${Math.floor(dist)} m · ${coins} coins\nBest ${best}`,
+      msg: `${summary()}\nBest ${best}${dailyLine}`,
       label: "Run again",
-      share: `I scored ${score} in Lane Rush. Beat that.`,
+      share: daily ? `I scored ${score} on today's Lane Rush daily run. Beat that.` : `I scored ${score} in Lane Rush. Beat that.`,
     });
   }
 
@@ -1106,6 +1378,7 @@ export function mount(root: HTMLElement): { destroy(): void } {
       shell.destroy();
       offSwipe();
       document.removeEventListener("keydown", onKey);
+      elDaily?.removeEventListener("click", onDaily);
     },
   };
 }
