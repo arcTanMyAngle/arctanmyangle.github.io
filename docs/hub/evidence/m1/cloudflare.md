@@ -52,10 +52,10 @@ Every route above loaded with no CSP violations from site code. `/` requests onl
 animation wasn't re-checked here because the pane was in the background (`document.hidden`, so the board correctly
 waits). The same `dist` animated in the local check (`headers-ci.md`).
 
-## T-M1-03 on origin G (local stand-in only, 2026-10-30)
+## T-M1-03 on origin G (local stand-in 2026-10-30, Cloudflare PASS 2026-11-22)
 
-Not yet deployed to `arctanmyangle-play`. Checked with `bun scripts/serve-dist.mjs --dir play --port 4330
---allow-parent http://localhost:4322` against A's `dist` on 4322, phone viewport 375x812:
+First checked with `bun scripts/serve-dist.mjs --dir play --port 4330 --allow-parent http://localhost:4322` against
+A's `dist` on 4322, phone viewport 375x812:
 
 - `/` and every `/g/<slug>/` get `frame-ancestors https://arctanmyangle.pages.dev https://*.arctanmyangle.pages.dev`
   (plus the local parent); each game also gets its own `default-src 'self'` policy with no other host
@@ -63,5 +63,16 @@ Not yet deployed to `arctanmyangle-play`. Checked with `bun scripts/serve-dist.m
 - A's `dist/_headers` has `frame-src https://arctanmyangle-play.pages.dev`, so A can frame G and nothing else.
 - In the frame: 2048 starts, takes swipes and Exit returns to the poster; Hextris reaches `gameState 1`; A Dark Room
   plays in landscape (844x390) and clips in portrait as its `phoneNote` says. No CSP violations from game code.
-- Still to check on Cloudflare: that `/g/<slug>/*` matches and the two CSP rules are comma-joined as `serve-dist`
-  does, and `Content-Type` on `CHANGES.md` / `LICENSE.*`.
+
+Then on the G preview (`https://hub-m1-proto-c.arctanmyangle-play.pages.dev`, curl): **PASS.**
+
+- Every `/g/<slug>/` page sends two `content-security-policy` headers: the shared `/*` rule
+  (`frame-ancestors https://arctanmyangle.pages.dev https://*.arctanmyangle.pages.dev; object-src 'none';
+  base-uri 'none'; form-action 'none'`) and that game's own policy from `play/_headers`, so `/g/<slug>/*` matches.
+  Subresources (e.g. `/g/2048/js/application.js`, `application/javascript`) get the same pair.
+- `Cross-Origin-Resource-Policy: same-site`, `X-Content-Type-Options: nosniff` and `Referrer-Policy: no-referrer`
+  on every response. Each game's `CHANGES.md` and `LICENSE.md` serve as `text/markdown`, `2048/LICENSE.txt` as
+  `text/plain`.
+- `/404.html` → 308; `/g/nope/` → 404 with `Cache-Control: no-store`.
+- Nit, left as is: `tower-blocks/LICENSE` (no extension) serves as `application/octet-stream`, so it downloads
+  instead of displaying. Nothing on A links to it; renaming it would need the rights doc and manifest updated too.

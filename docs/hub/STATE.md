@@ -1,13 +1,13 @@
-# STATE (updated 2026-11-05: Skate Lab on /skate/ + arcade quality pass, all uncommitted; see Last handoff)
+# STATE (updated 2026-11-22: Playwright + axe suite in CI, a11y fixes, T-M1-03 on G passed; uncommitted, see Last handoff)
 
 Milestone: M1 in progress (M1.1, M1.2, M1.3 done; Cloudflare A + G created, D-19)
 Done: M0 (b6df977). M1.1: A/B rejected, C approved (D-14, D-15). M1.2: C is the real site (D-16). M1.3: hashed CSP
 `_headers` (D-17), build-time chess plies so `/` ships no chess.js (D-18), `bun run budgets`, CI workflow, tests
-Next exact task: owner reviews and commits (or rejects) the uncommitted Skate Lab + arcade pass (Last handoff).
-Then: owner adds repo secrets `CLOUDFLARE_API_TOKEN` (Account → Cloudflare Pages: Edit) and
-`CLOUDFLARE_ACCOUNT_ID`, then pushes `hub/m1-proto-c` so CI runs on GitHub for the first time and the `deploy` job
-redeploys both previews (G first, then A). Both previews are already up by hand (see carry-forward for the exact
-commands). Then curl G's per-game CSP to close T-M1-03 on G, Playwright + axe (T-M1-04) and the M1 contracts.
+Next exact task: owner reviews and commits the uncommitted e2e + a11y work (Last handoff), adds repo secrets
+`CLOUDFLARE_API_TOKEN` (Account → Cloudflare Pages: Edit) and `CLOUDFLARE_ACCOUNT_ID`, then pushes `hub/m1-proto-c`
+so CI (now including Playwright + axe) runs on GitHub for the first time and the `deploy` job redeploys both previews
+(G first, then A). Both previews are already up by hand (see carry-forward for the exact commands). T-M1-03 (A + G)
+and T-M1-04 pass locally. Then: the M1 contracts, then Lighthouse CI (the last M1 gate not in CI).
 Blocked: CI deploy on the two repo secrets; Q-01 tabs content (M5), Q-02 projects (M3), Q-03 about (M5)
 Live: GitHub Pages (old site) until M6 cut-over. Preview: `https://hub-m1-proto-c.arctanmyangle.pages.dev`
 Budgets: see PLAN §4; baseline: `evidence/baseline/` (recorded; all routes already meet A-PERF-01 and A-PERF-05)
@@ -55,12 +55,16 @@ changing anything a D-entry covers. `HANDOFF.md` at the repo root describes the 
   is hashed automatically; external origins (Supabase in M2) must be added to `buildCsp` by hand. Origin G is in
   `frame-src` already, from `PUBLIC_PLAY_ORIGIN` or `DEFAULT_PLAY_ORIGIN` (keep it equal to `PLAY_ORIGIN` in
   `src/data/play.ts`; a test checks).
-  982 of 2000 chars used: if hashes grow, move inline code to files rather than splitting the rule.
+  1192 of 2000 chars used: if hashes grow, move inline code to files rather than splitting the rule.
 - `/games/` breaks under the CSP and is skipped by the budget gate; it goes in M3 (D-12) unless the owner keeps it.
 - Welcome still loads the mini-board replay + piece art (5.5 KiB raw). T-M1-01 / A-SHELL-01 say "zero chess JS":
   owner to confirm the animated board on `/` (approved in C) is fine, or swap it for a static SVG.
 - `bun run serve:dist` mimics Cloudflare headers, 308 trailing slash and 404.html; restart it after each build.
-- CI has never run on GitHub (branch not pushed). Lighthouse CI and Playwright/axe aren't in it yet.
+- CI has never run on GitHub (branch not pushed). Playwright + axe is in it (`bun run e2e`, Chromium); Lighthouse CI
+  isn't yet. Locally the suite drives the installed Edge: `PW_CHANNEL=msedge bun run e2e` (no browser download).
+- E2E routes come from `dist/sitemap-0.xml`, so new pages are covered automatically; it fails on any serious/critical
+  axe violation, a skip link that isn't the first Tab stop, focus hidden under the sticky header, or a CSP violation.
+  Overlays that grab focus on load break the skip-link check (see `played` in `gameShell.ts`).
 - Run `list_extensions` for `pg_jsonschema` right after the M2 Supabase project exists.
 - Cloudflare (D-19): A = `arctanmyangle`, G = `arctanmyangle-play`, classic Pages, direct upload, production branch
   `main`, account `fe4a741c62c89442fe0fcc12b6949753`. `--force` was only needed for `pages project create`; don't
@@ -92,7 +96,20 @@ changing anything a D-entry covers. `HANDOFF.md` at the repo root describes the 
 
 ## Last handoff
 
-Skate Lab + arcade quality pass (2026-11-05, **uncommitted**, nothing pushed or deployed). Plan:
+E2E + accessibility (2026-11-22, **uncommitted** on ba6cca9, nothing pushed or deployed). T-M1-04 / A-A11Y-01:
+`playwright.config.ts` + `e2e/shell.e2e.ts` (Playwright 1.65.1, `@axe-core/playwright` 4.14.0, `bun run e2e`) serve
+`dist/` through `serve-dist` with the real CSP and check every sitemap route + the 404 page on desktop and Pixel 7:
+axe in dark and light, shell landmarks / one h1 / skip link, desktop Tab walk (visible, unobscured, landmark order),
+phone menu. CI runs it after budgets and keeps the report on failure. It found and this session fixed: 2048 poster
+numerals (1.6–2.4:1), credit-link target size, chess current-move number contrast and a prohibited `aria-label`,
+start overlays in Iron Line / Monolith / Lane Rush stealing first focus, skate step outline hiding the focus ring,
+skate token names vs visible text, skate `<pre>` scroll regions. T-M1-03 on G closed by curl on the G preview (two
+CSP headers per game as designed; nit: `tower-blocks/LICENSE` is octet-stream). Evidence: `evidence/m1/e2e-a11y.md`,
+`evidence/m1/cloudflare.md`. Gates: tsc, check 0 errors/0 warnings, bun test (124 pass), build (20 pages, CSP 1192
+chars), budgets, e2e 135 passed / 57 skipped by design / 0 failed (Edge). Not checked: CI on GitHub, screen reader,
+real-device touch, Lighthouse, Cloudflare previews not redeployed with these fixes.
+
+Earlier: Skate Lab + arcade quality pass (2026-11-05, committed as ba6cca9). Plan:
 `~/.claude/plans/find-the-weakest-feature-enumerated-hamster.md`. `/skate/` went from "in the works" to a working
 lab: a ~6k-parameter net learns flatground tricks by SFT → GRPO → DPO. It ships a trained checkpoint and that run's
 curves, and visitors can watch replays, retrain from scratch in a Worker (keeps training while the tab is hidden),

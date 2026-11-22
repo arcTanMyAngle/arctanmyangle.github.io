@@ -625,7 +625,7 @@ Every test below is **PLANNED** until it is executed. An executed test records i
 
 **Missing skills/tooling note:**
 - No Supabase agent skill is installed. Suggested by Supabase: `npx skills add supabase/agent-skills`; the owner decides.
-- No Playwright, Lighthouse CI or Supabase CLI is installed locally.
+- Playwright is a devDependency (`bun run e2e`; locally it drives the installed Edge via `PW_CHANNEL=msedge`, CI installs Chromium). No Lighthouse CI or Supabase CLI is installed locally.
 - Docker on this Windows machine is unconfirmed. RLS tests therefore run in GitHub Actions if Docker isn't available locally.
 - The in-app Browser pane can't screenshot. Use Playwright traces for visual evidence.
 

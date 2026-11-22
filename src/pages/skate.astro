@@ -674,9 +674,10 @@ L_DPO = − log σ(m)</code></pre>
   .sk__strip :global(.sk__tok.is-pop) {
     border-color: var(--hue-line);
   }
+  /* The replay's current step: a hue border and underline bar, so the focus outline stays distinct from it. */
   .sk__strip :global(.sk__tok[aria-current="step"]) {
-    outline: 2px solid var(--hue);
-    outline-offset: 1px;
+    border-color: var(--hue);
+    box-shadow: inset 0 -3px 0 var(--hue);
   }
   .sk__dist {
     display: grid;
@@ -718,7 +719,9 @@ L_DPO = − log σ(m)</code></pre>
     font-family: var(--mono);
   }
   :root[data-motion="full"] .sk__strip :global(.sk__tok) {
-    transition: outline-color 120ms var(--ease);
+    transition:
+      border-color 120ms var(--ease),
+      box-shadow 120ms var(--ease);
   }
 
   .sk__tabs {
@@ -962,7 +965,9 @@ L_DPO = − log σ(m)</code></pre>
   .sk-math {
     margin: 0 0 0.75rem;
     padding: 0.75rem 1rem;
-    overflow-x: auto;
+    /* Long equations wrap instead of scrolling: a scroll box would need its own Tab stop to be keyboard-reachable. */
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
     border: 1px solid var(--line);
     border-radius: var(--radius-s);
     background: var(--surface-2);

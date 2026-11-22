@@ -516,11 +516,19 @@ const ACTION_LABEL: Record<ActionName, string> = {
   crouch: "crouch",
   pop: "pop",
   slide: "slide front foot",
-  flickToe: "flick (toe)",
-  flickHeel: "flick (heel)",
+  flickToe: "toe flick",
+  flickHeel: "heel flick",
   scoop: "scoop",
   catch: "catch",
 };
+
+/** Accessible name for a strip token: the visible abbreviation, then the full action when the two differ. */
+function tokenName(name: ActionName): string {
+  const abbr = ABBR[name];
+  const label = ACTION_LABEL[name];
+  if (!/\w/.test(abbr) || label.split(/\W+/).includes(abbr)) return label;
+  return `${abbr}, ${label}`;
+}
 
 function gradeWord(v: Verdict) {
   return v.grade === "clean" ? "Clean" : v.grade === "sketchy" ? "Sketchy" : "Bail";
@@ -727,7 +735,8 @@ export function mount(root: HTMLElement) {
       b.style.setProperty("--p", p.toFixed(3));
       b.textContent = ABBR[name];
       b.tabIndex = i === 0 ? 0 : -1;
-      b.setAttribute("aria-label", `Decision ${i + 1}: ${ACTION_LABEL[name]}, ${pct(p)} likely`);
+      // The name starts with what the button shows (WCAG 2.5.3, label in name), unless the label already has it.
+      b.setAttribute("aria-label", `${tokenName(name)}, decision ${i + 1}, ${pct(p)} likely`);
       strip.append(b);
     });
     showDist(0);

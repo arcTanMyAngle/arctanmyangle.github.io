@@ -51,7 +51,8 @@ const tiles = ["2", "4", "8", "16", "32", "64", "128", "2048", "", "2", "", "4",
     height: 3rem;
     border-radius: 4px;
     background: rgb(238 228 218 / 0.35);
-    color: #776e65;
+    /* Numerals are dark on every tile: the original white-on-orange is 1.6–2.4:1. All pairs here pass 4.5:1. */
+    color: #5f574f;
     font: 700 0.9375rem/1 var(--mono);
   }
   .t48 [data-n="2"],
@@ -61,17 +62,17 @@ const tiles = ["2", "4", "8", "16", "32", "64", "128", "2048", "", "2", "", "4",
   .t48 [data-n="8"],
   .t48 [data-n="16"] {
     background: #f2b179;
-    color: #f9f6f2;
+    color: #3d2a14;
   }
   .t48 [data-n="32"],
   .t48 [data-n="64"] {
     background: #f67c5f;
-    color: #f9f6f2;
+    color: #3d2a14;
   }
   .t48 [data-n="128"],
   .t48 [data-n="2048"] {
     background: #edc22e;
-    color: #f9f6f2;
+    color: #3d2a14;
     font-size: 0.75rem;
   }
   .hexmini {

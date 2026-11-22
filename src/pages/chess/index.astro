@@ -57,7 +57,7 @@ const groups = [
                   <h3 id={`line-${line.slug}`}>{line.name}</h3>
                   <span class="badge badge--muted">{line.side}</span>
                 </div>
-                <p class="line__moves mono" aria-label="Moves">
+                <p class="line__moves mono">
                   {line.tokens.map((t) => (
                     <span class="mv" data-ply={t.ply}>
                       {t.num && <span class="mv__n">{t.num}</span>}
@@ -166,6 +166,10 @@ const groups = [
     background: var(--hue-soft);
     color: var(--text);
     box-shadow: inset 0 0 0 1px var(--hue-line);
+  }
+  /* --text-3 on the tinted highlight is 4.2:1 in the dark theme. */
+  .mv:global(.is-current) .mv__n {
+    color: var(--text-2);
   }
   :global(:root[data-motion="full"]) .mv {
     transition:

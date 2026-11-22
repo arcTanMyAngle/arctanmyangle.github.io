@@ -48,6 +48,8 @@ export function createShell(root: HTMLElement, options: ShellOptions): Shell {
 
   let running = false;
   let shareText = "";
+  // Set once the overlay has been dismissed. Before that, show() is the first-load menu and must not take focus.
+  let played = false;
 
   const say = (t: string) => {
     if (live) live.textContent = t;
@@ -66,11 +68,14 @@ export function createShell(root: HTMLElement, options: ShellOptions): Shell {
     if (shareBtn) shareBtn.hidden = !shareText;
     overlay.hidden = false;
     say(`${o.title}. ${o.msg ?? ""}`);
-    // Don't pull focus out of the page on first load; do it once a game is under way.
-    if (root.contains(document.activeElement) || document.activeElement === document.body) main.focus({ preventScroll: true });
+    // Don't take focus on first load; do it once a game is under way (pause, game over, next mission).
+    if (root.contains(document.activeElement) || (played && document.activeElement === document.body)) {
+      main.focus({ preventScroll: true });
+    }
   };
 
   const hide = () => {
+    played = true;
     overlay.hidden = true;
     root.focus({ preventScroll: true });
   };

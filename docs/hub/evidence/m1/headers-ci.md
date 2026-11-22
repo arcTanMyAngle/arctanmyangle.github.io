@@ -57,10 +57,12 @@ chess.js, no origin G, no Supabase. The replay + piece art are still chess code 
 ## CI (`.github/workflows/ci.yml`)
 
 On every push and PR: `bun install --frozen-lockfile`, `bunx tsc --noEmit`, `bun run check`, `bun test`,
-`bun run build`, `bun run budgets`. Locally: tsc OK, check 0 errors / 0 warnings, 24/24 tests, build OK, budgets
-all within. Not yet run on GitHub (not pushed).
+`bun run build`, `bun run budgets`, then (since 2026-11-22) Playwright Chromium + `bun run e2e`, with the report
+uploaded on failure (`e2e-a11y.md`). Locally (2026-11-22): tsc OK, check 0 errors / 0 warnings, 124 tests pass, build
+OK (20 pages, CSP 1192 chars), budgets all within, e2e 135 passed / 57 skipped by design. Not yet run on GitHub (not
+pushed).
 
 Since D-19 a `deploy` job uploads the verified `dist` to Pages project A on every push (skipped until the repo has
 `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`).
 
-Not covered yet: Playwright + axe (T-M1-04), Lighthouse CI, origin G (no content yet).
+Not covered yet: Lighthouse CI. Origin G has no build, so CI only deploys it; `tests/play.test.mjs` checks its files.

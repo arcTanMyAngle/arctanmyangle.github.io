@@ -11,6 +11,7 @@
     "build": "astro build && bun scripts/build-headers.mjs",
     "serve:dist": "bun scripts/serve-dist.mjs",
     "budgets": "bun scripts/check-budgets.mjs",
+    "e2e": "playwright test",
     "preview": "astro preview",
     "sync:github": "bun scripts/sync-github.mjs",
     "train:skate": "bun scripts/train-skate.mjs",
@@ -23,6 +24,8 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@astrojs/sitemap": "^3.2.1",
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.65.1",
     "typescript": "^5.7.2"
   }
 }
