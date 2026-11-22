@@ -1,6 +1,6 @@
 # M1 end-to-end + accessibility (T-M1-04, A-A11Y-01)
 
-Run 2026-11-22 on top of ba6cca9 (uncommitted: the suite, CI steps and the a11y fixes below). Not yet run on GitHub
+Run 2026-11-22 on the tree committed as f54e8ea (the suite, CI steps and the a11y fixes below). Not yet run on GitHub
 (branch not pushed).
 
 ## What runs

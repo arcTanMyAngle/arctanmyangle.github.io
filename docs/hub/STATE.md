@@ -1,12 +1,11 @@
-# STATE (updated 2026-11-22: Playwright + axe suite in CI, a11y fixes, T-M1-03 on G passed; uncommitted, see Last handoff)
+# STATE (updated 2026-11-22: Playwright + axe suite in CI, a11y fixes, T-M1-03 on G passed; committed f54e8ea, not pushed)
 
 Milestone: M1 in progress (M1.1, M1.2, M1.3 done; Cloudflare A + G created, D-19)
 Done: M0 (b6df977). M1.1: A/B rejected, C approved (D-14, D-15). M1.2: C is the real site (D-16). M1.3: hashed CSP
 `_headers` (D-17), build-time chess plies so `/` ships no chess.js (D-18), `bun run budgets`, CI workflow, tests
-Next exact task: owner reviews and commits the uncommitted e2e + a11y work (Last handoff), adds repo secrets
-`CLOUDFLARE_API_TOKEN` (Account → Cloudflare Pages: Edit) and `CLOUDFLARE_ACCOUNT_ID`, then pushes `hub/m1-proto-c`
-so CI (now including Playwright + axe) runs on GitHub for the first time and the `deploy` job redeploys both previews
-(G first, then A). Both previews are already up by hand (see carry-forward for the exact commands). T-M1-03 (A + G)
+Next exact task: owner adds repo secrets `CLOUDFLARE_API_TOKEN` (Account → Cloudflare Pages: Edit) and
+`CLOUDFLARE_ACCOUNT_ID`, then pushes `hub/m1-proto-c` so CI (now including Playwright + axe) runs on GitHub for the
+first time and the `deploy` job redeploys both previews (G first, then A). Both previews are already up by hand (see carry-forward for the exact commands). T-M1-03 (A + G)
 and T-M1-04 pass locally. Then: the M1 contracts, then Lighthouse CI (the last M1 gate not in CI).
 Blocked: CI deploy on the two repo secrets; Q-01 tabs content (M5), Q-02 projects (M3), Q-03 about (M5)
 Live: GitHub Pages (old site) until M6 cut-over. Preview: `https://hub-m1-proto-c.arctanmyangle.pages.dev`
@@ -96,7 +95,7 @@ changing anything a D-entry covers. `HANDOFF.md` at the repo root describes the 
 
 ## Last handoff
 
-E2E + accessibility (2026-11-22, **uncommitted** on ba6cca9, nothing pushed or deployed). T-M1-04 / A-A11Y-01:
+E2E + accessibility (2026-11-22, committed as f54e8ea, nothing pushed or deployed). T-M1-04 / A-A11Y-01:
 `playwright.config.ts` + `e2e/shell.e2e.ts` (Playwright 1.65.1, `@axe-core/playwright` 4.14.0, `bun run e2e`) serve
 `dist/` through `serve-dist` with the real CSP and check every sitemap route + the 404 page on desktop and Pixel 7:
 axe in dark and light, shell landmarks / one h1 / skip link, desktop Tab walk (visible, unobscured, landmark order),
