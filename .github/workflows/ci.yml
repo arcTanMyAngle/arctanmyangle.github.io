@@ -42,6 +42,14 @@ jobs:
       - name: Unit tests
         run: bun test
 
+      # D-10: published content comes from a build-time snapshot. With no secrets (or on any error / invalid row) the
+      # script keeps the committed src/data/published.snapshot.json and exits 0.
+      - name: Snapshot published content
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: bun run snapshot:content
+
       # A branch preview of A must frame the same branch's preview of G, not production G. Pages adds a random suffix
       # to the alias of any branch name it has to clean up (e.g. one with a "/"), so both deploys pass an
       # already-clean name: lowercase, anything else turned into "-", 28 characters. That alias is then predictable.
@@ -78,6 +86,22 @@ jobs:
           path: |
             playwright-report
             test-results
+          retention-days: 7
+
+      # A-PERF-05: median-run performance ≥ 0.9 on the key routes, mobile preset, against dist/ with its real CSP.
+      # Pinned through bunx (D-22) and pointed at the Chromium Playwright just installed.
+      - name: Lighthouse CI
+        run: |
+          export CHROME_PATH="$(bun -e 'console.log(require("@playwright/test").chromium.executablePath())')"
+          bun run lhci
+
+      - name: Keep the Lighthouse reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse
+          path: .lighthouseci
+          include-hidden-files: true
           retention-days: 7
 
       - name: Keep the verified build

@@ -28,3 +28,6 @@ pnpm-debug.log*
 # NOTE: src/data/github-repos.generated.json is intentionally NOT ignored.
 # It's committed so CI/local builds have a cached fallback if the GitHub API
 # is unavailable at build time. Do not add it here.
+
+# lighthouse ci output
+.lighthouseci/
