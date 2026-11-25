@@ -14,6 +14,9 @@
     "e2e": "playwright test",
     "preview": "astro preview",
     "sync:github": "bun scripts/sync-github.mjs",
+    "gen:contracts": "bun scripts/gen-contract-types.mjs",
+    "snapshot:content": "bun scripts/snapshot-content.mjs",
+    "lhci": "bunx @lhci/cli@0.15.1 autorun",
     "train:skate": "bun scripts/train-skate.mjs",
     "check": "astro check"
   },
@@ -26,6 +29,9 @@
     "@astrojs/sitemap": "^3.2.1",
     "@axe-core/playwright": "4.14.0",
     "@playwright/test": "1.65.1",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "json-schema-to-typescript": "16.0.0",
     "typescript": "^5.7.2"
   }
 }

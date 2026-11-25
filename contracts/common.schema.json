@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arctanmyangle.pages.dev/contracts/common.schema.json",
+  "title": "Common",
+  "description": "Shared definitions (PLAN §3.3). Each kind schema keeps its own copy under $defs so pg_jsonschema can check it without resolving other files; tests/contracts.test.mjs fails if a copy drifts from this file. The URL pattern is only the first gate: src/lib/content/url.ts (and the M2 publish RPC) also reject IP-literal hosts, punycode and non-default ports.",
+  "$defs": {
+    "slug": {
+      "title": "Slug",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "httpsUrl": {
+      "title": "HttpsUrl",
+      "type": "string",
+      "pattern": "^https://[^\\s/?#@]+([/?#]\\S*)?$",
+      "maxLength": 2048
+    },
+    "isoDate": {
+      "title": "IsoDate",
+      "type": "string",
+      "format": "date-time"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "blurb": {
+      "title": "Blurb",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 280
+    }
+  }
+}

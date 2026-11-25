@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arctanmyangle.pages.dev/contracts/game.schema.json",
+  "title": "GameEntry",
+  "description": "A game on /arcade/ (PLAN §3.3). `bundle` names a game in play/games-manifest.json (origin G); `site-module` names a first-party module in src/lib/players/registry.ts; `embed` is an https URL whose host is in contracts/allowed-embed-hosts.json.",
+  "type": "object",
+  "required": ["slug", "title", "blurb", "adapter"],
+  "additionalProperties": false,
+  "properties": {
+    "slug": { "$ref": "#/$defs/slug" },
+    "title": { "$ref": "#/$defs/title" },
+    "blurb": { "$ref": "#/$defs/blurb" },
+    "adapter": { "type": "string", "enum": ["bundle", "site-module", "embed"] },
+    "bundle": { "$ref": "#/$defs/slug" },
+    "module": { "type": "string", "enum": ["stacker", "reaction", "iron-line", "monolith", "lane-rush"] },
+    "url": { "$ref": "#/$defs/httpsUrl" },
+    "controls": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 40 },
+      "maxItems": 8
+    },
+    "devices": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["desktop", "phone", "tablet"] },
+      "uniqueItems": true
+    },
+    "credit": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "license": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "sourceUrl": { "$ref": "#/$defs/httpsUrl" },
+    "poster": { "$ref": "#/$defs/httpsUrl" },
+    "phoneNote": { "type": "string", "minLength": 1, "maxLength": 200 }
+  },
+  "oneOf": [
+    {
+      "properties": { "adapter": { "const": "bundle" } },
+      "required": ["bundle"],
+      "not": { "anyOf": [{ "required": ["module"] }, { "required": ["url"] }] }
+    },
+    {
+      "properties": { "adapter": { "const": "site-module" } },
+      "required": ["module"],
+      "not": { "anyOf": [{ "required": ["bundle"] }, { "required": ["url"] }] }
+    },
+    {
+      "properties": { "adapter": { "const": "embed" } },
+      "required": ["url"],
+      "not": { "anyOf": [{ "required": ["bundle"] }, { "required": ["module"] }] }
+    }
+  ],
+  "$defs": {
+    "slug": {
+      "title": "Slug",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "httpsUrl": {
+      "title": "HttpsUrl",
+      "type": "string",
+      "pattern": "^https://[^\\s/?#@]+([/?#]\\S*)?$",
+      "maxLength": 2048
+    },
+    "title": {
+      "title": "Title",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "blurb": {
+      "title": "Blurb",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 280
+    }
+  }
+}

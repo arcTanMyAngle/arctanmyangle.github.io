@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arctanmyangle.pages.dev/contracts/play-v1.schema.json",
+  "title": "PlayV1",
+  "description": "play/v1 (PLAN §3.1): the postMessage contract between a game page on origin G and the play frame on origin A. Up: G to A. Down: A to G. Receivers also check the sender's origin and window.",
+  "oneOf": [{ "$ref": "#/$defs/up" }, { "$ref": "#/$defs/down" }],
+  "$defs": {
+    "up": {
+      "title": "PlayUpMessage",
+      "type": "object",
+      "required": ["v", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "v": { "type": "integer", "const": 1 },
+        "type": { "type": "string", "enum": ["ready", "error", "exit"] },
+        "detail": {}
+      }
+    },
+    "down": {
+      "title": "PlayDownMessage",
+      "type": "object",
+      "required": ["v", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "v": { "type": "integer", "const": 1 },
+        "type": { "type": "string", "enum": ["pause", "resume"] }
+      }
+    }
+  }
+}

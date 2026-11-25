@@ -1,0 +1,4 @@
+{
+  "description": "Hosts an `embed` game may point at (PLAN §3.3). Exact host names; a leading `*.` also matches subdomains. Adding a host also needs it in origin A's CSP frame-src. Empty until the owner allows one.",
+  "hosts": []
+}

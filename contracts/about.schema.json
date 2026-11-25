@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arctanmyangle.pages.dev/contracts/about.schema.json",
+  "title": "AboutEntry",
+  "description": "The single /about/ row (PLAN §3.3). Its slug is always `about`.",
+  "type": "object",
+  "required": ["slug", "headline", "body"],
+  "additionalProperties": false,
+  "properties": {
+    "slug": { "type": "string", "const": "about" },
+    "headline": { "$ref": "#/$defs/title" },
+    "body": {
+      "type": "array",
+      "description": "Paragraphs of plain text.",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": { "type": "string", "minLength": 1, "maxLength": 1200 }
+    },
+    "links": {
+      "type": "array",
+      "maxItems": 12,
+      "items": { "$ref": "#/$defs/link" }
+    }
+  },
+  "$defs": {
+    "link": {
+      "title": "AboutLink",
+      "type": "object",
+      "required": ["label", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "url": { "$ref": "#/$defs/httpsUrl" }
+      }
+    },
+    "httpsUrl": {
+      "title": "HttpsUrl",
+      "type": "string",
+      "pattern": "^https://[^\\s/?#@]+([/?#]\\S*)?$",
+      "maxLength": 2048
+    },
+    "title": {
+      "title": "Title",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    }
+  }
+}

@@ -6,19 +6,14 @@
 // Nothing from G loads until Play. After that the frame must say `ready` (play/v1) within READY_MS, or the page
 // shows the failure panel. Only messages from the frame's own window and from G's exact origin are trusted.
 
+import { isPlayMessage } from "../lib/players/playV1";
+
 const READY_MS = 10_000;
 // Some embedded browsers leave a fullscreen request pending forever; after this long the frame is pinned instead.
 const FS_WAIT_MS = 800;
 const SANDBOX = "allow-scripts allow-same-origin allow-pointer-lock";
 
 type State = "idle" | "loading" | "playing" | "failed";
-type Msg = { v: 1; type: "ready" | "error" | "exit"; detail?: unknown };
-
-function isMsg(d: unknown): d is Msg {
-  if (!d || typeof d !== "object") return false;
-  const m = d as Record<string, unknown>;
-  return m.v === 1 && (m.type === "ready" || m.type === "error" || m.type === "exit");
-}
 
 export function mount(root: HTMLElement, options: { origin: string }) {
   const origin = options.origin.replace(/\/+$/, "");
@@ -92,7 +87,7 @@ export function mount(root: HTMLElement, options: { origin: string }) {
   };
 
   const onMessage = (e: MessageEvent) => {
-    if (!frame || e.source !== frame.contentWindow || e.origin !== origin || !isMsg(e.data)) {
+    if (!frame || e.source !== frame.contentWindow || e.origin !== origin || !isPlayMessage(e.data)) {
       // Other frames, extensions and stray windows post here too. Count them, trust none.
       dropped++;
       console.debug(`[play] dropped message #${dropped} from ${e.origin || "unknown origin"}`);

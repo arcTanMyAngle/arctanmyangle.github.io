@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arctanmyangle.pages.dev/contracts/lab.schema.json",
+  "title": "LabEntry",
+  "description": "An experiment on /lab/ (PLAN §3.3): played like a `bundle` game from origin G, marked as an experiment, with the date it last changed.",
+  "type": "object",
+  "required": ["slug", "title", "blurb", "bundle", "experiment", "updatedAt"],
+  "additionalProperties": false,
+  "properties": {
+    "slug": { "$ref": "#/$defs/slug" },
+    "title": { "$ref": "#/$defs/title" },
+    "blurb": { "$ref": "#/$defs/blurb" },
+    "bundle": { "$ref": "#/$defs/slug" },
+    "experiment": { "type": "boolean", "const": true },
+    "updatedAt": { "$ref": "#/$defs/isoDate" },
+    "language": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "sourceUrl": { "$ref": "#/$defs/httpsUrl" },
+    "poster": { "$ref": "#/$defs/httpsUrl" }
+  },
+  "$defs": {
+    "slug": {
+      "title": "Slug",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "httpsUrl": {
+      "title": "HttpsUrl",
+      "type": "string",
+      "pattern": "^https://[^\\s/?#@]+([/?#]\\S*)?$",
+      "maxLength": 2048
+    },
+    "isoDate": {
+      "title": "IsoDate",
+      "type": "string",
+      "format": "date-time"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "blurb": {
+      "title": "Blurb",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 280
+    }
+  }
+}

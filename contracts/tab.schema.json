@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arctanmyangle.pages.dev/contracts/tab.schema.json",
+  "title": "TabEntry",
+  "description": "A guitar tab on /tabs/ (PLAN §3.3): plain text, with its tuning and where the right to publish it comes from.",
+  "type": "object",
+  "required": ["slug", "title", "tuning", "text", "rights"],
+  "additionalProperties": false,
+  "properties": {
+    "slug": { "$ref": "#/$defs/slug" },
+    "title": { "$ref": "#/$defs/title" },
+    "artist": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "tuning": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "capo": { "type": "integer", "minimum": 0, "maximum": 12 },
+    "text": { "type": "string", "minLength": 1, "maxLength": 40000 },
+    "rights": {
+      "description": "own: written by the owner; permission: the author said yes; public-domain; licensed: under the licence named in `credit`.",
+      "type": "string",
+      "enum": ["own", "permission", "public-domain", "licensed"]
+    },
+    "credit": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "sourceUrl": { "$ref": "#/$defs/httpsUrl" }
+  },
+  "$defs": {
+    "slug": {
+      "title": "Slug",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "httpsUrl": {
+      "title": "HttpsUrl",
+      "type": "string",
+      "pattern": "^https://[^\\s/?#@]+([/?#]\\S*)?$",
+      "maxLength": 2048
+    },
+    "title": {
+      "title": "Title",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    }
+  }
+}

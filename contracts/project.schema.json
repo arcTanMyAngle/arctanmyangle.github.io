@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arctanmyangle.pages.dev/contracts/project.schema.json",
+  "title": "ProjectEntry",
+  "description": "A project on /projects/ (PLAN §3.3): something you can run (`runUrl`) or look at (`outputs`), with an optional source link. A source link on its own is not a project entry.",
+  "type": "object",
+  "required": ["slug", "title", "blurb"],
+  "additionalProperties": false,
+  "if": { "not": { "required": ["runUrl"] } },
+  "then": { "required": ["outputs"] },
+  "properties": {
+    "slug": { "$ref": "#/$defs/slug" },
+    "title": { "$ref": "#/$defs/title" },
+    "blurb": { "$ref": "#/$defs/blurb" },
+    "runUrl": { "$ref": "#/$defs/httpsUrl" },
+    "outputs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": { "$ref": "#/$defs/output" }
+    },
+    "sourceUrl": { "$ref": "#/$defs/httpsUrl" },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 32 },
+      "maxItems": 8,
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "output": {
+      "title": "ProjectOutput",
+      "type": "object",
+      "required": ["type", "url", "alt"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string", "enum": ["image", "video"] },
+        "url": { "$ref": "#/$defs/httpsUrl" },
+        "alt": { "type": "string", "minLength": 1, "maxLength": 200 }
+      }
+    },
+    "slug": {
+      "title": "Slug",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "httpsUrl": {
+      "title": "HttpsUrl",
+      "type": "string",
+      "pattern": "^https://[^\\s/?#@]+([/?#]\\S*)?$",
+      "maxLength": 2048
+    },
+    "title": {
+      "title": "Title",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "blurb": {
+      "title": "Blurb",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 280
+    }
+  }
+}

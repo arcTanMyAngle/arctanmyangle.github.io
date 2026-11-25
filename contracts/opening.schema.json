@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arctanmyangle.pages.dev/contracts/opening.schema.json",
+  "title": "OpeningEntry",
+  "description": "A chess opening on /chess/ (PLAN §3.3). Each variation is PGN movetext; src/lib/content/validate.ts replays it with chess.js, at publish and at build.",
+  "type": "object",
+  "required": ["slug", "name", "side", "variations"],
+  "additionalProperties": false,
+  "properties": {
+    "slug": { "$ref": "#/$defs/slug" },
+    "name": { "$ref": "#/$defs/title" },
+    "side": { "type": "string", "enum": ["White", "Black"] },
+    "idea": { "$ref": "#/$defs/blurb" },
+    "variations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": { "$ref": "#/$defs/variation" }
+    }
+  },
+  "$defs": {
+    "variation": {
+      "title": "OpeningVariation",
+      "type": "object",
+      "required": ["name", "pgn"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "#/$defs/title" },
+        "pgn": { "type": "string", "minLength": 1, "maxLength": 4000 },
+        "note": { "$ref": "#/$defs/blurb" }
+      }
+    },
+    "slug": {
+      "title": "Slug",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "title": {
+      "title": "Title",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "blurb": {
+      "title": "Blurb",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 280
+    }
+  }
+}
