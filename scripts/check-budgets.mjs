@@ -16,7 +16,6 @@ import { fileURLToPath } from "node:url";
 
 const KIB = 1024;
 export const BUDGETS = { js: 150 * KIB, page: 500 * KIB, welcome: 150 * KIB };
-const SKIP_DIRS = new Set(["games"]); // legacy, not on origin A (see build-headers.mjs)
 
 const gz = (buf) => gzipSync(buf, { level: 9 }).length;
 
@@ -92,13 +91,12 @@ export function overBudget(route, { js, page }, budgets = BUDGETS) {
 
 const kib = (n) => `${(n / KIB).toFixed(1)} KiB`;
 
-async function htmlFiles(dir, top = true) {
+async function htmlFiles(dir) {
   const out = [];
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const path = join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (top && SKIP_DIRS.has(entry.name)) continue;
-      out.push(...(await htmlFiles(path, false)));
+      out.push(...(await htmlFiles(path)));
     } else if (entry.name.endsWith(".html")) {
       out.push(path);
     }

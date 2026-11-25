@@ -5,3 +5,6 @@
 /field-notes/* /about/ 301
 /arcade/t-rex-runner /arcade/ 301
 /arcade/t-rex-runner/ /arcade/ 301
+# The old GitHub Pages site's standalone games (removed in M1, D-21).
+/games/stacker.html /arcade/stacker/ 301
+/games/* /arcade/ 301

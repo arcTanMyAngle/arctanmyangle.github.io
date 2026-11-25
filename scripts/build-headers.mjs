@@ -18,9 +18,6 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const DIST = fileURLToPath(new URL("../dist/", import.meta.url));
-// Legacy bundles from the old site. Nothing links to them since M1.2; they move to
-// origin G or get deleted (owner call), so they are not covered by A's policy.
-const SKIP_DIRS = new Set(["games"]);
 const MAX_LINE = 2000;
 // Origin G, the only thing A may frame (PLAN §3.1). Keep the fallback in step with PLAY_ORIGIN in src/data/play.ts;
 // tests/play.test.mjs checks that they match.
@@ -82,13 +79,12 @@ export function buildHeaders(csp) {
   ].join("\n");
 }
 
-async function htmlFiles(dir, top = true) {
+async function htmlFiles(dir) {
   const out = [];
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const path = join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (top && SKIP_DIRS.has(entry.name)) continue;
-      out.push(...(await htmlFiles(path, false)));
+      out.push(...(await htmlFiles(path)));
     } else if (entry.name.endsWith(".html")) {
       out.push(path);
     }

@@ -30,11 +30,14 @@ rebuild (Cloudflare Pages, owner admin) is in progress** — for current status 
   Anything that animates on mount must defer on `document.hidden` and resume on `visibilitychange`.
 - **Toy/island pattern:** every interactive vanilla-TS module (`src/components/*.ts`) exports
   `mount(root: HTMLElement, options?) => { destroy(): void }`. `src/lib/canvasLoop.ts` (DPR capping, visibility
-  pausing, reduced-motion gating) and `src/lib/lazyMount.ts` are kept for canvas/below-the-fold toys; use them rather
-  than hand-rolling a second rAF loop.
+  pausing, reduced-motion gating) is the shared loop for canvas toys; use it rather than hand-rolling a second rAF
+  loop.
 - **Data model:** `src/lib/projects.ts` merges `src/data/github-repos.generated.json` (machine-written by
   `scripts/sync-github.mjs` — don't hand-edit) with `src/data/project-overrides.ts` (hand-authored, keyed by
   lowercased repo name = slug).
+- **Other machine-written files (never hand-edit):** `src/lib/content/types.generated.ts` (`bun run gen:contracts`
+  from `contracts/*.schema.json`; a test fails if it's stale), `src/data/published.snapshot.json`
+  (`bun run snapshot:content`) and `src/data/skate-policy.generated.json` (`bun run train:skate`).
 - **Never invent metrics.** Stars/license/etc. come only from the generated JSON. Omit a metric a repo doesn't
   have — don't estimate or invent one.
 - **Contrast:** the palette in `tokens.css` passes WCAG AA in both themes. The old muted `#5b6688` must not come back.
@@ -55,6 +58,12 @@ rebuild (Cloudflare Pages, owner admin) is in progress** — for current status 
 - Central localStorage keys: `src/lib/clientState.ts` (`STORAGE_KEYS`). The blocking head script in `BaseLayout.astro`
   duplicates the `theme`/`reducedEffects` key strings inline (must be a classic, non-module script to block before
   paint). Keep them in sync if a key is renamed.
+- Content contracts (PLAN §3.3): `contracts/*.schema.json` (JSON Schema 2020-12, one per published kind, plus
+  `play-v1` and `allowed-embed-hosts.json`). `src/lib/content/`: `validate.ts` (ajv), `url.ts` (`isSafeUrl`),
+  `index.ts` (`published(kind)` / `publishedBySlug` / `hasPublished`, read from the snapshot at build time),
+  `types.generated.ts`.
+- Player adapters: `src/lib/players/` (`playV1.ts` message types for the G iframe protocol, `types.ts`
+  `PlayerAdapter`, `registry.ts` site modules / bundle / embed).
 - Display toggles: `src/components/DisplayControls.ts` (header theme button, footer motion button).
 - Command palette: `src/components/CommandPalette.ts`, mounted globally (Ctrl/Cmd+K). Its toggles click the visible
   buttons so labels stay in step.
@@ -66,6 +75,12 @@ rebuild (Cloudflare Pages, owner admin) is in progress** — for current status 
 - `bun run check` and `bun run build` — both must pass with zero errors before considering any phase done.
 - `bun run sync:github` — re-fetches live repo metadata; safe to re-run, falls back to the committed cache on
   failure (rate limit, network down, etc.) rather than failing the build.
+- `bun run snapshot:content` — same pattern for published content: with `SUPABASE_URL`/`SUPABASE_ANON_KEY` it
+  fetches, validates and writes the snapshot; with no env vars, or on any error or invalid row, it keeps the
+  committed file and exits 0.
+- `bun run gen:contracts` — regenerates `types.generated.ts` after a schema edit.
+- `bun test`, `bun run budgets`, `bun run e2e` (locally `PW_CHANNEL=msedge`), `bun run lhci` (pinned bunx; set
+  `CHROME_PATH` to a local Chrome/Edge) — the rest of the CI gates.
 
 ## Token-efficiency notes for future sessions
 
