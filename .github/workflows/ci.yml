@@ -33,11 +33,13 @@ jobs:
 
       # No sync:github here: CI checks the committed github-repos.generated.json,
       # so a run never depends on the GitHub API.
-      - name: Type-check (tsc)
-        run: bunx tsc --noEmit
-
+      # Astro check goes first: it generates .astro/ (git-ignored), whose types tsc needs for astro:content and
+      # import.meta.env on a clean checkout.
       - name: Astro check
         run: bun run check
+
+      - name: Type-check (tsc)
+        run: bunx tsc --noEmit
 
       - name: Unit tests
         run: bun test
