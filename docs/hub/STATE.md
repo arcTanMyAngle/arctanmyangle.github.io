@@ -110,8 +110,11 @@ registry for site-module / bundle / embed). `lighthouserc.json` + CI step (perf 
 Deleted `public/games/` (+ skip-lists, + `/games/*` 301s) and the unused `lazyMount.ts`. Decisions D-20..D-23.
 Evidence: `evidence/m1/contracts.md`, `evidence/m1/lighthouse.md`. Gates (local): tsc, check 0 errors/0 warnings,
 bun test 194 pass, build 20 pages (CSP 1192 chars), budgets (`/` JS 5.9 KiB), e2e 135 passed / 57 skipped / 0 failed
-(Edge), lhci 12 runs no failures (perf medians 100/100/100/98). Not checked: the first GitHub CI run's result (see
-Actions), `/games/*` redirects on Cloudflare, deploys (secrets missing), screen reader, real-device touch.
+(Edge), lhci 12 runs no failures (perf medians 100/100/100/98). First GitHub CI run failed at tsc (`.astro/` types
+missing on a clean checkout); fixed by running astro check before tsc. Run 45616647916 then passed every gate on
+GitHub (verify 5m10s, incl. e2e + Lighthouse CI); `deploy` skipped (no secrets). CI warns that actions/checkout@v4
+and upload-artifact@v4 target the deprecated Node 20. Not checked: `/games/*` redirects on Cloudflare, deploys,
+screen reader, real-device touch.
 
 Earlier: E2E + accessibility (2026-11-22, committed as f54e8ea, nothing pushed or deployed). T-M1-04 / A-A11Y-01:
 `playwright.config.ts` + `e2e/shell.e2e.ts` (Playwright 1.65.1, `@axe-core/playwright` 4.14.0, `bun run e2e`) serve
